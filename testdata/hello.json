@@ -1,0 +1,21 @@
+{
+  "greeting": "hello",
+  "who": "world",
+  "count_to_five": [1,2,3,4,5],
+  "greek_letters": ["alpha", "beta", "gamma"],
+  "recording": {
+    "duration_sec": 5300,
+    "operator": "Joe",
+    "vol_setting": 10.3
+  },
+  "players": [
+    {
+    "name": "Alice",
+    "score": 1000
+  },
+    {
+      "name": "Bob",
+      "score": 1500
+    }
+  ]
+}
