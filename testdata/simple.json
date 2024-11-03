@@ -1,0 +1,12 @@
+{
+  "greeting": "hello",
+  "who": "world",
+  "nested": {
+    "again": {
+      "depth": "two"
+    },
+    "depth": "one",
+    "sub_2": "two"
+  },
+  "conclusion": "good bye"
+}
