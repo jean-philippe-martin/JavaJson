@@ -1,0 +1,12 @@
+{
+  "players": [
+    {
+      "name": "Alex",
+      "score": 10
+    },
+    {
+      "name": "Bob",
+      "score": 35
+    }
+  ]
+}

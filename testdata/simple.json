@@ -5,6 +5,11 @@
     "again": {
       "depth": "two"
     },
+    "numbers": [
+      10,
+      11,
+      12
+    ],
     "depth": "one",
     "sub_2": "two"
   },

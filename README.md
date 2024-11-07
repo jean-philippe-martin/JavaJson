@@ -13,8 +13,7 @@ mvn package
 ## Running
 
 ```
-cd target
-java -jar JavaJson-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar target/JavaJson-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 Use the up and down arrows to navigate. ESC to quit.

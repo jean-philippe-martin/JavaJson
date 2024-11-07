@@ -55,7 +55,7 @@ public class DrawTest {
                 "one": "hello",
                 "two": "world"
             }""");
-        Main.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -82,7 +82,7 @@ public class DrawTest {
                 },
                 "two": "more"
             }""");
-        Main.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -118,13 +118,13 @@ public class DrawTest {
                 },
                 "two": "more"
             }""");
-        Main.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
 
         state.cursorDown();
-        Main.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         got = extractAsString(screen);
         assertEquals(expected, got);
     }
@@ -160,16 +160,102 @@ public class DrawTest {
                },
                "conclusion": "good bye"
              }""");
-        Main.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
 
         for (int i=0; i<5; i++) {
             state.cursorDown();
-            Main.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+            Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
             got = extractAsString(screen);
             assertEquals(expected, got);
         }
+    }
+
+    @Test
+    public void testSimplePin() throws Exception {
+        Screen screen = setupScreen(20,4);
+
+        String expected = """
+            {•...•••••••••••••••
+            P•"two":•"world"••••
+            }•••••••••••••••••••
+            ••••••••••••••••••••
+            """;
+        JsonState state = JsonState.parseJson("""
+            {
+                "one": "hello",
+                "two": "world"
+            }""");
+        // put pin at "two"
+        state.cursorDown();
+        state.cursorDown();
+        state.togglePinnedAtCursor();
+        // fold root
+        state.cursorParent();
+        state.setFoldedAtCursor(true);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testNestedPin() throws Exception {
+        Screen screen = setupScreen(20,5);
+
+        String expected = """
+            {•...•••••••••••••••
+            ••"nested":•{•...•••
+            P•••"two":•"world"••
+            ••}•••••••••••••••••
+            }•••••••••••••••••••
+            """;
+        JsonState state = JsonState.parseJson("""
+            {
+                "nested": {
+                    "one": "hello",
+                    "two": "world"
+                }
+            }""");
+        // put pin at "two"
+        state.cursorDown();
+        state.cursorDown();
+        state.cursorDown();
+        state.togglePinnedAtCursor();
+        // fold root
+        state.cursorParent();
+        state.cursorParent();
+        state.setFoldedAtCursor(true);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testSimpleList() throws Exception {
+        Screen screen = setupScreen(20,6);
+
+        String expected = """
+            {•••••••••••••••••••
+            ••"numbers":•[••••••
+            ••••10••••••••••••••
+            ••••11••••••••••••••
+            ••]•••••••••••••••••
+            }•••••••••••••••••••
+            """;
+        JsonState state = JsonState.parseJson("""
+            {
+                "numbers": [
+                  10,
+                  11
+                ]
+            }""");
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
     }
 }
