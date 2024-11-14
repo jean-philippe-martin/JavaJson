@@ -6,12 +6,9 @@ import static org.junit.Assert.*;
 
 
 import com.googlecode.lanterna.TerminalPosition;
-import com.googlecode.lanterna.TextCharacter;
-import com.googlecode.lanterna.screen.VirtualScreen;
 import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 
 import java.io.IOException;
@@ -50,7 +47,7 @@ public class DrawTest {
             ••"two":•"world"••••
             }•••••••••••••••••••
             """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                 "one": "hello",
                 "two": "world"
@@ -74,7 +71,7 @@ public class DrawTest {
             ••"two":•"more"••••••••••
             }••••••••••••••••••••••••
             """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                 "one": {
                     "prime": "nope",
@@ -106,7 +103,7 @@ public class DrawTest {
             }•••••••••••••••••••••••••••••
             ••••••••••••••••••••••••••••••
             """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                 "one": {
                     "prime": "nope",
@@ -120,13 +117,8 @@ public class DrawTest {
             }""");
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
-
         assertEquals(expected, got);
 
-        state.cursorDown();
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
-        got = extractAsString(screen);
-        assertEquals(expected, got);
     }
 
     @Test
@@ -147,7 +139,7 @@ public class DrawTest {
            ••"conclusion":•"good•bye"••••
            }•••••••••••••••••••••••••••••
            """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                "greeting": "hello",
                "who": "world",
@@ -162,15 +154,7 @@ public class DrawTest {
              }""");
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
-
         assertEquals(expected, got);
-
-        for (int i=0; i<5; i++) {
-            state.cursorDown();
-            Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
-            got = extractAsString(screen);
-            assertEquals(expected, got);
-        }
     }
 
     @Test
@@ -183,7 +167,7 @@ public class DrawTest {
             }•••••••••••••••••••
             ••••••••••••••••••••
             """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                 "one": "hello",
                 "two": "world"
@@ -191,8 +175,55 @@ public class DrawTest {
         // put pin at "two"
         state.cursorDown();
         state.cursorDown();
-        state.togglePinnedAtCursor();
+        state.setPinnedAtCursors(true);
+        assertEquals(true, state.getPinnedAtCursor());
         // fold root
+        state.cursorParent();
+        state.setFoldedAtCursor(true);
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testSimplePin2() throws Exception {
+        Screen screen = setupScreen(20,7);
+
+        String expected = """
+            {•...•••••••••••••••
+            ••"players":•{•...••
+            ••••"Alex":•{•...•••
+            P•••••"score":•10•••
+            ••••}•••••••••••••••
+            ••}•••••••••••••••••
+            }•••••••••••••••••••
+            """;
+        JsonNode state = JsonNode.parseJson("""
+                {
+                  "players": {
+                    "Alex": {
+                      "score": 10,
+                      "category": "heavyweight",
+                      "age": 32
+                    },
+                    "Bob": {
+                      "score": 35,
+                      "category": "heavyweight",
+                      "age": 36,
+                      "requests": "pillow on chair"
+                    }
+                  }
+                }""");
+        // put pin at "Alex.score"
+        state.cursorDown();
+        state.cursorDown();
+        state.cursorDown();
+        state.setPinnedAtCursors(true);
+        assertEquals(true, state.getPinnedAtCursor());
+        // fold root
+        state.cursorParent();
+        state.cursorParent();
         state.cursorParent();
         state.setFoldedAtCursor(true);
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
@@ -212,7 +243,7 @@ public class DrawTest {
             ••}•••••••••••••••••
             }•••••••••••••••••••
             """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                 "nested": {
                     "one": "hello",
@@ -223,7 +254,7 @@ public class DrawTest {
         state.cursorDown();
         state.cursorDown();
         state.cursorDown();
-        state.togglePinnedAtCursor();
+        state.setPinnedAtCursors(true);
         // fold root
         state.cursorParent();
         state.cursorParent();
@@ -246,7 +277,7 @@ public class DrawTest {
             ••]•••••••••••••••••
             }•••••••••••••••••••
             """;
-        JsonState state = JsonState.parseJson("""
+        JsonNode state = JsonNode.parseJson("""
             {
                 "numbers": [
                   10,

@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.SequencedCollection;
 
-public class JsonStateMap extends JsonState {
+public class JsonNodeMap extends JsonNode {
 
     private final LinkedHashMap<String, Object> kv;
-    private final HashMap<String, JsonState> children;
+    private final HashMap<String, JsonNode> children;
 
 
-    protected JsonStateMap(LinkedHashMap<String, Object> kv, JsonState parent, Cursor curToMe, JsonState root) {
+    protected JsonNodeMap(LinkedHashMap<String, Object> kv, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.kv = kv;
         this.children = new HashMap<>();
@@ -25,15 +25,23 @@ public class JsonStateMap extends JsonState {
         return kv.get(key);
     }
 
-    public JsonState getChild(String key) {
+    public JsonNode getChild(String key) {
         if (this.children.containsKey(key)) {
             return this.children.get(key);
         } else {
-            JsonState child = JsonState.fromObject(kv.get(key), this, whereIAm.enterKey(key), root);
+            JsonNode child = JsonNode.fromObject(kv.get(key), this, whereIAm.enterKey(key), root);
             this.children.put(key, child);
             return child;
         }
     }
+
+    /** True if the userCursor is pointing to this key of ours. **/
+    @Override
+    public boolean isAtCursor(String key) {
+        JsonNode hypothetical = getChild(key);
+        return hypothetical.isAtCursor();
+    }
+
 
     /** Whether this child is folded **/
     public boolean getChildFolded(String key) {
@@ -42,21 +50,21 @@ public class JsonStateMap extends JsonState {
     }
 
     @Override
-    public JsonState firstChild() {
+    public JsonNode firstChild() {
         SequencedCollection<String> keys = this.getKeysInOrder();
         if (keys.isEmpty()) return null;
         return getChild(keys.getFirst());
     }
 
     @Override
-    public JsonState lastChild() {
+    public JsonNode lastChild() {
         SequencedCollection<String> keys = this.getKeysInOrder();
         if (keys.isEmpty()) return null;
         return getChild(keys.getLast());
     }
 
     @Override
-    public JsonState nextChild(Cursor childCursor) {
+    public JsonNode nextChild(Cursor childCursor) {
         childCursor = childCursor.truncate(this);
         Cursor.DescentStep step = childCursor.getStep();
         // if we found ourselves, then this must be a descentKey
@@ -73,13 +81,13 @@ public class JsonStateMap extends JsonState {
                 found = true;
             }
         }
-        JsonState parent = childCursor.getData().getParent();
+        JsonNode parent = childCursor.getData().getParent();
         if (parent==this) return null;
         return parent.nextChild(childCursor);
     }
 
     @Override
-    public JsonState prevChild(Cursor childCursor) {
+    public JsonNode prevChild(Cursor childCursor) {
         childCursor = childCursor.truncate(this);
         Cursor.DescentStep step = childCursor.getStep();
         // if we found ourselves, then this must be a descentKey

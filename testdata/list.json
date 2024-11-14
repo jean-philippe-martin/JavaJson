@@ -1,12 +1,21 @@
 {
   "players": [
     {
-      "name": "Alex",
-      "score": 10
+      "name": "Alice",
+      "score": 10,
+      "category": "heavyweight",
+      "age": 32,
+      "fastest_move_in_seconds": 0.002
     },
     {
       "name": "Bob",
-      "score": 35
+      "score": 35,
+      "category": "heavyweight",
+      "age": 36,
+      "requests": "pillow on chair",
+      "fastest_move_in_seconds": 0.0015
     }
   ]
 }
+
+

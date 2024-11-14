@@ -7,7 +7,6 @@ import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Random;
 import java.util.SequencedCollection;
 
@@ -178,7 +177,7 @@ public class Drawer {
     }
 
     // inFoldedContext = we're folded, only print pinned rows.
-    public static int printJsonMap(TextGraphics g, JsonStateMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext) {
+    public static int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext) {
         int line = 0;
         SequencedCollection<String> keys = jsonMap.getKeysInOrder();
         int indent = start.getColumn();
@@ -203,7 +202,7 @@ public class Drawer {
         pos = pos.withRelativeColumn(INDENT).withRelativeRow(1);
         line += 1;
         for (String key : keys) {
-            JsonState child = jsonMap.getChild(key);
+            JsonNode child = jsonMap.getChild(key);
             if (inFoldedContext && !child.hasPins()) {
                 // skip this child
                 continue;
@@ -211,20 +210,14 @@ public class Drawer {
             printMaybeReversed(g, pos, "\"" + key + "\"", jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos.withRelativeColumn(2 + key.length());
             switch (child) {
-                case JsonStateValue v -> {
+                case JsonNodeValue v -> {
                     Object val = v.getValue();
-                    if (val instanceof String) {
-                        g.putString(pos2, ": ");
-                        int height = printJsonObject(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext);
-                        line += height;
-                        pos = pos.withRelativeRow(height);
-                    } else {
-                        g.putString(pos2, ": " + val.toString());
-                        line += 1;
-                        pos = pos.withRelativeRow(1);
-                    }
+                    g.putString(pos2, ": ");
+                    int height = printJsonObject(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext);
+                    line += height;
+                    pos = pos.withRelativeRow(height);
                 }
-                case JsonState m -> {
+                case JsonNode m -> {
                     g.putString(pos2, ": ");
                     int childOffset = key.length() + 4;
                     int childHeight = printJsonObject(g, pos, childOffset, child, inFoldedContext);
@@ -241,34 +234,44 @@ public class Drawer {
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public static int printJsonObject(TextGraphics g, TerminalPosition start, int initialOffset, JsonState json) {
+    public static int printJsonObject(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
         return printJsonObject(g, start, initialOffset, json, false);
     }
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public static int printJsonObject(TextGraphics g, TerminalPosition start, int initialOffset, JsonState json, boolean inFoldedContext) {
+    public static int printJsonObject(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext) {
         int line = 0;
+        if (json.isAtPrimaryCursor() && json.parent!=null) {
+            g.putString(start.withColumn(0), ">>");
+        }
         if (json.getPinned()) {
             // draw the pin
             g.putString(start.withColumn(0), "P");
         }
-        if (json instanceof JsonStateValue) {
+        if (json instanceof JsonNodeValue jsonValue) {
+            int lines = 0;
             if (inFoldedContext && !json.hasPins()) {
                 // skip
                 return 0;
             }
-            Object value = ((JsonStateValue) json).getValue();
+            String annotation = jsonValue.getAnnotation();
+            if (!annotation.isEmpty()) {
+                printMaybeReversed(g, start.withRelativeColumn(initialOffset), "// " + annotation, false);
+                start = start.withRelativeRow(1);
+                lines++;
+            }
+            Object value = jsonValue.getValue();
             if (value instanceof String) {
                 printMaybeReversed(g, start.withRelativeColumn(initialOffset), "\"" + (String) value + "\"", json.isAtCursor());
-                return 1;
-            } else if (value instanceof Integer) {
+                return lines+1;
+            } else {
                 printMaybeReversed(g, start.withRelativeColumn(initialOffset), value.toString(), json.isAtCursor());
-                return 1;
+                return lines+1;
             }
         }
-        if (json instanceof JsonStateList) {
-            JsonStateList jsonList = (JsonStateList) json;
+        if (json instanceof JsonNodeList) {
+            JsonNodeList jsonList = (JsonNodeList) json;
             inFoldedContext = jsonList.folded || inFoldedContext;
             TerminalPosition pos = start;
             TerminalPosition pos2 = pos.withRelativeColumn(initialOffset);
@@ -286,7 +289,7 @@ public class Drawer {
             line += 1;
             pos3 = pos3.withRelativeRow(1);
             for (int index=0; index<jsonList.size(); index++) {
-                JsonState child = jsonList.get(index);
+                JsonNode child = jsonList.get(index);
                 if (inFoldedContext && !child.hasPins()) {
                     // skip that one, we're folded and it's not pinned.
                     continue;
@@ -299,8 +302,8 @@ public class Drawer {
             g.putString(pos, "]");
             return line + 1;
         }
-        else if (json instanceof JsonStateMap) {
-            JsonStateMap jsonMap = (JsonStateMap) json;
+        else if (json instanceof JsonNodeMap) {
+            JsonNodeMap jsonMap = (JsonNodeMap) json;
             if (inFoldedContext && !(jsonMap.getPinned() || jsonMap.hasPins())) {
                 return 0; // hidden in the fold
             }

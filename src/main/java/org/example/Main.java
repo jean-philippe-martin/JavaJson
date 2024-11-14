@@ -12,9 +12,6 @@ import com.googlecode.lanterna.terminal.Terminal;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.util.*;
-
-import org.example.Drawer;
 
 public class Main {
 
@@ -23,7 +20,8 @@ public class Main {
         // load the json
         Path path = FileSystems.getDefault().getPath("testdata/list.json");
 
-        JsonState myJson = JsonState.parse(path);
+        JsonNode myJson = JsonNode.parse(path);
+
 
         /*
         A Screen works similar to double-buffered video memory, it has two surfaces than can be directly addressed and
@@ -70,12 +68,16 @@ public class Main {
                 || (key.getCharacter() != null && 'f' == key.getCharacter())) {
                     myJson.setFoldedAtCursor(false);
                 }
+                if (key.getCharacter()!=null && 'e' == key.getCharacter()) {
+                    myJson.cursorDownToAllChildren();
+                }
                 if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
-                    myJson.togglePinnedAtCursor();
+                    boolean pinned = myJson.getPinnedAtCursor();
+                    myJson.setPinnedAtCursors(!pinned);
                 }
                 if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
                     // restart (for testing)
-                    myJson = JsonState.parse(path);
+                    myJson = JsonNode.parse(path);
                 }
                 if (key.getKeyType() == KeyType.Escape || (key.getCharacter() != null && 'q' == key.getCharacter()))
                     break;
