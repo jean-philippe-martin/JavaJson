@@ -9,10 +9,14 @@ import com.googlecode.lanterna.screen.Screen;
 import java.io.IOException;
 import java.util.Random;
 import java.util.SequencedCollection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Drawer {
 
     static final int INDENT = 2;
+
+    static final Pattern colorPattern = Pattern.compile("#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})");
 
     // blocks
     public static void demo(Screen screen) throws IOException {
@@ -261,10 +265,25 @@ public class Drawer {
                 start = start.withRelativeRow(1);
                 lines++;
             }
+
             Object value = jsonValue.getValue();
-            if (value instanceof String) {
-                printMaybeReversed(g, start.withRelativeColumn(initialOffset), "\"" + (String) value + "\"", json.isAtCursor());
-                return lines+1;
+            if (value instanceof String str) {
+                printMaybeReversed(g, start.withRelativeColumn(initialOffset), "\"" + str + "\"", json.isAtCursor());
+                lines += 1;
+                Matcher colorMatcher = colorPattern.matcher(str);
+                colorMatcher.find();
+                if (colorMatcher.hasMatch() && colorMatcher.groupCount()==3) {
+                    int cr = Integer.parseInt(colorMatcher.group(1), 16);
+                    int cg = Integer.parseInt(colorMatcher.group(2), 16);
+                    int cb = Integer.parseInt(colorMatcher.group(3), 16);
+                    g.putString(start.withRelativeColumn(initialOffset + 3 + str.length()), "//");
+                    TextColor fg = g.getForegroundColor();
+                    TextColor col = TextColor.Indexed.fromRGB(cr, cg, cb);
+                    g.setForegroundColor(col);
+                    g.putString(start.withRelativeColumn(initialOffset + 6 + str.length()), "██");
+                    g.setForegroundColor(fg);
+                }
+                return lines;
             } else {
                 printMaybeReversed(g, start.withRelativeColumn(initialOffset), value.toString(), json.isAtCursor());
                 return lines+1;
@@ -272,7 +291,7 @@ public class Drawer {
         }
         if (json instanceof JsonNodeList) {
             JsonNodeList jsonList = (JsonNodeList) json;
-            inFoldedContext = jsonList.folded || inFoldedContext;
+            inFoldedContext = (jsonList.folded || inFoldedContext) && !jsonList.getPinned();
             TerminalPosition pos = start;
             TerminalPosition pos2 = pos.withRelativeColumn(initialOffset);
             if (inFoldedContext) {

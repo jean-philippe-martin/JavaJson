@@ -12,6 +12,7 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.Terminal;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
 
 
 public class DrawTest {
@@ -29,7 +30,7 @@ public class DrawTest {
         return ret.toString();
     }
 
-    public Screen setupScreen(int width, int height) throws IOException {
+    public static Screen setupScreen(int width, int height) throws IOException {
         Terminal term = new DefaultVirtualTerminal(new TerminalSize(width, height));
         Screen screen = new TerminalScreen(term);
         screen.startScreen();
@@ -179,7 +180,7 @@ public class DrawTest {
         assertEquals(true, state.getPinnedAtCursor());
         // fold root
         state.cursorParent();
-        state.setFoldedAtCursor(true);
+        state.setFoldedAtCursors(true);
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
@@ -225,7 +226,7 @@ public class DrawTest {
         state.cursorParent();
         state.cursorParent();
         state.cursorParent();
-        state.setFoldedAtCursor(true);
+        state.setFoldedAtCursors(true);
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
@@ -258,7 +259,7 @@ public class DrawTest {
         // fold root
         state.cursorParent();
         state.cursorParent();
-        state.setFoldedAtCursor(true);
+        state.setFoldedAtCursors(true);
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
@@ -285,6 +286,106 @@ public class DrawTest {
                 ]
             }""");
         Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testMatcher() {
+        String foo = "#1234af";
+        Matcher m = Drawer.colorPattern.matcher(foo);
+        m.find();
+        assertTrue(m.hasMatch());
+        assertEquals(3, m.groupCount());
+        assertEquals("12", m.group(1));
+        assertEquals("34", m.group(2));
+        assertEquals("af", m.group(3));
+        int value = Integer.parseInt( m.group(3), 16);
+        assertEquals(0xaf, value);
+    }
+
+    @Test
+    public void testPinnedListWontFold() throws Exception {
+        Screen screen = setupScreen(20,6);
+
+        String expected = """
+            {•...•••••••••••••••
+            P•"numbers":•[••••••
+            ••••10••••••••••••••
+            ••••11••••••••••••••
+            ••]•••••••••••••••••
+            }•••••••••••••••••••
+            """;
+        JsonNode node = JsonNode.parseJson("""
+            {
+                "letters": [
+                  "a",
+                  "b"
+                ],
+                "numbers": [
+                  10,
+                  11
+                ]
+            }""");
+        // pin 'numbers'
+        node.cursorDown();
+        node.cursorDown();
+        node.cursorDown();
+        node.cursorDown();
+        assertEquals(".numbers", node.rootInfo.userCursor.toString());
+        node.setPinnedAtCursors(true);
+        // fold at root
+        node.cursorUp();
+        node.cursorUp();
+        node.cursorUp();
+        node.cursorUp();
+        node.setFoldedAtCursors(true);
+        // render
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testPinnedMapWontFold() throws Exception {
+        Screen screen = setupScreen(20,6);
+
+        String expected = """
+            {•...•••••••••••••••
+            P•"numbers":•{••••••
+            ••••"ten":•10•••••••
+            ••••"eleven":•11••••
+            ••}•••••••••••••••••
+            }•••••••••••••••••••
+            """;
+        JsonNode node = JsonNode.parseJson("""
+            {
+                "letters": [
+                  "a",
+                  "b"
+                ],
+                "numbers": {
+                  "ten": 10,
+                  "eleven": 11
+                }
+            }""");
+        // pin 'numbers'
+        node.cursorDown();
+        node.cursorDown();
+        node.cursorDown();
+        node.cursorDown();
+        assertEquals(".numbers", node.rootInfo.userCursor.toString());
+        node.setPinnedAtCursors(true);
+        // fold at root
+        node.cursorUp();
+        node.cursorUp();
+        node.cursorUp();
+        node.cursorUp();
+        node.setFoldedAtCursors(true);
+        // render
+        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);

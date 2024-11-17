@@ -355,4 +355,140 @@ public class CursorTest {
             state.cursorUp();
         }
     }
+
+    @Test
+    public void testMultiCursorSameTypeDifferentDepth() throws Exception {
+        JsonNode json = JsonNode.parseJson("""
+                {
+                  "players": [
+                    {
+                      "name": "Alice"
+                    },
+                    {
+                      "name": "Bob"
+                    },
+                    {
+                      "name": "Charlie",
+                      "pet": {
+                        "name": "kittycat",
+                        "likes": [
+                          "pats",
+                          "tuna"
+                        ]
+                      }
+                    }
+                  ]
+                }
+                """);
+        // Point to "players"
+        json.cursorDown();
+        JsonNodeList players = (JsonNodeList) json.atCursor();
+        // Select all players
+        json.cursorDownToAllChildren();
+        // All players are selected
+        assertTrue(players.get(0).isAtCursor());
+        assertTrue(players.get(1).isAtCursor());
+        assertTrue(players.get(2).isAtCursor());
+        // "Tuna" is not selected
+        JsonNodeList likes = (JsonNodeList) ((JsonNodeMap)(((JsonNodeMap) players.get(2)).getChild("pet"))).getChild("likes");
+        assertFalse(likes.get(0).isAtCursor());
+        assertFalse(likes.get(1).isAtCursor());
+    }
+
+    @Test
+    public void testMultiCursorPinAndFold() throws Exception {
+        JsonNode json = JsonNode.parseJson("""
+                [
+                  {
+                    "name": "Fizbuzz Elementary",
+                    "address": "136 Learning Lane",
+                    "founded": 1942
+                  },
+                  {
+                    "name": "Mendingorium",
+                    "address": "631 Mending Lane"
+                  },
+                  {
+                    "nickname": "The secret place"
+                  }
+                ]
+                """);
+        // Fold every object
+        json.cursorDownToAllChildren();
+        json.cursorDown();
+        assertEquals("[0].name", json.rootInfo.userCursor.toString());
+        json.setPinnedAtCursors(true);
+        json.setFoldedAtCursors(true);
+        json.cursorUp();
+    }
+
+    @Test
+    public void testCursorDownThroughVisible() throws Exception {
+        JsonNode json = JsonNode.parseJson("""
+                {
+                  "school": {
+                    "name": "Fizbuzz Elementary",
+                    "address": "136 Learning Lane",
+                    "founded": 1942
+                  },
+                  "hospital": {
+                    "name": "Mendingorium",
+                    "address": "631 Mending Lane"
+                  }
+                }
+                """);
+        // Point to "school.address"
+        json.cursorDown();
+        json.cursorDown();
+        json.cursorDown();
+        assertEquals(".school.address", json.rootInfo.userCursor.toString());
+        // Pin "school.address"
+        json.setPinnedAtCursors(true);
+        json.cursorUp();
+        json.cursorUp();
+        // Fold "school"
+        json.setFoldedAtCursors(true);
+
+        // Now, going down one should go to school.address
+        json.cursorDown();
+        assertEquals(".school.address", json.rootInfo.userCursor.toString());
+        // And once more should go to hospital
+        json.cursorDown();
+        assertEquals(".hospital", json.rootInfo.userCursor.toString());
+
+        // Going up should skip to visible too.
+        json.cursorUp();
+        assertEquals(".school.address", json.rootInfo.userCursor.toString());
+        json.cursorUp();
+        assertEquals(".school", json.rootInfo.userCursor.toString());
+    }
+
+    @Test
+    public void testDownThroughFolded() throws Exception {
+        JsonNode json = JsonNode.parseJson("""
+                [
+                  {
+                    "name": "Fizbuzz Elementary",
+                    "address": "136 Learning Lane",
+                    "founded": 1942
+                  },
+                  {
+                    "name": "Mendingorium",
+                    "address": "631 Mending Lane"
+                  }
+                ]
+                """);
+        // Fold every object
+        json.cursorDown();
+        assertEquals("[0]", json.rootInfo.userCursor.toString());
+        json.setFoldedAtCursors(true);
+        json.cursorDown();
+        assertEquals("[1]", json.rootInfo.userCursor.toString());
+        json.setFoldedAtCursors(true);
+        // cursor up/down through them
+        json.cursorUp();
+        assertEquals("[0]", json.rootInfo.userCursor.toString());
+        json.cursorDown();
+        assertEquals("[1]", json.rootInfo.userCursor.toString());
+    }
 }

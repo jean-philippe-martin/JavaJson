@@ -2,6 +2,7 @@ package org.example;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.NoSuchElementException;
 import java.util.SequencedCollection;
 
 public class JsonNodeMap extends JsonNode {
@@ -29,7 +30,9 @@ public class JsonNodeMap extends JsonNode {
         if (this.children.containsKey(key)) {
             return this.children.get(key);
         } else {
-            JsonNode child = JsonNode.fromObject(kv.get(key), this, whereIAm.enterKey(key), root);
+            Object childJson = kv.get(key);
+            if (null==childJson) throw new NoSuchElementException("No '"+key+"' child for " + whereIAm.toString());
+            JsonNode child = JsonNode.fromObject(childJson, this, whereIAm.enterKey(key), root);
             this.children.put(key, child);
             return child;
         }

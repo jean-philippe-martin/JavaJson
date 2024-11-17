@@ -29,7 +29,7 @@ public class Conversions {
     }
 
     public static String toString(double value, UNITS unit) {
-        return Double.toString(value) + " " + toString(unit);
+        return String.format("%.2f %s", value, Conversions.toString(unit));
     }
 
     private static String toString(UNITS unit) {

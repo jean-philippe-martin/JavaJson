@@ -17,8 +17,10 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
+
         // load the json
-        Path path = FileSystems.getDefault().getPath("testdata/list.json");
+        //Path path = FileSystems.getDefault().getPath("testdata/list.json");
+        Path path = FileSystems.getDefault().getPath(args[0]);
 
         JsonNode myJson = JsonNode.parse(path);
 
@@ -60,13 +62,13 @@ public class Main {
                 if (key.getKeyType() == KeyType.ArrowDown) myJson.cursorDown();
                 if (key.getKeyType() == KeyType.ArrowUp) myJson.cursorUp();
                 if (key.getKeyType() == KeyType.ArrowLeft) {
-                    if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursor(true)) {
+                    if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
                         myJson.cursorParent();
                     }
                 }
                 if (key.getKeyType() == KeyType.ArrowRight
                 || (key.getCharacter() != null && 'f' == key.getCharacter())) {
-                    myJson.setFoldedAtCursor(false);
+                    myJson.setFoldedAtCursors(false);
                 }
                 if (key.getCharacter()!=null && 'e' == key.getCharacter()) {
                     myJson.cursorDownToAllChildren();

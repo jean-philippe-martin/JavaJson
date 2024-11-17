@@ -180,7 +180,7 @@ public class Cursor {
             // now either same value, or we're at pivot.
             DescentStep itsStep = (DescentStep) itsAncestors.step;
             if (!myAncestors.step.equals(itsAncestors.step)) {
-                if (myAncestors.parent != fork) return false;
+                if (itsAncestors.parent != fork || myAncestors.parent != fork) return false;
                 return true;
             }
 

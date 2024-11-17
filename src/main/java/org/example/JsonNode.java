@@ -65,11 +65,8 @@ public abstract class JsonNode {
     public static JsonNode parseJson(String jsonLines) throws JsonProcessingException {
         // Parse it
         ObjectMapper parser = new ObjectMapper();
-        // Todo: not assume the object's a map
-        Object parsed = parser.readValue(jsonLines, LinkedHashMap.class);
-        LinkedHashMap<String, Object> kv = (LinkedHashMap<String, Object>)parsed;
-
-        return JsonNode.fromObject(kv, null, new Cursor(), null);
+        Object parsed = parser.readValue(jsonLines, Object.class);
+        return JsonNode.fromObject(parsed, null, new Cursor(), null);
     }
 
     /** Create a JsonState object to wrap the given JSON object. **/
@@ -124,9 +121,30 @@ public abstract class JsonNode {
         this.annotation = a;
     }
 
-    /** Whether this JSON object is folded. **/
+    /**
+     * Whether the user explicitly folded this JSON object.
+     * Note that it may still be shown folded because a parent is folded.
+     **/
     public boolean getFolded() {
         return folded;
+    }
+
+    /**
+     * Whether this node should be shown in the UI.
+     */
+    public boolean isVisible() {
+        if (hasPins()) return true;
+        if (rootInfo.root == this) return true;
+        // if any of our ancestors is folded, then we're hidden since we have no pins.
+        // If any of our ancestors is pinned, then we're visible because folds higher up
+        // wouldn't have an effect.
+        JsonNode cur = this.getParent();
+        while (cur!=null) {
+            if (cur.getPinned()) return true;
+            if (cur.getFolded()) return false;
+            cur = cur.getParent();
+        }
+        return true;
     }
 
     public boolean getFoldedAtCursor() {
@@ -140,14 +158,20 @@ public abstract class JsonNode {
      * Sets the "folded" state at the cursor position.
      * @return whether "folded" was changed.
      */
-    public boolean setFoldedAtCursor(boolean folded) {
+    public boolean setFoldedAtCursors(boolean folded) {
         Cursor where = rootInfo.userCursor;
         JsonNode place = where.getData();
-        if (null==place) return false;
-        boolean changed = place.folded != folded;
-        place.folded = folded;
-        boolean b = place instanceof JsonNodeValue<?>;
-        return (changed && !b);
+        boolean changed = false;
+        if (null!=place) {
+            if (place.folded != folded && !(place instanceof JsonNodeValue)) {
+                changed=true;
+            }
+            place.folded = folded;
+        }
+        for (JsonNode sibling : atAnyCursor()) {
+            sibling.folded = folded;
+        }
+        return changed;
     }
 
     public boolean getPinned() {
@@ -220,16 +244,31 @@ public abstract class JsonNode {
         return this.parent;
     }
 
+    /**
+     * Move the cursor more or less one line down on the screen.
+     *
+     * That means enter the object we're at, or go to the next sibling.
+     */
     public void cursorDown() {
         JsonNode current = rootInfo.userCursor.getData();
         // If there's a child, go there.
-        JsonNode kid = current.firstChild();
-        if (null!=kid) {
-            rootInfo.setCursor(kid.whereIAm);
-            return;
+        // unless we're folded with no pins.
+        if (!current.getFolded() || current.hasPins()) {
+            JsonNode kid = current.firstChild();
+            // go down until we find a visible child
+            while (kid!=null && !kid.isVisible()) {
+                kid = current.nextChild(kid.whereIAm);
+            }
+            if (null != kid) {
+                rootInfo.setCursor(kid.whereIAm);
+                return;
+            }
         }
         // No child? Go to next sibling.
         JsonNode sibling = current.nextSibling();
+        while (null!=sibling && !sibling.isVisible()) {
+            sibling = sibling.nextSibling();
+        }
         if (null!=sibling) {
             rootInfo.setCursor(sibling.whereIAm);
             return;
@@ -243,6 +282,9 @@ public abstract class JsonNode {
             }
 
             JsonNode aunt = dad.nextSibling();
+            while (null!=aunt && !aunt.isVisible()) {
+                aunt = aunt.nextSibling();
+            }
             if (aunt!=null) {
                 rootInfo.setCursor(aunt.whereIAm);
                 return;
@@ -260,6 +302,9 @@ public abstract class JsonNode {
         JsonNode current = rootInfo.userCursor.getData();
         // Go to prev sibling.
         JsonNode sibling = current.prevSibling();
+        while (null!=sibling && !sibling.isVisible()) {
+            sibling = sibling.prevSibling();
+        }
         if (null==sibling) {
             // no prev sibling, go to parent
             JsonNode parent = current.getParent();
@@ -271,6 +316,9 @@ public abstract class JsonNode {
         // we moved to the prev sibling, but we must also now go deep.
         while (true) {
             JsonNode next = sibling.lastChild();
+            while (next!=null && !next.isVisible()) {
+                next = next.prevSibling();
+            }
             if (next==null) break;
             sibling = next;
         }
@@ -326,10 +374,15 @@ public abstract class JsonNode {
         JsonNode child = forkJson.firstChild();
         while (child!=null) {
             JsonNode cur = child;
-            for (int i = atFork.size() + 1; i < atCursor.size(); i++) {
-                cur = atCursor.get(i).apply(cur);
+            try {
+                for (int i = atFork.size() + 1; cur != null && i < atCursor.size(); i++) {
+                    cur = atCursor.get(i).apply(cur);
+                }
+            } catch (NoSuchElementException nope) {
+                cur = null;
             }
-            if (cur!=primary) ret.add(cur);
+            // Some children may not have the whole path apply to them; skip those.
+            if (null!=cur && cur!=primary) ret.add(cur);
             child = forkJson.nextChild(child.whereIAm);
         }
         return ret;
