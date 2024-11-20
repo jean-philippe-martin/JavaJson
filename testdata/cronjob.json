@@ -1,0 +1,39 @@
+{
+  "apiVersion": "batch/v1beta1",
+  "kind": "CronJob",
+  "metadata": {
+    "name": "example-cronjob",
+    "annotations": {
+      "createdTimestamp": "2024-11-15T09:25:00Z",
+      "lastUpdatedTimestamp": "2024-11-15T09:25:00Z",
+      "jobTimeoutSeconds": "3600"
+    }
+  },
+  "spec": {
+    "schedule": "0 0 * * *",
+    "jobTemplate": {
+      "spec": {
+        "activeDeadlineSeconds": 3600,
+        "template": {
+          "metadata": {
+            "name": "example-job"
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "example-container",
+                "image": "busybox",
+                "args": [
+                  "/bin/sh",
+                  "-c",
+                  "sleep 3600; echo Job completed!"
+                ]
+              }
+            ],
+            "restartPolicy": "OnFailure"
+          }
+        }
+      }
+    }
+  }
+}

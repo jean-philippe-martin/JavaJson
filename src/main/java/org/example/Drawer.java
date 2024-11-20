@@ -18,6 +18,11 @@ public class Drawer {
 
     static final Pattern colorPattern = Pattern.compile("#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})");
 
+    // Where on the screen we drew the cursor.
+    // If that was too low, maybe you'll want to adjust and try again?
+    private int cursorScreenLine = 0;
+    private boolean drewCursor = false;
+
     // blocks
     public static void demo(Screen screen) throws IOException {
 
@@ -180,8 +185,14 @@ public class Drawer {
         }
     }
 
+    public Drawer() {}
+
+    public int getCursorLineLastTime() {
+        return this.cursorScreenLine;
+    }
+
     // inFoldedContext = we're folded, only print pinned rows.
-    public static int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext) {
+    public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext) {
         int line = 0;
         SequencedCollection<String> keys = jsonMap.getKeysInOrder();
         int indent = start.getColumn();
@@ -217,18 +228,20 @@ public class Drawer {
                 case JsonNodeValue v -> {
                     Object val = v.getValue();
                     g.putString(pos2, ": ");
-                    int height = printJsonObject(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext);
+                    int height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext);
                     line += height;
                     pos = pos.withRelativeRow(height);
                 }
                 case JsonNode m -> {
                     g.putString(pos2, ": ");
                     int childOffset = key.length() + 4;
-                    int childHeight = printJsonObject(g, pos, childOffset, child, inFoldedContext);
+                    int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext);
                     line += childHeight;
                     pos = pos.withRelativeRow(childHeight);
                 }
             }
+            // stop drawing if we're off the screen.
+            if (drewCursor && pos.getRow() > g.getSize().getRows() + 10) break;
         }
         line += 1;
         pos = pos.withRelativeColumn(-INDENT);
@@ -238,20 +251,28 @@ public class Drawer {
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public static int printJsonObject(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
-        return printJsonObject(g, start, initialOffset, json, false);
+    public int printJsonTree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
+        this.drewCursor = false;
+        return printJsonSubtree(g, start, initialOffset, json, false);
     }
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public static int printJsonObject(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext) {
+    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext) {
         int line = 0;
-        if (json.isAtPrimaryCursor() && json.parent!=null) {
-            g.putString(start.withColumn(0), ">>");
+        if (json.isAtPrimaryCursor()) {
+            this.cursorScreenLine = start.getRow();
+            this.drewCursor = true;
+            if (json.parent!=null) {
+                g.putString(start.withColumn(0), ">>");
+            }
         }
         if (json.getPinned()) {
             // draw the pin
             g.putString(start.withColumn(0), "P");
+        }
+        if (json.isAtFork()) {
+            g.putString(start.withColumn(0), "*");
         }
         if (json instanceof JsonNodeValue jsonValue) {
             int lines = 0;
@@ -289,8 +310,7 @@ public class Drawer {
                 return lines+1;
             }
         }
-        if (json instanceof JsonNodeList) {
-            JsonNodeList jsonList = (JsonNodeList) json;
+        if (json instanceof JsonNodeList jsonList) {
             inFoldedContext = (jsonList.folded || inFoldedContext) && !jsonList.getPinned();
             TerminalPosition pos = start;
             TerminalPosition pos2 = pos.withRelativeColumn(initialOffset);
@@ -302,7 +322,7 @@ public class Drawer {
                     return 1;
                 }
             } else {
-                g.putString(pos2, "[");
+                g.putString(pos2, "[ // " + jsonList.childCount() + " entries");
             }
             TerminalPosition pos3 = pos.withRelativeColumn(INDENT);
             line += 1;
@@ -313,9 +333,11 @@ public class Drawer {
                     // skip that one, we're folded and it's not pinned.
                     continue;
                 }
-                int height = printJsonObject(g, pos3, 0, child, inFoldedContext);
+                int height = printJsonSubtree(g, pos3, 0, child, inFoldedContext);
                 line += height;
                 pos3 = pos3.withRelativeRow(height);
+                // stop drawing if we're off the screen.
+                if (drewCursor && pos3.getRow() > g.getSize().getRows() + 10) break;
             }
             pos = pos3.withRelativeColumn(-INDENT);
             g.putString(pos, "]");

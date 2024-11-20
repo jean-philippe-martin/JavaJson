@@ -38,6 +38,10 @@ public class JsonNodeMap extends JsonNode {
         }
     }
 
+    public int childCount() {
+        return kv.size();
+    }
+
     /** True if the userCursor is pointing to this key of ours. **/
     @Override
     public boolean isAtCursor(String key) {

@@ -37,6 +37,10 @@ public class JsonNodeList extends JsonNode {
         return get(children.length-1);
     }
 
+    public int childCount() {
+        return children.length;
+    }
+
     @Override
     public JsonNode nextChild(Cursor childCursor) {
         childCursor = childCursor.truncate(this);

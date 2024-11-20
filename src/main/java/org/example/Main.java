@@ -38,6 +38,7 @@ public class Main {
         try {
             Terminal terminal = defaultTerminalFactory.createTerminal();
             screen = new TerminalScreen(terminal);
+            Drawer d = new Drawer();
 
             /*
             Screens will only work in private mode and while you can call methods to mutate its state, before you can
@@ -53,10 +54,21 @@ public class Main {
             screen.setCursorPosition(null);
 
             int selected = 0;
+            int scroll = 0;
+            int rowLimit = screen.getTerminalSize().getRows()-2;
             while (true) {
                 TextGraphics g = screen.newTextGraphics();
                 screen.clear();
-                Drawer.printJsonObject(g, TerminalPosition.TOP_LEFT_CORNER, 0, myJson);
+                d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+                if (d.getCursorLineLastTime()>rowLimit) {
+                    scroll += (d.getCursorLineLastTime()-rowLimit);
+                    screen.clear();
+                    d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+                } else if (d.getCursorLineLastTime()<0) {
+                    scroll += d.getCursorLineLastTime();
+                    screen.clear();
+                    d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+                }
                 screen.refresh(Screen.RefreshType.DELTA);
                 KeyStroke key = terminal.readInput();
                 if (key.getKeyType() == KeyType.ArrowDown) myJson.cursorDown();
@@ -70,7 +82,7 @@ public class Main {
                 || (key.getCharacter() != null && 'f' == key.getCharacter())) {
                     myJson.setFoldedAtCursors(false);
                 }
-                if (key.getCharacter()!=null && 'e' == key.getCharacter()) {
+                if (key.getCharacter()!=null && ('e' == key.getCharacter() || '*' == key.getCharacter())) {
                     myJson.cursorDownToAllChildren();
                 }
                 if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
@@ -80,6 +92,16 @@ public class Main {
                 if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
                     // restart (for testing)
                     myJson = JsonNode.parse(path);
+                }
+                if (key.getKeyType() == KeyType.PageDown) {
+                    for (int i=0; i<g.getSize().getRows()-2; i++) {
+                        myJson.cursorDown();
+                    }
+                }
+                if (key.getKeyType() == KeyType.PageUp) {
+                    for (int i=0; i<g.getSize().getRows()-2; i++) {
+                        myJson.cursorUp();
+                    }
                 }
                 if (key.getKeyType() == KeyType.Escape || (key.getCharacter() != null && 'q' == key.getCharacter()))
                     break;

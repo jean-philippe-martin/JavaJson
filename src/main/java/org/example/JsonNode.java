@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.lang.ArrayIndexOutOfBoundsException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -113,6 +114,12 @@ public abstract class JsonNode {
     public boolean isAtCursor(String key) {
         // JsonStateMap overrides this
         return false;
+    }
+
+    // true if we selected all the children of this node
+    public boolean isAtFork() {
+        if (null==rootInfo.fork) return false;
+        return rootInfo.fork.selects(this, null);
     }
 
     // An alternate way to represent the value, e.g. different unit
@@ -379,6 +386,8 @@ public abstract class JsonNode {
                     cur = atCursor.get(i).apply(cur);
                 }
             } catch (NoSuchElementException nope) {
+                cur = null;
+            } catch (ArrayIndexOutOfBoundsException nope2) {
                 cur = null;
             }
             // Some children may not have the whole path apply to them; skip those.

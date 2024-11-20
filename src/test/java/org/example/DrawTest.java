@@ -41,7 +41,7 @@ public class DrawTest {
     @Test
     public void testSimpleObject() throws Exception {
         Screen screen = setupScreen(20,4);
-
+        Drawer d = new Drawer();
         String expected = """
             {•••••••••••••••••••
             ••"one":•"hello"••••
@@ -53,7 +53,7 @@ public class DrawTest {
                 "one": "hello",
                 "two": "world"
             }""");
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -62,6 +62,7 @@ public class DrawTest {
     @Test
     public void testNestedObject() throws Exception {
         Screen screen = setupScreen(25,7);
+        Drawer d = new Drawer();
 
         String expected = """
             {••••••••••••••••••••••••
@@ -80,7 +81,7 @@ public class DrawTest {
                 },
                 "two": "more"
             }""");
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -89,6 +90,7 @@ public class DrawTest {
     @Test
     public void testTripleNestedObject() throws Exception {
         Screen screen = setupScreen(30,12);
+        Drawer d = new Drawer();
 
         String expected = """
             {•••••••••••••••••••••••••••••
@@ -116,7 +118,7 @@ public class DrawTest {
                 },
                 "two": "more"
             }""");
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
         assertEquals(expected, got);
 
@@ -125,6 +127,7 @@ public class DrawTest {
     @Test
     public void testPreviouslyBrokenObject() throws Exception {
         Screen screen = setupScreen(30,12);
+        Drawer d = new Drawer();
 
         String expected = """
            {•••••••••••••••••••••••••••••
@@ -153,7 +156,7 @@ public class DrawTest {
                },
                "conclusion": "good bye"
              }""");
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
         assertEquals(expected, got);
     }
@@ -161,6 +164,7 @@ public class DrawTest {
     @Test
     public void testSimplePin() throws Exception {
         Screen screen = setupScreen(20,4);
+        Drawer d = new Drawer();
 
         String expected = """
             {•...•••••••••••••••
@@ -181,7 +185,7 @@ public class DrawTest {
         // fold root
         state.cursorParent();
         state.setFoldedAtCursors(true);
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -190,6 +194,7 @@ public class DrawTest {
     @Test
     public void testSimplePin2() throws Exception {
         Screen screen = setupScreen(20,7);
+        Drawer d = new Drawer();
 
         String expected = """
             {•...•••••••••••••••
@@ -227,7 +232,7 @@ public class DrawTest {
         state.cursorParent();
         state.cursorParent();
         state.setFoldedAtCursors(true);
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -236,6 +241,7 @@ public class DrawTest {
     @Test
     public void testNestedPin() throws Exception {
         Screen screen = setupScreen(20,5);
+        Drawer d = new Drawer();
 
         String expected = """
             {•...•••••••••••••••
@@ -260,7 +266,7 @@ public class DrawTest {
         state.cursorParent();
         state.cursorParent();
         state.setFoldedAtCursors(true);
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -269,10 +275,11 @@ public class DrawTest {
     @Test
     public void testSimpleList() throws Exception {
         Screen screen = setupScreen(20,6);
+        Drawer d = new Drawer();
 
         String expected = """
             {•••••••••••••••••••
-            ••"numbers":•[••••••
+            ••"numbers":•[•//•2•
             ••••10••••••••••••••
             ••••11••••••••••••••
             ••]•••••••••••••••••
@@ -285,7 +292,7 @@ public class DrawTest {
                   11
                 ]
             }""");
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -308,10 +315,11 @@ public class DrawTest {
     @Test
     public void testPinnedListWontFold() throws Exception {
         Screen screen = setupScreen(20,6);
+        Drawer d = new Drawer();
 
         String expected = """
             {•...•••••••••••••••
-            P•"numbers":•[••••••
+            P•"numbers":•[•//•2•
             ••••10••••••••••••••
             ••••11••••••••••••••
             ••]•••••••••••••••••
@@ -342,7 +350,7 @@ public class DrawTest {
         node.cursorUp();
         node.setFoldedAtCursors(true);
         // render
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -351,6 +359,7 @@ public class DrawTest {
     @Test
     public void testPinnedMapWontFold() throws Exception {
         Screen screen = setupScreen(20,6);
+        Drawer d = new Drawer();
 
         String expected = """
             {•...•••••••••••••••
@@ -385,7 +394,7 @@ public class DrawTest {
         node.cursorUp();
         node.setFoldedAtCursors(true);
         // render
-        Drawer.printJsonObject(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
