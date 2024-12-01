@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.lang.ArrayIndexOutOfBoundsException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.cursor.ForkCursor;
+import org.example.cursor.MultiCursor;
+import org.example.cursor.NoMultiCursor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,22 +27,30 @@ public abstract class JsonNode {
     public class RootInfo {
         protected @NotNull Cursor userCursor;
         protected @NotNull JsonNode root;
-        // The fork is where we go to all children
-        protected @Nullable Cursor fork;
+        protected @NotNull MultiCursor secondaryCursors;
 
         public RootInfo(@NotNull JsonNode root) {
             this.userCursor = new Cursor();
             this.root = root;
             this.userCursor.setData(root);
+            this.secondaryCursors = new NoMultiCursor();
         }
 
-        public void setCursor(@NotNull Cursor c) {
+        public void setPrimaryCursor(@NotNull Cursor c) {
             this.userCursor = c;
         }
 
         // Null indicates no fork
         public void setFork(@Nullable Cursor fork) {
-            this.fork = fork;
+            if (null==fork) {
+                this.secondaryCursors = new NoMultiCursor();
+            } else {
+                this.secondaryCursors = new ForkCursor(fork);
+            }
+        }
+
+        public void setSecondaryCursors(@NotNull MultiCursor mc) {
+            this.secondaryCursors = mc;
         }
     }
 
@@ -102,7 +112,8 @@ public abstract class JsonNode {
 
     // Any of the cursors
     public boolean isAtCursor() {
-        return rootInfo.userCursor.selects(this, rootInfo.fork);
+        return (rootInfo.userCursor.selects(this, null))
+            || (rootInfo.secondaryCursors.selects(rootInfo.userCursor, whereIAm));
     }
 
     public boolean isAtPrimaryCursor() {
@@ -112,14 +123,20 @@ public abstract class JsonNode {
 
     /** True if the userCursor is pointing to this key of ours. **/
     public boolean isAtCursor(String key) {
-        // JsonStateMap overrides this
+        // JsonNodeMap overrides this
         return false;
     }
 
-    // true if we selected all the children of this node
+    // true if this node is where the fork is.
     public boolean isAtFork() {
-        if (null==rootInfo.fork) return false;
-        return rootInfo.fork.selects(this, null);
+        if (rootInfo.secondaryCursors instanceof ForkCursor fc) {
+            return fc.getFork().getData() == this;
+        }
+        return false;
+    }
+
+    public Cursor asCursor() {
+        return whereIAm;
     }
 
     // An alternate way to represent the value, e.g. different unit
@@ -267,7 +284,7 @@ public abstract class JsonNode {
                 kid = current.nextChild(kid.whereIAm);
             }
             if (null != kid) {
-                rootInfo.setCursor(kid.whereIAm);
+                rootInfo.setPrimaryCursor(kid.whereIAm);
                 return;
             }
         }
@@ -277,7 +294,7 @@ public abstract class JsonNode {
             sibling = sibling.nextSibling();
         }
         if (null!=sibling) {
-            rootInfo.setCursor(sibling.whereIAm);
+            rootInfo.setPrimaryCursor(sibling.whereIAm);
             return;
         }
         // No sibling? Go to dad's next sibling.
@@ -293,7 +310,7 @@ public abstract class JsonNode {
                 aunt = aunt.nextSibling();
             }
             if (aunt!=null) {
-                rootInfo.setCursor(aunt.whereIAm);
+                rootInfo.setPrimaryCursor(aunt.whereIAm);
                 return;
             }
             JsonNode newDad = dad.getParent();
@@ -316,7 +333,7 @@ public abstract class JsonNode {
             // no prev sibling, go to parent
             JsonNode parent = current.getParent();
             if (null!=parent) {
-                rootInfo.setCursor(parent.whereIAm);
+                rootInfo.setPrimaryCursor(parent.whereIAm);
             }
             return;
         }
@@ -329,7 +346,7 @@ public abstract class JsonNode {
             if (next==null) break;
             sibling = next;
         }
-        rootInfo.setCursor(sibling.whereIAm);
+        rootInfo.setPrimaryCursor(sibling.whereIAm);
         return;
     };
 
@@ -339,7 +356,7 @@ public abstract class JsonNode {
         // If there's a child, go there.
         JsonNode kid = current.firstChild();
         if (null!=kid) {
-            rootInfo.setCursor(kid.whereIAm);
+            rootInfo.setPrimaryCursor(kid.whereIAm);
             rootInfo.setFork(cursor);
             return true;
         }
@@ -351,7 +368,71 @@ public abstract class JsonNode {
     public void cursorParent() {
         JsonNode parent = rootInfo.userCursor.getData().getParent();
         if (null==parent) return;
-        rootInfo.setCursor(parent.whereIAm);
+        rootInfo.setPrimaryCursor(parent.whereIAm);
+    }
+
+    public void cursorNextSibling() {
+        JsonNode start = rootInfo.userCursor.getData();
+        JsonNode sibling = start.nextSibling();
+        while (sibling!=null && !sibling.isVisible()) {
+            sibling = sibling.nextSibling();
+        }
+        if (null!=sibling && sibling.isVisible()) {
+            rootInfo.setPrimaryCursor(sibling.whereIAm);
+            return;
+        }
+        JsonNode dad = start.getParent();
+        while (null!=dad) {
+            sibling = dad.nextChild(start.whereIAm);
+            while (sibling!=null && !sibling.isVisible()) {
+                sibling = sibling.nextSibling();
+            }
+            if (null != sibling && sibling.isVisible()) {
+                rootInfo.setPrimaryCursor(sibling.whereIAm);
+                return;
+            }
+            dad = dad.getParent();
+        }
+    }
+
+    public void cursorPrevSibling() {
+        JsonNode start = rootInfo.userCursor.getData();
+        JsonNode sibling = start.prevSibling();
+        while (sibling!=null && !sibling.isVisible()) {
+            sibling = sibling.prevSibling();
+        }
+        if (null!=sibling && sibling.isVisible()) {
+            rootInfo.setPrimaryCursor(sibling.whereIAm);
+            return;
+        }
+        JsonNode dad = start.getParent();
+        while (null!=dad) {
+            sibling = dad.prevChild(start.whereIAm);
+            while (sibling!=null && !sibling.isVisible()) {
+                sibling = sibling.prevSibling();
+            }
+            if (null != sibling && sibling.isVisible()) {
+                rootInfo.setPrimaryCursor(sibling.whereIAm);
+                return;
+            }
+            dad = dad.getParent();
+        }
+    }
+
+    /** Move the primary cursor to the next secondary cursor. **/
+    public void cursorNextCursor() {
+        Cursor next = this.rootInfo.secondaryCursors.nextCursor(this.rootInfo.userCursor);
+        if (null!=next) {
+            this.rootInfo.setPrimaryCursor(next);
+        }
+    }
+
+    /** Move the primary cursor to the previous secondary cursor. **/
+    public void cursorPrevCursor() {
+        Cursor next = this.rootInfo.secondaryCursors.prevCursor(this.rootInfo.userCursor);
+        if (null!=next) {
+            this.rootInfo.setPrimaryCursor(next);
+        }
     }
 
     /**
@@ -369,31 +450,7 @@ public abstract class JsonNode {
         ArrayList<JsonNode> ret = new ArrayList<>();
         JsonNode primary = rootInfo.userCursor.getData();
         ret.add(primary);
-        Cursor fork = rootInfo.fork;
-        if (null==fork) return ret;
-        // there may be secondary cursors
-        List<Cursor.DescentStep> atFork = fork.asListOfSteps();
-        List<Cursor.DescentStep> atCursor = rootInfo.userCursor.asListOfSteps();
-        // ex: fork = ."foo" [1]
-        //     cursor = ."foo" [1] [2] ."blah"
-        //     so we visit all the children .foo[1][*].blah
-        JsonNode forkJson = fork.getData();
-        JsonNode child = forkJson.firstChild();
-        while (child!=null) {
-            JsonNode cur = child;
-            try {
-                for (int i = atFork.size() + 1; cur != null && i < atCursor.size(); i++) {
-                    cur = atCursor.get(i).apply(cur);
-                }
-            } catch (NoSuchElementException nope) {
-                cur = null;
-            } catch (ArrayIndexOutOfBoundsException nope2) {
-                cur = null;
-            }
-            // Some children may not have the whole path apply to them; skip those.
-            if (null!=cur && cur!=primary) ret.add(cur);
-            child = forkJson.nextChild(child.whereIAm);
-        }
+        rootInfo.secondaryCursors.addAllNodes(rootInfo.userCursor, ret);
         return ret;
     }
 

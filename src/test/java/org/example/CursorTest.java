@@ -491,4 +491,144 @@ public class CursorTest {
         json.cursorDown();
         assertEquals("[1]", json.rootInfo.userCursor.toString());
     }
+
+    @Test
+    public void testNextCursorForFork() throws Exception {
+        JsonNode state = JsonNode.parseJson("""
+                {
+                  "players": [
+                    { "name": "Alex",
+                      "score": 10
+                    },
+                    { "name": "Bob",
+                      "score": 35
+                    },
+                    { "name": "Charlie",
+                      "score": 70
+                    }
+                  ]
+                }""");
+        assertTrue(state.isAtCursor());
+        state.cursorDown();
+        JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
+        assertEquals(".players", state.rootInfo.userCursor.toString());
+        state.cursorDownToAllChildren();
+        // Now we have a primary cursor at "Alex" and secondary cursors at "Bob" and "Charlie".
+        assertEquals(".players[0]", state.rootInfo.userCursor.toString());
+        List<JsonNode> selected = state.atAnyCursor();
+        assertEquals(3, selected.size());
+        assertEquals(".players[0]", selected.get(0).whereIAm.toString());
+        assertEquals(".players[1]", selected.get(1).whereIAm.toString());
+        assertEquals(".players[2]", selected.get(2).whereIAm.toString());
+
+        // Now we move to the next cursor
+        state.cursorNextCursor();
+
+        assertEquals(".players[1]", state.rootInfo.userCursor.toString());
+        selected = state.atAnyCursor();
+        assertEquals(3, selected.size());
+        assertEquals(".players[1]", selected.get(0).whereIAm.toString());
+        assertEquals(".players[0]", selected.get(1).whereIAm.toString());
+        assertEquals(".players[2]", selected.get(2).whereIAm.toString());
+
+        // Again.
+        state.cursorNextCursor();
+
+        assertEquals(".players[2]", state.rootInfo.userCursor.toString());
+        selected = state.atAnyCursor();
+        assertEquals(3, selected.size());
+        assertEquals(".players[2]", selected.get(0).whereIAm.toString());
+        assertEquals(".players[0]", selected.get(1).whereIAm.toString());
+        assertEquals(".players[1]", selected.get(2).whereIAm.toString());
+    }
+
+    @Test
+    public void testNextCursorForFork2() throws Exception {
+        JsonNode state = JsonNode.parseJson("""
+                {
+                  "players": [
+                    { "name": "Alex",
+                      "score": 10
+                    },
+                    { "name": "Bob",
+                      "score": 35
+                    },
+                    { "name": "Charlie",
+                      "score": 70
+                    }
+                  ]
+                }""");
+        assertTrue(state.isAtCursor());
+        state.cursorDown();
+        JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
+        assertEquals(".players", state.rootInfo.userCursor.toString());
+        state.cursorDownToAllChildren();
+        state.cursorDown();
+        // Now we have a primary cursor at "Alex" and secondary cursors at "Bob" and "Charlie".
+        assertEquals(".players[0].name", state.rootInfo.userCursor.toString());
+        List<JsonNode> selected = state.atAnyCursor();
+        assertEquals(3, selected.size());
+        assertEquals(".players[0].name", selected.get(0).whereIAm.toString());
+        assertEquals(".players[1].name", selected.get(1).whereIAm.toString());
+        assertEquals(".players[2].name", selected.get(2).whereIAm.toString());
+
+        // Now we move to the next cursor
+        state.cursorNextCursor();
+
+        assertEquals(".players[1].name", state.rootInfo.userCursor.toString());
+        selected = state.atAnyCursor();
+        assertEquals(3, selected.size());
+        assertEquals(".players[1].name", selected.get(0).whereIAm.toString());
+        assertEquals(".players[0].name", selected.get(1).whereIAm.toString());
+        assertEquals(".players[2].name", selected.get(2).whereIAm.toString());
+
+        // Again.
+        state.cursorNextCursor();
+
+        assertEquals(".players[2].name", state.rootInfo.userCursor.toString());
+        selected = state.atAnyCursor();
+        assertEquals(3, selected.size());
+        assertEquals(".players[2].name", selected.get(0).whereIAm.toString());
+        assertEquals(".players[0].name", selected.get(1).whereIAm.toString());
+        assertEquals(".players[1].name", selected.get(2).whereIAm.toString());
+    }
+
+    @Test
+    public void testNextCursorForForkTricky() throws Exception {
+        JsonNode state = JsonNode.parseJson("""
+                {
+                  "players": [
+                    { "name": "Alex",
+                      "score": 10
+                    },
+                    { "nickname": "Little Bobby Tables",
+                      "score": 35
+                    },
+                    { "name": "Charlie",
+                      "score": 70
+                    }
+                  ]
+                }""");
+        assertTrue(state.isAtCursor());
+        state.cursorDown();
+        JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
+        assertEquals(".players", state.rootInfo.userCursor.toString());
+        state.cursorDownToAllChildren();
+        state.cursorDown();
+        // Now we have a primary cursor at "Alex" and secondary cursors at "Charlie".
+        assertEquals(".players[0].name", state.rootInfo.userCursor.toString());
+        List<JsonNode> selected = state.atAnyCursor();
+        assertEquals(2, selected.size());
+        assertEquals(".players[0].name", selected.get(0).whereIAm.toString());
+        assertEquals(".players[2].name", selected.get(1).whereIAm.toString());
+
+        // Now we move to the next cursor
+        state.cursorNextCursor();
+
+        assertEquals(".players[2].name", state.rootInfo.userCursor.toString());
+        selected = state.atAnyCursor();
+        assertEquals(2, selected.size());
+        assertEquals(".players[2].name", selected.get(0).whereIAm.toString());
+        assertEquals(".players[0].name", selected.get(1).whereIAm.toString());
+    }
 }

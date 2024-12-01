@@ -299,6 +299,31 @@ public class DrawTest {
     }
 
     @Test
+    public void testSimpleListFolded() throws Exception {
+        Screen screen = setupScreen(30,3);
+        Drawer d = new Drawer();
+
+        String expected = """
+            {•••••••••••••••••••••••••••••
+            >>"numbers":•[•...•]•//•2•entr
+            }•••••••••••••••••••••••••••••
+            """;
+        JsonNode state = JsonNode.parseJson("""
+            {
+                "numbers": [
+                  10,
+                  11
+                ]
+            }""");
+        state.cursorDown();
+        state.setFoldedAtCursors(true);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
     public void testMatcher() {
         String foo = "#1234af";
         Matcher m = Drawer.colorPattern.matcher(foo);

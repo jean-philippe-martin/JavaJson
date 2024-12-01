@@ -8,6 +8,8 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import org.example.cursor.FindCursor;
+import org.example.ui.InputField;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -15,15 +17,35 @@ import java.nio.file.Path;
 
 public class Main {
 
+    private static boolean showFind = false;
+
+    private static InputField findInput = null;
+
+    private static final String keys_help = """
+                up/down         : navigate line
+                pg up / pg dn   : navigate page
+                shift + up/down : navigate sibling
+                n / N           : navigate cursors
+                left / right    : fold / unfold
+                e / *           : select all children
+                p               : pin (show despite folds)
+                h / ?           : show help page
+                q / ESC         : quit
+                """;
+
+
     public static void main(String[] args) throws Exception {
 
+        if (args.length==1 && args[0].equals("--help")) {
+            System.out.println("Key bindings:");
+            System.out.println(keys_help);
+            return;
+        }
 
         // load the json
         //Path path = FileSystems.getDefault().getPath("testdata/list.json");
         Path path = FileSystems.getDefault().getPath(args[0]);
-
         JsonNode myJson = JsonNode.parse(path);
-
 
         /*
         A Screen works similar to double-buffered video memory, it has two surfaces than can be directly addressed and
@@ -53,9 +75,9 @@ public class Main {
             // hide cursor
             screen.setCursorPosition(null);
 
-            int selected = 0;
             int scroll = 0;
             int rowLimit = screen.getTerminalSize().getRows()-2;
+            TextGraphics g2 = null;
             while (true) {
                 TextGraphics g = screen.newTextGraphics();
                 screen.clear();
@@ -69,42 +91,94 @@ public class Main {
                     screen.clear();
                     d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
                 }
+                if (showFind) {
+                    g2 = findScreen(terminal, screen);
+                    findInput.draw(g2);
+                }
                 screen.refresh(Screen.RefreshType.DELTA);
                 KeyStroke key = terminal.readInput();
-                if (key.getKeyType() == KeyType.ArrowDown) myJson.cursorDown();
-                if (key.getKeyType() == KeyType.ArrowUp) myJson.cursorUp();
-                if (key.getKeyType() == KeyType.ArrowLeft) {
-                    if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
-                        myJson.cursorParent();
+                if (!showFind) {
+                    // normal key handling
+                    if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) myJson.cursorDown();
+                    if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
+                    if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) myJson.cursorUp();
+                    if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
+                    if (key.getKeyType() == KeyType.ArrowLeft) {
+                        if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
+                            myJson.cursorParent();
+                        }
+                    }
+                    if (key.getKeyType() == KeyType.ArrowRight
+                            || (key.getCharacter() != null && 'f' == key.getCharacter())) {
+                        myJson.setFoldedAtCursors(false);
+                    }
+                    if (key.getCharacter() != null && ('e' == key.getCharacter() || '*' == key.getCharacter())) {
+                        myJson.cursorDownToAllChildren();
+                    }
+                    if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
+                        boolean pinned = myJson.getPinnedAtCursor();
+                        myJson.setPinnedAtCursors(!pinned);
+                    }
+                    if ((key.getCharacter() != null && 'n' == key.getCharacter())) {
+                        // next cursor/match
+                        myJson.cursorNextCursor();
+                    }
+                    if ((key.getCharacter() != null && 'N' == key.getCharacter())) {
+                        // next cursor/match
+                        myJson.cursorPrevCursor();
+                    }
+                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
+                        // restart (for testing)
+                        myJson = JsonNode.parse(path);
+                    }
+                    if (key.getKeyType() == KeyType.PageDown) {
+                        for (int i = 0; i < g.getSize().getRows() - 2; i++) {
+                            myJson.cursorDown();
+                        }
+                    }
+                    if (key.getKeyType() == KeyType.PageUp) {
+                        for (int i = 0; i < g.getSize().getRows() - 2; i++) {
+                            myJson.cursorUp();
+                        }
+                    }
+                    if (key.getKeyType() == KeyType.Home) {
+                        myJson.rootInfo.setPrimaryCursor(myJson.whereIAm);
+                    }
+                    if (key.getKeyType() == KeyType.End) {
+                        JsonNode lastChild = myJson;
+                        for (int i=0; i<100; i++) {
+                            JsonNode x = lastChild.lastChild();
+                            if (x==null || x==lastChild) break;
+                            lastChild = x;
+                        }
+                        myJson.rootInfo.setPrimaryCursor(lastChild.whereIAm);
+                    }
+                    if (key.getCharacter() != null && ('h' == key.getCharacter() || '?' == key.getCharacter())) {
+                        helpScreen(terminal, screen);
+                    }
+                    if (key.getCharacter() != null && ('.' == key.getCharacter() || 'f' == key.getCharacter())) {
+                        findScreen(terminal, screen);
+                    }
+                    if (key.getCharacter() != null && ('f' == key.getCharacter())) {
+                        showFind = true;
+                        findInput = new InputField();
+                    }
+                    if (key.getKeyType() == KeyType.Escape || (key.getCharacter() != null && 'q' == key.getCharacter()))
+                        break;
+                } else {
+                    // Incremental find mode
+                    findInput.update(g2, key);
+                    // find screen mode
+                    if (key.getKeyType() == KeyType.Escape) {
+                        showFind = false;
+                        findInput = null;
+                    } else if (key.getKeyType()==KeyType.Enter) {
+                        FindCursor fc = new FindCursor(findInput.getText());
+                        myJson.rootInfo.setSecondaryCursors(fc);
+                        // TODO: set primary cursor to first match (or first match after cursor?)
+                        showFind = false;
                     }
                 }
-                if (key.getKeyType() == KeyType.ArrowRight
-                || (key.getCharacter() != null && 'f' == key.getCharacter())) {
-                    myJson.setFoldedAtCursors(false);
-                }
-                if (key.getCharacter()!=null && ('e' == key.getCharacter() || '*' == key.getCharacter())) {
-                    myJson.cursorDownToAllChildren();
-                }
-                if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
-                    boolean pinned = myJson.getPinnedAtCursor();
-                    myJson.setPinnedAtCursors(!pinned);
-                }
-                if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
-                    // restart (for testing)
-                    myJson = JsonNode.parse(path);
-                }
-                if (key.getKeyType() == KeyType.PageDown) {
-                    for (int i=0; i<g.getSize().getRows()-2; i++) {
-                        myJson.cursorDown();
-                    }
-                }
-                if (key.getKeyType() == KeyType.PageUp) {
-                    for (int i=0; i<g.getSize().getRows()-2; i++) {
-                        myJson.cursorUp();
-                    }
-                }
-                if (key.getKeyType() == KeyType.Escape || (key.getCharacter() != null && 'q' == key.getCharacter()))
-                    break;
             }
 
         } catch (IOException e) {
@@ -123,5 +197,52 @@ public class Main {
             }
         }
 
+    }
+
+    private static void helpScreen(Terminal terminal, Screen screen) throws IOException {
+        TextGraphics g = screen.newTextGraphics();
+        screen.clear();
+        String[] lines = keys_help.split("\n");
+        TerminalPosition pos = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
+        for (String l : lines) {
+            g.putString(pos, l);
+            pos = pos.withRelativeRow(1);
+        }
+        screen.refresh(Screen.RefreshType.DELTA);
+        KeyStroke key = terminal.readInput();
+    }
+
+
+    // returns the TextGraphic region for the input field
+    private static TextGraphics findScreen(Terminal terminal, Screen screen) throws IOException {
+        TextGraphics g = screen.newTextGraphics();
+        String menu = """
+                +----------[ FIND ]--------------+
+                |                                |
+                +--------------------------------+
+                | alt-f: find in keys/values/both|
+                | alt-c: case sensitivity        |
+                | alt-s: find only within selection
+                | alt-r: regular expression      |
+                | up/down: prev/next result      |
+                +--------------------------------+
+                | enter: select one              |
+                | shift-enter: select all        |
+                | ... : add to selection         |
+                | esc : cancel find              |
+                +--------------------------------+
+                """;
+        String[] lines = menu.split("\n");
+        TerminalPosition pos = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
+        for (String l : lines) {
+            g.putString(pos, l);
+            pos = pos.withRelativeRow(1);
+        }
+        TextGraphics g2 = g.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER.withRelative(5,2),
+                new TerminalSize(32,1));
+        g2.setForegroundColor(TextColor.ANSI.YELLOW_BRIGHT);
+        g2.setBackgroundColor(TextColor.Indexed.fromRGB(0,0,128));
+        g2.fill(' ');
+        return g2;
     }
 }

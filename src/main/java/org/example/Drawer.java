@@ -314,15 +314,26 @@ public class Drawer {
             inFoldedContext = (jsonList.folded || inFoldedContext) && !jsonList.getPinned();
             TerminalPosition pos = start;
             TerminalPosition pos2 = pos.withRelativeColumn(initialOffset);
+            JsonNode dad = jsonList.getParent();
+            if (json.isAtCursor() && (dad==null || dad instanceof JsonNodeList)) {
+                // we have no label, so let's make the bracket bold.
+                g.putString(pos2, "[", SGR.REVERSE);
+            } else {
+                g.putString(pos2, "[");
+            }
+            pos2 = pos2.withRelativeColumn(1);
             if (inFoldedContext) {
                 if (jsonList.hasPins()) {
-                    g.putString(pos2, "[ ...");
+                    g.putString(pos2, " ...");
+                    pos2 = pos2.withRelativeColumn(4);
                 } else {
-                    g.putString(pos2, "[ ... ]");
-                    return 1;
+                    g.putString(pos2, " ... ]");
+                    pos2 = pos2.withRelativeColumn(6);
                 }
-            } else {
-                g.putString(pos2, "[ // " + jsonList.childCount() + " entries");
+            }
+            g.putString(pos2, " // " + jsonList.childCount() + " entries");
+            if (inFoldedContext && !jsonList.hasPins()) {
+                return 1;
             }
             TerminalPosition pos3 = pos.withRelativeColumn(INDENT);
             line += 1;
