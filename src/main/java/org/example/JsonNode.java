@@ -30,9 +30,8 @@ public abstract class JsonNode {
         protected @NotNull MultiCursor secondaryCursors;
 
         public RootInfo(@NotNull JsonNode root) {
-            this.userCursor = new Cursor();
             this.root = root;
-            this.userCursor.setData(root);
+            this.userCursor = root.whereIAm;
             this.secondaryCursors = new NoMultiCursor();
         }
 
@@ -356,8 +355,8 @@ public abstract class JsonNode {
         // If there's a child, go there.
         JsonNode kid = current.firstChild();
         if (null!=kid) {
-            rootInfo.setPrimaryCursor(kid.whereIAm);
             rootInfo.setFork(cursor);
+            rootInfo.setPrimaryCursor(kid.whereIAm);
             return true;
         }
         // no child, nothing to do
