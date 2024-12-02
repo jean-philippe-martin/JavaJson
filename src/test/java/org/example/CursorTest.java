@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.cursor.FindCursor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -440,5 +441,91 @@ public class CursorTest {
         assertEquals(2, selected.size());
         assertEquals(".players[2].name", selected.get(0).whereIAm.toString());
         assertEquals(".players[0].name", selected.get(1).whereIAm.toString());
+    }
+
+    @Test
+    public void testNextCursorInFind() throws Exception {
+        JsonNode node = JsonNode.parseJson("""
+                {
+                  "red": {
+                    "code": "#ff0000",
+                    "closest": "pink"
+                  },
+                  "pink": {
+                    "code": "#ff1493",
+                    "closest": "red"
+                  },
+                  "orange": {
+                    "code": "#ffa500",
+                    "closest": "red"
+                  },
+                  "green": {
+                    "code": "#00ff00"
+                  }
+                }
+                """);
+        assertTrue(node.isAtCursor());
+        node.rootInfo.setSecondaryCursors(new FindCursor("red"));
+        assertEquals("", node.rootInfo.userCursor.toString());
+
+        // Now we move to the next cursor
+        node.cursorNextCursor();
+
+        assertEquals(".red", node.rootInfo.userCursor.toString());
+
+        node.cursorNextCursor();
+
+        assertEquals(".pink.closest", node.rootInfo.userCursor.toString());
+
+        node.cursorNextCursor();
+
+        assertEquals(".orange.closest", node.rootInfo.userCursor.toString());
+    }
+
+    @Test
+    public void testPrevCursorInFind() throws Exception {
+        JsonNode node = JsonNode.parseJson("""
+                {
+                  "red": {
+                    "code": "#ff0000",
+                    "closest": "pink"
+                  },
+                  "pink": {
+                    "code": "#ff1493",
+                    "closest": "red"
+                  },
+                  "orange": {
+                    "code": "#ffa500",
+                    "closest": "red"
+                  },
+                  "green": {
+                    "code": "#00ff00"
+                  }
+                }
+                """);
+        assertTrue(node.isAtCursor());
+        node.rootInfo.setSecondaryCursors(new FindCursor("red"));
+        // go to the end
+        JsonNode lastChild = node;
+        for (int i=0; i<100; i++) {
+            JsonNode x = lastChild.lastChild();
+            if (x==null || x==lastChild) break;
+            lastChild = x;
+        }
+        node.rootInfo.setPrimaryCursor(lastChild.whereIAm);
+        assertEquals(".green.code", node.rootInfo.userCursor.toString());
+
+        // Now we move to the next cursor
+        node.cursorPrevCursor();
+
+        assertEquals(".orange.closest", node.rootInfo.userCursor.toString());
+
+        node.cursorPrevCursor();
+
+        assertEquals(".pink.closest", node.rootInfo.userCursor.toString());
+
+        node.cursorPrevCursor();
+
+        assertEquals(".red", node.rootInfo.userCursor.toString());
     }
 }

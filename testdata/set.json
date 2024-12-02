@@ -1,0 +1,20 @@
+{
+  "red": {
+    "code": "#ff0000",
+    "closest": "pink"
+  },
+  "pink": {
+    "code": "#ff1493",
+    "closest": "red"
+  },
+  "orange": {
+    "code": "#ffa500",
+    "closest": "red"
+  },
+  "green": {
+    "code": "#00ff00"
+  },
+  "blue": {
+    "code": "#0000ff"
+  }
+}

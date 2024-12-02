@@ -453,5 +453,11 @@ public abstract class JsonNode {
         return ret;
     }
 
+    /**
+     * @return The root node.
+     */
+    public @NotNull JsonNode getRoot() {
+        return rootInfo.root;
+    }
 
 }

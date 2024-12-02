@@ -166,14 +166,14 @@ public class Main {
                     if (key.getKeyType() == KeyType.Escape || (key.getCharacter() != null && 'q' == key.getCharacter()))
                         break;
                 } else {
-                    // Incremental find mode
+                    // Incremental find mode...
                     findInput.update(g2, key);
                     // find screen mode
                     if (key.getKeyType() == KeyType.Escape) {
                         showFind = false;
                         findInput = null;
                     } else if (key.getKeyType()==KeyType.Enter) {
-                        FindCursor fc = new FindCursor(findInput.getText());
+                        FindCursor fc = new FindCursor(findInput.getText(), true);
                         myJson.rootInfo.setSecondaryCursors(fc);
                         // TODO: set primary cursor to first match (or first match after cursor?)
                         showFind = false;
