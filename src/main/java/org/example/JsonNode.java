@@ -22,6 +22,17 @@ import org.jetbrains.annotations.Nullable;
 public abstract class JsonNode {
     // the actual data is held by a subclass.
 
+    // This holds saved cursors so we can stash them.
+    public class SavedCursors {
+        public Cursor primaryCursor;
+        public MultiCursor secondaryCursors;
+
+        public SavedCursors(Cursor primary, MultiCursor secondaries) {
+            primaryCursor = primary;
+            secondaryCursors = secondaries;
+        }
+    }
+
     // Information that applies to the whole JSON tree rather than
     // just one node.
     public class RootInfo {
@@ -50,6 +61,15 @@ public abstract class JsonNode {
 
         public void setSecondaryCursors(@NotNull MultiCursor mc) {
             this.secondaryCursors = mc;
+        }
+
+        public SavedCursors save() {
+            return new SavedCursors(userCursor, secondaryCursors);
+        }
+
+        public void restore(SavedCursors save) {
+            this.userCursor = save.primaryCursor;
+            this.secondaryCursors = save.secondaryCursors;
         }
     }
 
@@ -117,6 +137,11 @@ public abstract class JsonNode {
 
     public boolean isAtPrimaryCursor() {
         return rootInfo.userCursor.selects(this, null);
+    }
+
+    // True if a secondary cursor is on this node
+    public boolean isAtSecondaryCursor() {
+        return rootInfo.secondaryCursors.selects(rootInfo.userCursor, whereIAm);
     }
 
 

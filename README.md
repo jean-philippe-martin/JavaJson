@@ -14,12 +14,12 @@ Available features:
 - time annotation (convert from large number of seconds to hours or days)
 - color preview (256 colors, if the terminal supports it)
 - scrolling
+- text search
 
 Missing features:
 
 - unicode support
-- help screen showing the supported keys
-- text search
+- help screen showing the supported keys (press 'h' or '?')
 - JSONL files
 
 ## Testing

@@ -11,13 +11,17 @@ public class InputField {
     // For now we only allow a single line, but we could expand.
     private TextGraphics textArea;
 
+    // Focused looks different to indicate we're reading user input
+    private boolean focused = true;
+
     // What the user typed
     private @NotNull String text = "";
     private final static String CURSOR = "█";
 
     public InputField() {}
 
-    public void update(TextGraphics g, KeyStroke key) {
+    public void update(KeyStroke key) {
+        if (!focused) return;
         if (key.getKeyType()== KeyType.Backspace) {
             if (!text.isEmpty()) {
                 text = text.substring(0,text.length()-1);
@@ -33,7 +37,13 @@ public class InputField {
         }
     }
     public void draw(TextGraphics where) {
-        where.putString(TerminalPosition.TOP_LEFT_CORNER, text + CURSOR);
+        String s = text;
+        if (focused) s += CURSOR;
+        where.putString(TerminalPosition.TOP_LEFT_CORNER, s);
+    }
+
+    public void setFocused(boolean f) {
+        focused = f;
     }
 
     public @NotNull String getText() {

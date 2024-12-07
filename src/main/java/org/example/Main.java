@@ -9,6 +9,9 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import org.example.cursor.FindCursor;
+import org.example.cursor.MultiCursor;
+import org.example.cursor.NoMultiCursor;
+import org.example.ui.FindControl;
 import org.example.ui.InputField;
 
 import java.io.IOException;
@@ -17,20 +20,23 @@ import java.nio.file.Path;
 
 public class Main {
 
+    // All about the search feature
     private static boolean showFind = false;
-
-    private static InputField findInput = null;
+    private static FindControl findControl;
+    private static JsonNode.SavedCursors cursorsBeforeFind = null;
 
     private static final String keys_help = """
                 up/down         : navigate line
                 pg up / pg dn   : navigate page
                 shift + up/down : navigate sibling
                 n / N           : navigate cursors
+                ESC             : remove secondary cursors
                 left / right    : fold / unfold
                 e / *           : select all children
+                f               : find
                 p               : pin (show despite folds)
                 h / ?           : show help page
-                q / ESC         : quit
+                q               : quit
                 """;
 
 
@@ -43,9 +49,10 @@ public class Main {
         }
 
         // load the json
-        //Path path = FileSystems.getDefault().getPath("testdata/list.json");
         Path path = FileSystems.getDefault().getPath(args[0]);
         JsonNode myJson = JsonNode.parse(path);
+        findControl = new FindControl(myJson);
+
 
         /*
         A Screen works similar to double-buffered video memory, it has two surfaces than can be directly addressed and
@@ -79,6 +86,7 @@ public class Main {
             int rowLimit = screen.getTerminalSize().getRows()-2;
             TextGraphics g2 = null;
             while (true) {
+                screen.doResizeIfNecessary();
                 TextGraphics g = screen.newTextGraphics();
                 screen.clear();
                 d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
@@ -92,8 +100,7 @@ public class Main {
                     d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
                 }
                 if (showFind) {
-                    g2 = findScreen(terminal, screen);
-                    findInput.draw(g2);
+                    findControl.draw(screen.newTextGraphics());
                 }
                 screen.refresh(Screen.RefreshType.DELTA);
                 KeyStroke key = terminal.readInput();
@@ -156,27 +163,68 @@ public class Main {
                     if (key.getCharacter() != null && ('h' == key.getCharacter() || '?' == key.getCharacter())) {
                         helpScreen(terminal, screen);
                     }
-                    if (key.getCharacter() != null && ('.' == key.getCharacter() || 'f' == key.getCharacter())) {
-                        findScreen(terminal, screen);
-                    }
                     if (key.getCharacter() != null && ('f' == key.getCharacter())) {
                         showFind = true;
-                        findInput = new InputField();
+                        findControl.init();
+                        cursorsBeforeFind = myJson.rootInfo.save();
                     }
-                    if (key.getKeyType() == KeyType.Escape || (key.getCharacter() != null && 'q' == key.getCharacter()))
+                    if (key.getKeyType() == KeyType.Escape) {
+                        myJson.rootInfo.secondaryCursors = new NoMultiCursor();
+                    }
+                    if (key.getCharacter() != null && 'q' == key.getCharacter())
                         break;
                 } else {
                     // Incremental find mode...
-                    findInput.update(g2, key);
+                    FindControl.Choice choice = findControl.update(key);
                     // find screen mode
-                    if (key.getKeyType() == KeyType.Escape) {
-                        showFind = false;
-                        findInput = null;
-                    } else if (key.getKeyType()==KeyType.Enter) {
-                        FindCursor fc = new FindCursor(findInput.getText(), true);
-                        myJson.rootInfo.setSecondaryCursors(fc);
-                        // TODO: set primary cursor to first match (or first match after cursor?)
-                        showFind = false;
+                    switch (choice) {
+                        case FindControl.Choice.CANCEL -> {
+                            showFind = false;
+                            myJson.rootInfo.restore(cursorsBeforeFind);
+                            cursorsBeforeFind = null;
+                        }
+                        case FindControl.Choice.FIND -> {
+                            // enter: select all
+                            FindCursor fc = new FindCursor(
+                                    findControl.getText(), findControl.getAllowSubstring(),
+                                    findControl.getIgnoreCase(),
+                                    findControl.getSearchKeys(), findControl.getSearchValues(),
+                                    findControl.getUseRegexp());
+                            myJson.rootInfo.setSecondaryCursors(fc);
+                            // TODO: set primary cursor to first match (or first match after cursor?)
+
+                            JsonNode primary = myJson.rootInfo.userCursor.getData();
+                            if (!primary.isAtSecondaryCursor()) {
+                                myJson.cursorNextCursor();
+                            }
+                            if (!primary.isAtSecondaryCursor()) {
+                                myJson.cursorPrevCursor();
+                            }
+                            showFind = false;
+                        }
+                        case FindControl.Choice.GOTO -> {
+                            // shift-enter: go to current find
+                            JsonNode primary = myJson.rootInfo.userCursor.getData();
+                            if (!primary.isAtSecondaryCursor()) {
+                                myJson.cursorNextCursor();
+                            }
+                            if (!primary.isAtSecondaryCursor()) {
+                                myJson.cursorPrevCursor();
+                            }
+                            cursorsBeforeFind.primaryCursor = myJson.rootInfo.userCursor;
+                            myJson.rootInfo.restore(cursorsBeforeFind);
+                            cursorsBeforeFind = null;
+                            showFind = false;
+                        }
+                        case FindControl.Choice.NONE -> {
+                            // still in the "find" dialog, we preview the search results
+                            FindCursor fc = new FindCursor(
+                                    findControl.getText(), findControl.getAllowSubstring(),
+                                    findControl.getIgnoreCase(),
+                                    findControl.getSearchKeys(), findControl.getSearchValues(),
+                                    findControl.getUseRegexp());
+                            myJson.rootInfo.setSecondaryCursors(fc);
+                        }
                     }
                 }
             }
@@ -219,6 +267,8 @@ public class Main {
         String menu = """
                 +----------[ FIND ]--------------+
                 |                                |
+                +--------------------------------+
+                | Whole | Aa | K+V | .* |        |
                 +--------------------------------+
                 | alt-f: find in keys/values/both|
                 | alt-c: case sensitivity        |

@@ -5,15 +5,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * A multicursor that highlights all the places that match a search string.
  */
 public class FindCursor implements MultiCursor {
     protected @NotNull String pattern;
+    protected @Nullable java.util.regex.Pattern regexp = null;
     // false: only match if the whole string equals the pattern
     // (otherwise, do substring)
     protected boolean substring;
+    protected boolean ignoreCase;
+    // Whether we search the keys (e.g. "key": "value")
+    protected boolean inKey;
+    // Whether we search the values.
+    // Note: we have to always search in at least one of them.
+    protected boolean inValue;
+
 
     /**
      * Search for exact matches of "text".
@@ -21,31 +31,60 @@ public class FindCursor implements MultiCursor {
     public FindCursor(@NotNull String text) {
         this.pattern = text;
         this.substring = false;
+        this.ignoreCase = false;
+        this.inKey = true;
+        this.inValue = true;
     }
 
     /**
      * Search for substring matches of "substring" (that is, anything that contains "substring")
      */
-    public FindCursor(@NotNull String substring, boolean allowSubstring) {
+    public FindCursor(@NotNull String substring, boolean allowSubstring, boolean ignoreCase, boolean inKey, boolean inValue, boolean isRegExp) {
         this.pattern = substring;
         this.substring = allowSubstring;
+        this.ignoreCase = ignoreCase;
+        this.inKey = inKey;
+        this.inValue = inValue;
+        if (!inKey && !inValue) throw new RuntimeException("cannot search by neither key nor value.");
+        if (isRegExp) {
+            int flags = 0;
+            if (ignoreCase) {
+                flags += Pattern.CASE_INSENSITIVE + Pattern.UNICODE_CASE;
+            }
+            this.regexp = Pattern.compile(this.pattern, flags);
+        } else {
+            if (ignoreCase) {
+                this.pattern = this.pattern.toUpperCase();
+            }
+        }
     }
 
     private boolean matches(@Nullable JsonNode node) {
         if (null==node) return false;
         // check the key that holds this guy
-        if (node.asCursor().getStep() instanceof Cursor.DescentKey dk) {
+        if (inKey && node.asCursor().getStep() instanceof Cursor.DescentKey dk) {
             if (dk!=null && stringMatches(dk.get())) return true;
         }
         // check the value in this guy
-        if (node instanceof JsonNodeValue<?> jns) {
+        if (inValue && node instanceof JsonNodeValue<?> jns) {
             if (stringMatches(jns.getValue().toString())) return true;
         }
         return false;
     }
 
     private boolean stringMatches(String s) {
-        if (substring) return (s!=null && s.contains(pattern));
+        if (null==s) return false;
+        if (regexp!=null) {
+            if (this.substring) {
+                return regexp.matcher(s).find();
+            } else {
+                return regexp.matcher(s).matches();
+            }
+        }
+        if (ignoreCase) {
+            s = s.toUpperCase();
+        }
+        if (substring) return (s.contains(pattern));
         return pattern.equals(s);
     }
 
@@ -59,7 +98,27 @@ public class FindCursor implements MultiCursor {
     @Override
     public void addAllNodes(Cursor primaryCur, @NotNull List<JsonNode> list) {
         JsonNode primary = primaryCur.getData();
-        // TODO!
+        JsonNode root = primaryCur.getData().getRoot();
+        innerAddAllNodes(primary, root, list);
+    }
+
+    private void innerAddAllNodes(JsonNode primary, JsonNode cur, @NotNull List<JsonNode> list) {
+        if (matches(cur) && cur!=primary) list.add(cur);
+        switch (cur) {
+            case JsonNodeValue<?> nv -> {
+            }
+            case JsonNodeList nl -> {
+                for (int i=0; i<nl.size(); i++) {
+                    innerAddAllNodes(primary, nl.get(i), list);
+                }
+            }
+            case JsonNodeMap nm -> {
+                for (String k : nm.getKeysInOrder()) {
+                    innerAddAllNodes(primary, nm.getChild(k), list);
+                }
+            }
+            default -> { }
+        }
     }
 
     @Override
