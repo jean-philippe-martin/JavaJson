@@ -4,7 +4,7 @@ import java.util.List;
 
 public class JsonNodeList extends JsonNode {
 
-    private final List<Object> values;
+    final List<Object> values;
     private final JsonNode[] children;
 
     protected JsonNodeList(List<Object> values, JsonNode parent, Cursor curToMe, JsonNode root) {

@@ -1,0 +1,20 @@
+{
+  "numbers": [
+    6,2,5,7,91,0
+  ],
+  "words": [
+    "farmer", "Mary", "had", "a", "little", "lamb"
+  ],
+  "dates-haha": [
+    "2024-2-1", "2024-10-3"
+  ],
+  "numbers disguised as strings": [
+    "1", "10", "2", "3", "100"
+  ],
+  "records": [
+    { "name": "Alice", "score": 10 },
+    { "name": "Bob", "score": 3 },
+    { "name": "Fazam", "score": 100 },
+    { "name": "Grace", "score": 22 }
+  ]
+}
