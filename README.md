@@ -37,7 +37,7 @@ mvn package
 ## Running
 
 ```
-java -jar target/JavaJson-0.1-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
+java -jar target/JavaJson-0.2-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
 ```
 
 (Change the input file as desired)
