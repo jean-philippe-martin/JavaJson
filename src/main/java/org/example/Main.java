@@ -46,7 +46,6 @@ public class Main {
                 
                 ---------------[ Transform ]--------------
                 +               : union selected arrays
-                s               : sort selected array(s)
                 shift-Z         : undo last transform
                 
                 ---------------[ Program ]----------------
@@ -259,9 +258,9 @@ public class Main {
                             myJson = pastJson.removeLast();
                         }
                     }
-                    if (key.getCharacter() != null && ('s' == key.getCharacter())) {
-                        sortControl = new SortControl(myJson.atCursor());
-                    }
+//                    if (key.getCharacter() != null && ('s' == key.getCharacter())) {
+//                        sortControl = new SortControl(myJson.atCursor());
+//                    }
                     if (key.getKeyType() == KeyType.Escape) {
                         myJson.rootInfo.secondaryCursors = new NoMultiCursor();
                     }

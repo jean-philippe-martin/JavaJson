@@ -15,11 +15,11 @@ Available features:
 - color preview (256 colors, if the terminal supports it)
 - scrolling
 - text search
+- help screen showing the supported keys (press 'h' or '?')
 
 Missing features:
 
 - unicode support
-- help screen showing the supported keys (press 'h' or '?')
 - JSONL files
 
 ## Testing
@@ -37,10 +37,10 @@ mvn package
 ## Running
 
 ```
-java -jar target/JavaJson-1.0-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
+java -jar target/JavaJson-0.1-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
 ```
 
 (Change the input file as desired)
 
-Use the up and down arrows to navigate. ESC to quit.
+Use the up and down arrows to navigate. q to quit.
 

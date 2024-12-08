@@ -1,0 +1,42 @@
+[
+  {
+    "vehicle": [
+      {
+        "make": "Subaru",
+        "model": "Forester",
+        "insurance": {
+          "company": "Allyourmoney",
+          "policy_num": "98765"
+        },
+        "maintenance": [
+          {
+            "date": "01/01/2021",
+            "description": ["oil change", "oil filter replacement"]
+          },
+          {
+            "date": "01/08/2021",
+            "description": ["tire rotation"]
+          }
+        ]
+      },
+      {
+        "make": "Toyota",
+        "model": "RAV4",
+        "insurance": {
+          "company": "Somestates",
+          "policy_num": "12345"
+        },
+        "maintenance": [
+          {
+            "date": "01/02/2021",
+            "description": ["air filter replacement", "deep clean" ,"pipe cleaning"]
+          },
+          {
+            "date": "01/09/2021",
+            "description": ["battery replacement", "starter maintenance"]
+          }
+        ]
+      }
+    ]
+  }
+]
