@@ -74,6 +74,7 @@ public class JsonNodeValue<T> extends JsonNode {
         return secs;
     }
 
+    @Override
     public T getValue() {
         return this.value;
     }
@@ -96,6 +97,16 @@ public class JsonNodeValue<T> extends JsonNode {
     @Override
     public JsonNode prevChild(Cursor pointingToAChild) {
         return null;
+    }
+
+    @Override
+    public void sort(Sorter sorter) {
+        // Nothing to do
+    }
+
+    @Override
+    public void unsort() {
+        // Nothing to do
     }
 
 }

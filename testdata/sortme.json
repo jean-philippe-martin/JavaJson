@@ -1,16 +1,25 @@
 {
   "numbers": [
-    6,2,5,7,91,0
+    9,2,5,6,91,0
   ],
   "words": [
-    "farmer", "Mary", "had", "a", "little", "lamb"
+    "Mary", "had", "a", "little", "lamb"
+  ],
+  "more_words": [
+    "LOUD", "quiet", "a", "SENTENCE",
+    "sentence", "A"
   ],
   "dates-haha": [
-    "2024-2-1", "2024-10-3"
+    "2024-2-1", "2024-10-3", "2024-3-20"
   ],
   "numbers disguised as strings": [
     "1", "10", "2", "3", "100"
   ],
+  "named things": {
+    "thing 1": { "name":  "Bim" },
+    "thing 2": { "name":  "Bem" },
+    "cat": { "name":  "Cat In The Hat"}
+  },
   "records": [
     { "name": "Alice", "score": 10 },
     { "name": "Bob", "score": 3 },

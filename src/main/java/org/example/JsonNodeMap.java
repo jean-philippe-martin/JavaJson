@@ -1,25 +1,38 @@
 package org.example;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.NoSuchElementException;
-import java.util.SequencedCollection;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
 
 public class JsonNodeMap extends JsonNode {
 
     private final LinkedHashMap<String, Object> kv;
     private final HashMap<String, JsonNode> children;
 
+    // The keys, in display order
+    private @NotNull String[] displayOrder;
+    // For each key, where it stands in the display order.
+    private @NotNull Map<String, Integer> whereIsDiplayed;
+
 
     protected JsonNodeMap(LinkedHashMap<String, Object> kv, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.kv = kv;
         this.children = new HashMap<>();
+        this.displayOrder = kv.sequencedKeySet().toArray(new String[0]);
+        this.whereIsDiplayed = new HashMap<>();
+        for (int i=0; i<displayOrder.length; i++) {
+            whereIsDiplayed.put(displayOrder[i], i);
+        }
     }
 
     public SequencedCollection<String> getKeysInOrder() {
-        LinkedHashMap<String, Object> kv = (LinkedHashMap<String, Object>) this.kv;
-        return kv.sequencedKeySet();
+        return new ArrayList<>(List.of(displayOrder));
+    }
+
+    @Override
+    public Object getValue() {
+        return kv.clone();
     }
 
     public Object getValue(String key) {
@@ -49,7 +62,6 @@ public class JsonNodeMap extends JsonNode {
         return hypothetical.isAtCursor();
     }
 
-
     /** Whether this child is folded **/
     public boolean getChildFolded(String key) {
         if (!this.children.containsKey(key)) return false;
@@ -58,16 +70,14 @@ public class JsonNodeMap extends JsonNode {
 
     @Override
     public JsonNode firstChild() {
-        SequencedCollection<String> keys = this.getKeysInOrder();
-        if (keys.isEmpty()) return null;
-        return getChild(keys.getFirst());
+        if (displayOrder.length==0) return null;
+        return getChild(displayOrder[0]);
     }
 
     @Override
     public JsonNode lastChild() {
-        SequencedCollection<String> keys = this.getKeysInOrder();
-        if (keys.isEmpty()) return null;
-        return getChild(keys.getLast());
+        if (displayOrder.length==0) return null;
+        return getChild(displayOrder[displayOrder.length-1]);
     }
 
     @Override
@@ -77,20 +87,17 @@ public class JsonNodeMap extends JsonNode {
         // if we found ourselves, then this must be a descentKey
         if (!(step instanceof Cursor.DescentKey)) return null;
         String key = ((Cursor.DescentKey)step).get();
-        SequencedCollection<String> keys = this.getKeysInOrder();
-        boolean found = false;
-        for (String k : keys) {
-            if (found) {
-                // Get the cursor via the JsonState so that it has the data filled in.
-                return getChild(k);
-            }
-            if (k.equals(key)) {
-                found = true;
-            }
+        if (!whereIsDiplayed.containsKey(key)) {
+            return null;
         }
-        JsonNode parent = childCursor.getData().getParent();
-        if (parent==this) return null;
-        return parent.nextChild(childCursor);
+        int displayIndex = whereIsDiplayed.get(key);
+        if (displayIndex+1 >= displayOrder.length) {
+            // we're at the end
+            JsonNode parent = childCursor.getData().getParent();
+            if (parent==this) return null;
+            return parent.nextChild(childCursor);
+        }
+        return getChild(displayOrder[displayIndex+1]);
     }
 
     @Override
@@ -100,19 +107,40 @@ public class JsonNodeMap extends JsonNode {
         // if we found ourselves, then this must be a descentKey
         if (!(step instanceof Cursor.DescentKey)) return null;
         String key = ((Cursor.DescentKey)step).get();
-        SequencedCollection<String> keys = this.getKeysInOrder();
-        boolean found = false;
-        for (String k : keys.reversed()) {
-            if (found) {
-                // Get the cursor via the JsonState so that it has the data filled in.
-                return getChild(k);
-            }
-            if (k.equals(key)) {
-                found = true;
-            }
+        if (!whereIsDiplayed.containsKey(key)) {
+            return null;
         }
-        return null;
+        int displayIndex = whereIsDiplayed.get(key);
+        if (displayIndex == 0) {
+            // we're at the beginning already
+            return null;
+        }
+        return getChild(displayOrder[displayIndex-1]);
     }
 
+    @Override
+    public void sort(Sorter sorter) {
+        if (null==sorter) {
+            unsort();
+            return;
+        }
+
+        ArrayList<String> keys = new ArrayList<String>(getKeysInOrder());
+        keys.sort(sorter);
+        this.displayOrder = keys.toArray(new String[0]);
+        this.whereIsDiplayed = new HashMap<>();
+        for (int i=0; i<displayOrder.length; i++) {
+            whereIsDiplayed.put(displayOrder[i], i);
+        }
+    }
+
+    @Override
+    public void unsort() {
+        this.displayOrder = kv.sequencedKeySet().toArray(new String[0]);
+        this.whereIsDiplayed = new HashMap<>();
+        for (int i=0; i<displayOrder.length; i++) {
+            whereIsDiplayed.put(displayOrder[i], i);
+        }
+    }
 
 }

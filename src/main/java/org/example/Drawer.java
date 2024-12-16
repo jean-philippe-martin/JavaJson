@@ -338,8 +338,9 @@ public class Drawer {
             TerminalPosition pos3 = pos.withRelativeColumn(INDENT);
             line += 1;
             pos3 = pos3.withRelativeRow(1);
-            for (int index=0; index<jsonList.size(); index++) {
-                JsonNode child = jsonList.get(index);
+            int[] indexes = jsonList.getIndexesInOrder();
+            for (int index=0; index<indexes.length; index++) {
+                JsonNode child = jsonList.get(indexes[index]);
                 if (inFoldedContext && !child.hasPins()) {
                     // skip that one, we're folded and it's not pinned.
                     continue;

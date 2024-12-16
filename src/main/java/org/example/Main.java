@@ -177,8 +177,20 @@ public class Main {
                 }
                 else if (null!=sortControl) {
                     // manage the sort dialog
-                    sortControl.update(key);
+                    Sorter s = sortControl.update(key);
+                    if (s!=null) {
+                        for (JsonNode node : myJson.atAnyCursor()) {
+                            node.sort(s);
+                        }
+                        sortControl = null;
+                    }
                     if (key.getKeyType()==KeyType.Escape) {
+                        sortControl = null;
+                    }
+                    if (key.getKeyType()==KeyType.Character && key.getCharacter()=='x') {
+                        for (JsonNode node : myJson.atAnyCursor()) {
+                            node.unsort();
+                        }
                         sortControl = null;
                     }
                 }
@@ -258,9 +270,9 @@ public class Main {
                             myJson = pastJson.removeLast();
                         }
                     }
-//                    if (key.getCharacter() != null && ('s' == key.getCharacter())) {
-//                        sortControl = new SortControl(myJson.atCursor());
-//                    }
+                    if (key.getCharacter() != null && ('s' == key.getCharacter())) {
+                        sortControl = new SortControl(myJson.atCursor());
+                    }
                     if (key.getKeyType() == KeyType.Escape) {
                         myJson.rootInfo.secondaryCursors = new NoMultiCursor();
                     }
@@ -301,38 +313,4 @@ public class Main {
     }
 
 
-    // returns the TextGraphic region for the input field
-    private static TextGraphics findScreen(Terminal terminal, Screen screen) throws IOException {
-        TextGraphics g = screen.newTextGraphics();
-        String menu = """
-                +----------[ FIND ]--------------+
-                |                                |
-                +--------------------------------+
-                | Whole | Aa | K+V | .* |        |
-                +--------------------------------+
-                | alt-f: find in keys/values/both|
-                | alt-c: case sensitivity        |
-                | alt-s: find only within selection
-                | alt-r: regular expression      |
-                | up/down: prev/next result      |
-                +--------------------------------+
-                | enter: select one              |
-                | shift-enter: select all        |
-                | ... : add to selection         |
-                | esc : cancel find              |
-                +--------------------------------+
-                """;
-        String[] lines = menu.split("\n");
-        TerminalPosition pos = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
-        for (String l : lines) {
-            g.putString(pos, l);
-            pos = pos.withRelativeRow(1);
-        }
-        TextGraphics g2 = g.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER.withRelative(5,2),
-                new TerminalSize(32,1));
-        g2.setForegroundColor(TextColor.ANSI.YELLOW_BRIGHT);
-        g2.setBackgroundColor(TextColor.Indexed.fromRGB(0,0,128));
-        g2.fill(' ');
-        return g2;
-    }
 }

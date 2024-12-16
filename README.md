@@ -2,8 +2,7 @@
 
 A simple folding JSON viewer for the terminal, written in Java.
 
-This isn't complete yet (most notably, scrolling is missing),
-but the basic functionality is there.
+This isn't complete yet, but the basic functionality is there.
 
 Available features:
 
@@ -42,5 +41,5 @@ java -jar target/JavaJson-0.2-SNAPSHOT-jar-with-dependencies.jar testdata/list.j
 
 (Change the input file as desired)
 
-Use the up and down arrows to navigate. q to quit.
+Use the up and down arrows to navigate. h for help, q to quit.
 

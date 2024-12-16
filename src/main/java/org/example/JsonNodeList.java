@@ -1,20 +1,47 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class JsonNodeList extends JsonNode {
 
+    // The JsonNodeList holds a JSON array, like "[ "hello", 1, 2]".
+    // The deal is that we want the UI to be able to reorder the elements for display,
+    // but we need to still know where things were originally so that cursors
+    // don't need to be modified and yet still point to the same thing after
+    // the display order is changed.
+    // For that reason, we don't reorder the actual list of values but
+    // instead maintain a "display order" of who's displayed when.
+    // Everything else that talks about an "index" uses the original index.
+
     final List<Object> values;
     private final JsonNode[] children;
+    // display index -> list index
+    private int[] displayOrder;
+    // list index -> display index
+    private int[] whereIsDiplayed;
 
+    /** We assume that the passed values list is never modified. **/
     protected JsonNodeList(List<Object> values, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.values = values;
+        this.displayOrder = new int[values.size()];
+        for (int i = 0; i< displayOrder.length; i++) {
+            displayOrder[i] = i;
+        }
+        // when index = display order, these two arrays are the same.
+        this.whereIsDiplayed = displayOrder;
         this.children = new JsonNode[values.size()];
     }
 
     public int size() {
         return this.values.size();
+    }
+
+
+    public int[] getIndexesInOrder() {
+        return displayOrder.clone();
     }
 
     public JsonNode get(int index) {
@@ -26,15 +53,22 @@ public class JsonNodeList extends JsonNode {
     }
 
     @Override
+    public Object getValue() {
+        List<Object> ret = new ArrayList(values);
+        return ret;
+    }
+
+
+    @Override
     public JsonNode firstChild() {
         if (values.isEmpty()) return null;
-        return get(0);
+        return get(displayOrder[0]);
     }
 
     @Override
     public JsonNode lastChild() {
         if (values.isEmpty()) return null;
-        return get(children.length-1);
+        return get(displayOrder[displayOrder.length-1]);
     }
 
     public int childCount() {
@@ -50,11 +84,14 @@ public class JsonNodeList extends JsonNode {
         switch (childCursor.getStep()) {
             case Cursor.DescentIndex di -> {
                 int index = di.get();
-                if (index+1>=this.values.size()) {
+                // convert from the index in the original order (what's in the cursor)
+                // to the index in display order (the order we want to iterate in)
+                int displayed = whereIsDiplayed[index];
+                if (displayed+1>=displayOrder.length) {
                     // out of bounds
                     return null;
                 }
-                return this.get(index+1);
+                return get(displayOrder[displayed+1]);
             }
             default -> throw new RuntimeException("invalid cursor");
         }
@@ -69,14 +106,43 @@ public class JsonNodeList extends JsonNode {
         switch (childCursor.getStep()) {
             case Cursor.DescentIndex di -> {
                 int index = di.get();
-                if (index<=0) {
+                // convert from the index in the original order (what's in the cursor)
+                // to the index in display order (the order we want to iterate in)
+                int displayed = whereIsDiplayed[index];
+                if (displayed<=0) {
                     // out of bounds
                     return null;
                 }
-                return this.get(index-1);
+                return get(displayOrder[displayed-1]);
             }
             default -> throw new RuntimeException("invalid cursor");
         }
+    }
+
+    @Override
+    public void sort(Sorter sorter) {
+        if (null==sorter) {
+            unsort();
+            return;
+        }
+        SorterList<Object> sl = new SorterList<>(sorter, values);
+        displayOrder = Arrays.stream(displayOrder).boxed().sorted(sl).mapToInt(i->i).toArray();
+        if (whereIsDiplayed==displayOrder) {
+            whereIsDiplayed = new int[displayOrder.length];
+        }
+        for (int pos=0; pos<displayOrder.length; pos++) {
+            int index = displayOrder[pos];
+            whereIsDiplayed[index] = pos;
+        }
+    }
+
+    @Override
+    public void unsort() {
+        for (int i = 0; i< displayOrder.length; i++) {
+            displayOrder[i] = i;
+        }
+        // when index = display order, these two arrays are the same.
+        this.whereIsDiplayed = displayOrder;
     }
 
 

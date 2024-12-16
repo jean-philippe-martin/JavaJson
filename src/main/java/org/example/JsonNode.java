@@ -293,6 +293,11 @@ public abstract class JsonNode {
     }
 
     /**
+     * @return the value stored in that node.
+     */
+    public abstract Object getValue();
+
+    /**
      * Move the cursor more or less one line down on the screen.
      *
      * That means enter the object we're at, or go to the next sibling.
@@ -484,5 +489,11 @@ public abstract class JsonNode {
     public @NotNull JsonNode getRoot() {
         return rootInfo.root;
     }
+
+    /** Sort **/
+    public abstract void sort(Sorter sorter);
+
+    /** Return to the original order. **/
+    public abstract void unsort();
 
 }
