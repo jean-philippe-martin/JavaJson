@@ -14,7 +14,7 @@ Available features:
 - [color preview](doc/features.md#annotations) (256 colors, if the terminal supports it)
 - scrolling
 - [text search](doc/features.md#search)
-- sorting
+- [sorting](doc/features.md#sorting)
 - help screen showing the supported keys (press 'h' or '?')
 
 Missing features:

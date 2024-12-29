@@ -6,9 +6,10 @@ The program focuses on viewing JSON files and has the following features:
 - [Pinning](#pinning)
 - [Multicursor](#multicursor)
 - [Find](#search)
+- [Sort](#sorting)
 - Sibling selection
-- Sort
-
+- [Annotations](#annotations)
+- 
 ## Basic navigation
 
 You use `up arrow`, `down`, `page up`, `page down`, `home` and `end` to navigate through the document.
