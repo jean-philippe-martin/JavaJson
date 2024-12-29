@@ -161,16 +161,55 @@ public class SorterTest {
 
         assertEquals(-1, sort.compare(input1, input2));
         assertEquals(1, sort.compare(input2, input1));
+
+        // Packing shouldn't change the outcome
+        sort.pack();
+
+        assertEquals(-1, sort.compare(input1, input2));
+        assertEquals(1, sort.compare(input2, input1));
+    }
+
+    @Test
+    public void testSortNumberified_5() {
+        Sorter sort1 = new Sorter(false, false, true, null);
+        Sorter sort2 = new Sorter(false, false, true, "foobar");
+        String input1 = "";
+        String input2 = "fish";
+
+        assertEquals(-1, sort1.compare(input1, input2));
+        assertEquals(1, sort1.compare(input2, input1));
+
+        assertEquals(-1, sort2.compare(input1, input2));
+        assertEquals(1, sort2.compare(input2, input1));
     }
 
     @Test
     public void testSortWithNulls() {
-        Sorter sort = new Sorter(false, false, true, null);
+        Sorter sort1 = new Sorter(false, false, false, null);
+        Sorter sort2 = new Sorter(false, false, true, null);
+        Sorter sort3 = new Sorter(false, false, true, "fancy");
         String input1 = null;
         String input2 = "2 fish";
 
-        assertEquals(1, sort.compare(input1, input2));
-        assertEquals(-1, sort.compare(input2, input1));
+        assertEquals(1, sort1.compare(input1, input2));
+        assertEquals(-1, sort1.compare(input2, input1));
+
+        assertEquals(1, sort2.compare(input1, input2));
+        assertEquals(-1, sort2.compare(input2, input1));
+
+        assertEquals(1, sort3.compare(input1, input2));
+        assertEquals(-1, sort3.compare(input2, input1));
+    }
+
+    @Test
+    public void testSortWithTwoNulls() {
+        Sorter sort1 = new Sorter(false, false, false, null);
+        Sorter sort2 = new Sorter(false, false, true, null);
+        Sorter sort3 = new Sorter(false, false, true, "fancy");
+
+        assertEquals(0, sort1.compare(null, null));
+        assertEquals(0, sort2.compare(null, null));
+        assertEquals(0, sort3.compare(null, null));
     }
 
     @Test
@@ -199,6 +238,30 @@ public class SorterTest {
 
         assertTrue(sort.compare(input1, input2) > 0);
         assertTrue(sort.compare(input2, input1) < 0);
+    }
+
+    @Test
+    public void testSortMapVsString() {
+        Sorter sort = new Sorter(false, false, true, "name");
+        Map<String, Object> input1 = new HashMap<>();
+        input1.put("name", "Zanzibar");
+        input1.put("score", 10);
+        String input2 = "input2";
+
+        assertTrue(sort.compare(input1, input2) < 0);
+        assertTrue(sort.compare(input2, input1) > 0);
+    }
+
+    @Test
+    public void testSortMapVsInteger() {
+        Sorter sort = new Sorter(false, false, true, "name");
+        Map<String, Object> input1 = new HashMap<>();
+        input1.put("name", "Zanzibar");
+        input1.put("score", 10);
+        Integer input2 = 222;
+
+        assertTrue(sort.compare(input1, input2) < 0);
+        assertTrue(sort.compare(input2, input1) > 0);
     }
 
 
