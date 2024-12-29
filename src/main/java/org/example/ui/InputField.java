@@ -6,6 +6,9 @@ import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A freeform text input field.
+ */
 public class InputField {
     // Where we'll put what the user types.
     // For now we only allow a single line, but we could expand.

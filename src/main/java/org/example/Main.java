@@ -29,26 +29,28 @@ public class Main {
     private static List<JsonNode> pastJson = new ArrayList<>();
 
     private static final String keys_help = """
-                ---------------[ Movement ]---------------
+                ----------------[ Movement ]----------------
                 up/down         : navigate line
                 pg up / pg dn   : navigate page
+                home / end      : beginning/end of document
                 shift + up/down : navigate sibling
                 
-                ---------------[ View ]-------------------
+                ----------------[ View ]--------------------
                 left / right    : fold / unfold
                 p               : pin (show despite folds)
                 
-                ---------------[ Multicursor ]------------
+                ----------------[ Multicursor ]-------------
                 f               : find
                 e / *           : select all children
                 n / N           : navigate cursors
                 ESC             : remove secondary cursors
                 
-                ---------------[ Transform ]--------------
+                ----------------[ Transform ]---------------
                 +               : union selected arrays
+                s               : sort selected array(s)
                 shift-Z         : undo last transform
                 
-                ---------------[ Program ]----------------
+                ----------------[ Program ]-----------------
                 h / ?           : show help page
                 q               : quit
                 """;
@@ -166,12 +168,16 @@ public class Main {
                         }
                         case FindControl.Choice.NONE -> {
                             // still in the "find" dialog, we preview the search results
-                            FindCursor fc = new FindCursor(
-                                    findControl.getText(), findControl.getAllowSubstring(),
-                                    findControl.getIgnoreCase(),
-                                    findControl.getSearchKeys(), findControl.getSearchValues(),
-                                    findControl.getUseRegexp());
-                            myJson.rootInfo.setSecondaryCursors(fc);
+                            if (!findControl.getText().isEmpty()) {
+                                FindCursor fc = new FindCursor(
+                                        findControl.getText(), findControl.getAllowSubstring(),
+                                        findControl.getIgnoreCase(),
+                                        findControl.getSearchKeys(), findControl.getSearchValues(),
+                                        findControl.getUseRegexp());
+                                myJson.rootInfo.setSecondaryCursors(fc);
+                            } else {
+                                myJson.rootInfo.setSecondaryCursors(cursorsBeforeFind.secondaryCursors);
+                            }
                         }
                     }
                 }
@@ -271,7 +277,10 @@ public class Main {
                         }
                     }
                     if (key.getCharacter() != null && ('s' == key.getCharacter())) {
-                        sortControl = new SortControl(myJson.atCursor());
+                        boolean anyList = myJson.atAnyCursor().stream().anyMatch(x->x instanceof JsonNodeList);
+                        if (anyList) {
+                            sortControl = new SortControl(myJson.atAnyCursor());
+                        }
                     }
                     if (key.getKeyType() == KeyType.Escape) {
                         myJson.rootInfo.secondaryCursors = new NoMultiCursor();

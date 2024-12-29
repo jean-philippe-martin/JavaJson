@@ -1,29 +1,47 @@
 package org.example;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
 
 public class Sorter implements Comparator<Object> {
 
     private boolean reverse;
     private boolean ignoreCase;
     private boolean parseNumbers;
+    // the field we're comparing (in objects aka maps), or null if we're not comparing maps.
+    private @Nullable String field;
     private Map<String, ArrayList<Object>> numberified;
 
-    public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers) {
+    public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers, @Nullable String field) {
         this.reverse = reverse;
         this.ignoreCase = ignoreCase;
         this.parseNumbers = parseNumbers;
+        this.field = field;
         if (parseNumbers) numberified = new HashMap<>();
     }
 
     // Removes intermediate sorting data
-    public void pack() {}
+    public void pack() {
+        this.numberified.clear();
+    }
 
     @Override
     public int compare(Object o1, Object o2) {
+        if (null != field) return compareMaps(o1, o2);
+        return innerCompare(o1, o2);
+    }
+
+    // compare when we don't need to look inside maps
+    private int innerCompare(@Nullable Object o1, @Nullable Object o2) {
+        // handle nulls: they go last.
+        if (null==o1) {
+            if (null==o2) return 0;
+            return 1;
+        } else if (null==o2) {
+            return -1;
+        }
         if (!parseNumbers) return compareObjects(o1, o2);
         ArrayList<Object> l1 = translate(o1);
         ArrayList<Object> l2 = translate(o2);
@@ -34,7 +52,7 @@ public class Sorter implements Comparator<Object> {
         }
         for (int i=0; i<l1.size(); i++) {
             // equal up to this point, shorter wins.
-            if (l2.size()<=i) return -1;
+            if (l2.size()<=i) return 1;
             int c = compareObjects(l1.get(i), l2.get(i));
             if (c!=0) return c;
         }
@@ -43,7 +61,44 @@ public class Sorter implements Comparator<Object> {
         return -1;
     }
 
-    public int compareObjects(Object o1, Object o2) {
+    // compare when we need to look inside maps
+    public int compareMaps(@Nullable Object o1, @Nullable Object o2) {
+        // handle nulls: they go last.
+        if (null==o1) {
+            if (null==o2) return 0;
+            return 1;
+        } else if (null==o2) {
+            return -1;
+        }
+        // Non-maps
+        if ((!(o1 instanceof Map)) && (!(o2 instanceof Map))) {
+            // Use the same sorting order between those even though they aren't maps.
+            return innerCompare(o1, o2);
+        }
+        // Map vs something else
+        if (o1 instanceof Map && (!(o2 instanceof Map))) {
+            // maps go first.
+            return -1;
+        }
+        if (o2 instanceof Map && (!(o1 instanceof Map))) {
+            // maps go first.
+            return 1;
+        }
+        // Both maps (at this point, it guaranteed to be the case)
+        if (o1 instanceof Map m1 && o2 instanceof Map m2) {
+            Object got1 = null;
+            if (m1.containsKey(field)) got1 = m1.get(field);
+            Object got2 = null;
+            if (m2.containsKey(field)) got2 = m2.get(field);
+            return innerCompare(got1, got2);
+        }
+        // we should get there.
+        return 0;
+    }
+
+    // not parsing numbers into stuff
+    public int compareObjects(@NotNull Object o1, @NotNull Object o2) {
+        // Strings
         if (o1 instanceof String s1 && o2 instanceof String s2) {
             if (ignoreCase) {
                 s1 = s1.toUpperCase();
@@ -53,12 +108,14 @@ public class Sorter implements Comparator<Object> {
             if (reverse) ret = -ret;
             return ret;
         }
+        // String vs number
         if (o1 instanceof String && (o2 instanceof Integer || o2 instanceof Double)) {
             return reverse?-1:1;
         }
         if ((o1 instanceof Integer || o1 instanceof Double) && o2 instanceof String) {
             return reverse?1:-1;
         }
+        // Numbers
         if (o1 instanceof Integer i1 && o2 instanceof Integer i2) {
             int ret = i1.compareTo(i2);
             if (reverse) ret = -ret;

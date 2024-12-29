@@ -331,7 +331,11 @@ public class Drawer {
                     pos2 = pos2.withRelativeColumn(6);
                 }
             }
-            g.putString(pos2, " // " + jsonList.childCount() + " entries");
+            int c = jsonList.childCount();
+            String countAnno = " // " + c;
+            if (c==1) countAnno += " entry";
+            else countAnno += " entries";
+            g.putString(pos2, countAnno);
             if (inFoldedContext && !jsonList.hasPins()) {
                 return 1;
             }

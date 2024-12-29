@@ -15,15 +15,22 @@
   "numbers disguised as strings": [
     "1", "10", "2", "3", "100"
   ],
+  "files on my hard disk": [
+    "homework 2b",
+    "homework",
+    "homework FINAL",
+    "homework 2",
+    "homework 10"
+  ],
   "named things": {
     "thing 1": { "name":  "Bim" },
     "thing 2": { "name":  "Bem" },
     "cat": { "name":  "Cat In The Hat"}
   },
   "records": [
-    { "name": "Alice", "score": 10 },
-    { "name": "Bob", "score": 3 },
-    { "name": "Fazam", "score": 100 },
-    { "name": "Grace", "score": 22 }
+    { "name": "Bob", "score":  10, "level": 5, "league": "small", "streak": 5, "difficulty": "hard", "ssn": "123-456-789" },
+    { "name": "Alice",   "score":   3, "level": 3, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-678" },
+    { "name": "Fazam", "score": 100, "level": 1, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-567" },
+    { "name": "Grace", "score":  22, "level": 2, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-456" }
   ]
 }

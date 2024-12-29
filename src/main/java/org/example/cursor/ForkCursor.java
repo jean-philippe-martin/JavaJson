@@ -42,6 +42,8 @@ public class ForkCursor implements MultiCursor {
                 cur = null;
             } catch (ArrayIndexOutOfBoundsException nope2) {
                 cur = null;
+            } catch (ClassCastException nope3) {
+                cur = null;
             }
             // Some children may not have the whole path apply to them; skip those.
             if (null!=cur && cur!=primary) list.add(cur);

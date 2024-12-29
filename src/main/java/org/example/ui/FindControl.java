@@ -9,6 +9,8 @@ import org.example.JsonNode;
 import org.example.cursor.FindCursor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class FindControl {
 
     public enum Choice {
@@ -29,6 +31,7 @@ public class FindControl {
     boolean searchKey=true;
     boolean searchValue=true;
     boolean regExp = false;
+    boolean showHelp = true;
     // Which row is selected (has input focus)
     int row = 0;
     int col=0;
@@ -51,9 +54,11 @@ public class FindControl {
         String menu = """
                 ╭────────────[ FIND ]────────────╮
                 │                                │
-                ├────────────────────────────────┤
+                ├───────┬────┬─────┬────┬────────┤
                 │ Whole │ Aa │ K+V │ .* │        │
-                ├────────────────────────────────┤
+                """;
+        if (showHelp) menu += """
+                ├───────┴────┴─────┴────┴────────┤
                 │ w: match whole words only      │
                 │ c/a: case-sensitive match      │
                 │ k/v: find in keys/values/both  │
@@ -63,7 +68,11 @@ public class FindControl {
                 │ enter: select all              │
                 │ g: go to current find only     │
                 │ esc : cancel find              │
+                │ ? : toggle help text           │
                 ╰────────────────────────────────╯
+                """;
+        else menu += """
+                ╰───────┴────┴─────┴────┴────[?]─╯
                 """;
         String[] lines = menu.split("\n");
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
@@ -95,7 +104,7 @@ public class FindControl {
         if (row==0) {
             TextColor fc = g.getForegroundColor();
             g.setForegroundColor(TextColor.ANSI.CYAN);
-            Rectangle.drawSingle(g, top.withRelative(0,0), new TerminalSize(34, 3));
+            Rectangle.drawBold(g, top.withRelative(0,0), new TerminalSize(34, 3));
             g.putString(top.withRelativeColumn(0).withRelativeRow(row * 2 + 1), ">");
             g.putString(top.withRelativeColumn(33).withRelativeRow(row * 2 + 1), "<");
             g.putString(top.withRelativeColumn(13), "[ FIND ]");
@@ -104,9 +113,12 @@ public class FindControl {
             int[] sep = new int[] {0, 8, 13, 19, 24};
             TextColor fc = g.getForegroundColor();
             g.setForegroundColor(TextColor.ANSI.CYAN);
-            Rectangle.drawSingle(g, top.withRelative(sep[col], 2), new TerminalSize(sep[col+1]-sep[col]+1, 3));
+            Rectangle.drawBold(g, top.withRelative(sep[col], 2), new TerminalSize(sep[col+1]-sep[col]+1, 3));
             g.putString(top.withRelative(sep[col], 3), ">");
             g.putString(top.withRelative(sep[col+1], 3), "<");
+            if (col==0 && !showHelp){
+                g.putString(top.withRelative(sep[col], 4), "╰");
+            }
             g.setForegroundColor(fc);
         }
 
@@ -152,7 +164,6 @@ public class FindControl {
                     searchKey = true;
                     searchValue = true;
                 }
-
             }
             if (key.getKeyType()== KeyType.Character &&  key.getCharacter()=='k' && (searchKey || !searchValue)) {
                 this.searchValue = !this.searchValue;
@@ -168,6 +179,9 @@ public class FindControl {
             }
             if (key.getKeyType()== KeyType.Character && key.getCharacter()=='N') {
                 myJson.cursorPrevCursor();
+            }
+            if (key.getKeyType()== KeyType.Character && key.getCharacter()=='?') {
+                showHelp = !showHelp;
             }
             if (key.getKeyType()== KeyType.Character && key.getCharacter()=='g') {
                 return Choice.GOTO;
