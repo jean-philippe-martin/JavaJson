@@ -19,7 +19,7 @@ public class CursorSortedTest {
         assertTrue(state.isAtCursor());
         JsonNodeList jnl = (JsonNodeList)state;
         // Case-sensitive sort
-        jnl.sort(new Sorter(false, false, false, null));
+        jnl.sort(new Sorter(false, false, false, null, false));
 
         state.cursorDown();
         assertEquals("A", state.rootInfo.userCursor.getData().getValue());
@@ -55,20 +55,36 @@ public class CursorSortedTest {
                 ]""");
         assertTrue(state.isAtCursor());
         JsonNodeList jnl = (JsonNodeList) state;
-        jnl.sort(new Sorter(false, false, false, "name"));
+        jnl.sort(new Sorter(false, false, false, "name", false));
 
         state.cursorDown();
         Map<String, Object> firstObject = (Map<String, Object>) state.rootInfo.userCursor.getData().getValue();
         assertEquals("Aaron", firstObject.get("name"));
 
         state.cursorUp();
-        jnl.sort(new Sorter(false, false, false, "score"));
+        jnl.sort(new Sorter(false, false, false, "score", false));
 
         state.cursorDown();
         firstObject = (Map<String, Object>) state.rootInfo.userCursor.getData().getValue();
         assertEquals("Zanzibar", firstObject.get("name"));
     }
 
-    }
+//    @Test
+//    public void testSortingMaps() throws Exception {
+//        JsonNode state = JsonNode.parseJson("""
+//                {
+//                   "Zanzibar": 10,
+//                   "Aaron": 20,
+//                   "Charlize": 123456,
+//                }""");
+//
+//        JsonNodeMap jnm = (JsonNodeMap) state;
+//        jnm.sort(new Sorter(false, false, false, null));
+//
+//        state.cursorDown();
+//
+//    }
+
+}
 
 

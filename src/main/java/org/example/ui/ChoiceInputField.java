@@ -35,6 +35,8 @@ public class ChoiceInputField {
     // how far down we're scrolling
     private int displayScroll = 0;
 
+    private int dropdownSize = 5;
+
     // What the user typed
     private @NotNull String typed = "";
     // What we automatically add so the full text is one of the choices.
@@ -49,7 +51,7 @@ public class ChoiceInputField {
         Arrays.sort(this.choices);
         choiceIndex = 0;
         typed = "";
-        continuation = choices[0];
+        continuation = this.choices[0];
     }
 
     public void draw(TextGraphics where) {
@@ -57,6 +59,9 @@ public class ChoiceInputField {
         if (focused) {
             if (showChoices) {
                 TextGraphics g3 = where.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER.withRelative(1,1), where.getSize().withRelative(-2,-1));
+                int size = g3.getSize().getRows();
+                size = Math.min(size, dropdownSize);
+                g3 = g3.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER, g3.getSize().withRows(size));
                 g3.setForegroundColor(where.getForegroundColor());
                 g3.fill(' ');
                 TerminalPosition c = TerminalPosition.TOP_LEFT_CORNER.withRelative(1,1);
@@ -78,7 +83,7 @@ public class ChoiceInputField {
                     c = c.withRelativeRow(1);
                 }
                 g3.setForegroundColor(TextColor.ANSI.CYAN);
-                Rectangle.drawSingle(g3, TerminalPosition.TOP_LEFT_CORNER, where.getSize().withRelative(-2,-1));
+                Rectangle.drawSingle(g3, TerminalPosition.TOP_LEFT_CORNER, g3.getSize());
                 if (brackets.isPresent()) {
                     c = brackets.get();
                     g3.putString(c.withRelativeColumn(-1), ">");
@@ -116,6 +121,8 @@ public class ChoiceInputField {
             displayIndex = 0;
             displayScroll = 0;
             displayChoices = Arrays.stream(choices).filter(x -> x.startsWith(typed)).toList();
+            // 2 for the border
+            dropdownSize = displayChoices.size() + 2;
         } else if (key.getKeyType()==KeyType.ArrowUp) {
             if (!showChoices) return false;
             if (displayIndex>0) displayIndex -= 1;
@@ -130,6 +137,7 @@ public class ChoiceInputField {
             typed = displayChoices.get(displayIndex);
             continuation = "";
             showChoices = false;
+            updateChoiceIndex(typed);
         } else if (key.getCharacter() != null) {
             // normal key
             char k = key.getCharacter();
@@ -145,6 +153,16 @@ public class ChoiceInputField {
             return false;
         }
         return true;
+    }
+
+    // finds an exact match
+    private void updateChoiceIndex(String choiceStr) {
+        for (int i=0; i<choices.length; i++) {
+            if (choices[i].equals(choiceStr)) {
+                choiceIndex = i;
+                return;
+            }
+        }
     }
 
     private void updateDisplayChoices(String typed) {
@@ -164,7 +182,6 @@ public class ChoiceInputField {
             }
         }
         continuation = displayChoices.get(displayIndex).substring(typed.length());
-        // todo: make sure the displayScroll is such that we can see displayIndex
     }
 
     public void setFocused(boolean focused) {
@@ -177,7 +194,7 @@ public class ChoiceInputField {
     }
 
     /** What the user typed so far (autocompletion excluded) */
-    public String getTyped() {
+    public @NotNull String getTyped() {
         return typed;
     }
 

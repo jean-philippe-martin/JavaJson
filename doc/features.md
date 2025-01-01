@@ -227,7 +227,10 @@ Finally, you can press `g` to keep only the current main selection (unselecting 
 
 ## Sorting
 
-### A. Sorting strings and numbers
+In short, press "s" to sort and it should be fairly straight-forward. You want the cursor on the array or map
+that contains the things you want to sort.
+
+### A. Sorting lists of strings and numbers
 
 Let's open the `sortme` test file (you can skip the build step if you already have the jar file).
 
@@ -298,7 +301,7 @@ provides:
 Note that the "sort" dialog only work if at least one of the cursors is pointing
 to a list. The non-list cursors will be ignored.
 
-### B. Sorting objects
+### B. Sorting lists of objects
 
 It is also possible to sort lists that contain JSON objects. For example, in
 the "sortme" file we opened in section A, if you go down to "records" and press `s`
@@ -327,6 +330,48 @@ field you'd like to sort by. The options are what you can see in the records on
 the screen: name, score, level, league, streak, difficulty, ssn. You can type those
 in directly, or you can press the `TAB` key to be presented with a list of options.
 Press `up/down` then `ENTER` to select an option, or `TAB` again to close the list.
+
+### C. Sorting maps of strings/numbers
+
+Sometimes, the things we want to sort are not in an array. Consider the example below:
+
+```
+>>"high scores": {                      ╭────────────[ SORT ]───────────────╮
+    "Zebulon": 2                        │ (keys)                            │
+    "Charlize": 10                      ┏━━━┓────┬─────┬────────────────────┤
+    "Zanzibar": 20                      > R < Aa │ num │                    │
+    "Aaron": 50                         ╰━━━┛────┴─────┴────────────────[?]─╯
+  }
+```
+
+Here we have an associative map, where the key is the person's name, and the value is their score. Pressing `s`
+there allows us to sort these too. The only difference is that instead of a field name, we get to choose between
+"(keys)" to sort from Aaron to Zebulon, of "(values)" to sort by score, 2 to 50.
+
+### D. Sorting maps of maps
+
+Consider the example below: it's a key/value map, and it contains three named
+maps: "thing 1", "thing 2", and "cat". Here the program gives us the choice
+of sorting by keys (so "cat" would be first), or by the "name" field. If there
+were other fields, they would be added to the list of course.
+
+```
+>>"named things": {
+    "thing 1": {          ┏━━━━━━━━━━━━[ SORT ]━━━━━━━━━━━━━━━┓
+      "name": "Bim"       ┃ (keys)                            ┃
+    }                     ┗┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓┛
+    "thing 2": {          │>(keys)                           <│
+      "name": "Bem"       ╰┃name                             ┃╯
+    }                      ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    "cat": {
+      "name": "Cat In The Hat"
+    }
+  }
+}
+```
+
+So in conclusion: roughly speaking, so long as you have something that looks like a sequence of things,
+you should be able to sort them.
 
 ## Sibling selection
 

@@ -277,8 +277,8 @@ public class Main {
                         }
                     }
                     if (key.getCharacter() != null && ('s' == key.getCharacter())) {
-                        boolean anyList = myJson.atAnyCursor().stream().anyMatch(x->x instanceof JsonNodeList);
-                        if (anyList) {
+                        boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
+                        if (!allValues) {
                             sortControl = new SortControl(myJson.atAnyCursor());
                         }
                     }

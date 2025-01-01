@@ -27,9 +27,15 @@ public class SortControl {
     boolean ignoreCase;
     boolean numberify;
     boolean showHelp = true;
+    // true if one of the things we're sorting is a map,
+    // so we can choose between sorting by keys or values.
+    boolean sortingAMap = false;
     int col, row;
     HashSet<String> fieldChoices = null;
     ChoiceInputField input;
+
+    public final static String KEYS_CHOICE="(keys)";
+    public final static String VALUES_CHOICE="(values)";
 
     public SortControl(@Nullable List<JsonNode> selectedNodes) {
         init(selectedNodes);
@@ -47,22 +53,42 @@ public class SortControl {
         this.selectedNodes = selectedNodes;
         this.selectField = false;
         this.fieldChoices = new HashSet<>();
+        this.sortingAMap = false;
         for (JsonNode node : this.selectedNodes) {
+            if (node instanceof JsonNodeMap jnm) {
+                sortingAMap = true;
+                for (String key : jnm.getKeysInOrder()) {
+                    if (jnm.getChild(key) instanceof JsonNodeMap kid) {
+                        fieldChoices.addAll(kid.getKeysInOrder());
+                    }
+                }
+            }
             if (node instanceof JsonNodeList jnl) {
                 for (int i=0; i<jnl.childCount(); i++) {
                     if (jnl.get(i) instanceof JsonNodeMap jnm) {
-                        this.selectField = true;
                         fieldChoices.addAll(jnm.getKeysInOrder());
                     }
                 }
             }
         }
+        if (sortingAMap) {
+            if (fieldChoices.isEmpty()) {
+                // Only values: we can choose to sort by key or value
+                fieldChoices.add(KEYS_CHOICE);
+                fieldChoices.add(VALUES_CHOICE);
+            } else {
+                // maps in there: we can choose a field from the map.
+                fieldChoices.add(KEYS_CHOICE);
+            }
+        }
+        this.selectField = !fieldChoices.isEmpty();
         input = null;
         if (!this.selectField) row=1;
         if (this.selectField) input = new ChoiceInputField(fieldChoices.toArray(new String[0]));
     }
 
     public void draw(TextGraphics g) {
+        boolean skippedField = false;
     String menu = """
             ╭────────────[ SORT ]───────────────╮
             │                                   │
@@ -90,15 +116,21 @@ public class SortControl {
         String[] lines = menu.split("\n");
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER;
         TerminalPosition pos = top;
-        TerminalPosition optsPos = TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(2);
-        if (!selectField) optsPos = TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(1);
         for (int i=0; i<lines.length; i++) {
             String l = lines[i];
-            if ((!selectField) && i==1) continue;
+            // skip the line for the field names
+            if (i==1) {
+                if ((!selectField && !sortingAMap)) {
+                    skippedField=true;
+                    continue;
+                }
+            }
             if ((!selectField) && l.contains("TAB")) continue;
             g.putString(pos, l);
             pos = pos.withRelativeRow(1);
         }
+        TerminalPosition optsPos = TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(2);
+        if (skippedField) optsPos = TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(1);
         int[] sep = new int[]{0, 4, 9, 15};
         TextColor fc = g.getForegroundColor();
         if (row==0) {
@@ -150,7 +182,7 @@ public class SortControl {
             } else {
                 field = null;
             }
-            return new Sorter(this.reverse, ignoreCase, numberify, field);
+            return new Sorter(this.reverse, ignoreCase, numberify, field, KEYS_CHOICE.equals(field));
         }
         if (key.getKeyType()==KeyType.ArrowDown) {
             if (row<1) { this.row++; }

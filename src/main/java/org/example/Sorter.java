@@ -13,18 +13,25 @@ public class Sorter implements Comparator<Object> {
     // the field we're comparing (in objects aka maps), or null if we're not comparing maps.
     private @Nullable String field;
     private Map<String, ArrayList<Object>> numberified;
+    private boolean sortKeys;
 
-    public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers, @Nullable String field) {
+    public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers, @Nullable String field, boolean sortKeys) {
         this.reverse = reverse;
         this.ignoreCase = ignoreCase;
         this.parseNumbers = parseNumbers;
         this.field = field;
         if (parseNumbers) numberified = new HashMap<>();
+        this.sortKeys = sortKeys;
     }
 
     // Removes intermediate sorting data
     public void pack() {
         this.numberified.clear();
+    }
+
+    /** if true, we're sorting by JSON map keys */
+    public boolean getSortkeys() {
+        return this.sortKeys;
     }
 
     @Override

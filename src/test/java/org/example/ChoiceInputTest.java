@@ -1,8 +1,16 @@
 package org.example;
 
+import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
+import com.googlecode.lanterna.screen.Screen;
+import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import org.example.ui.ChoiceInputField;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -80,6 +88,35 @@ public class ChoiceInputTest {
         field.update(KeyStroke.fromString("x"));
         assertEquals("Alix", field.getChoice());
 
+    }
+
+    @Test
+    public void testDefaultsToLexicographicalFirst() {
+        ChoiceInputField field = new ChoiceInputField(new String[] { "(keys)", "(values)" });
+        assertEquals("(keys)", field.getChoice());
+    }
+
+    @Test
+    public void testDefaultsToLexicographicalFirstEvenAfterDraw() throws IOException {
+        ChoiceInputField field = new ChoiceInputField(new String[] { "(keys)", "(values)" });
+        Terminal term = new DefaultVirtualTerminal(new TerminalSize(20, 20));
+        Screen screen = new TerminalScreen(term);
+        field.draw(screen.newTextGraphics());
+
+        assertEquals("(keys)", field.getChoice());
+
+        field.update(KeyStroke.fromString("x"));
+
+        assertEquals("(keys)", field.getChoice());
+    }
+
+    @Test
+    public void testTabWorks() {
+        ChoiceInputField field = new ChoiceInputField(new String[] { "(keys)", "(values)" });
+        field.update(new KeyStroke(KeyType.Tab));
+        field.update(new KeyStroke(KeyType.ArrowDown));
+        field.update(new KeyStroke(KeyType.Enter));
+        assertEquals("(values)", field.getChoice());
     }
 
 }

@@ -1,6 +1,6 @@
 {
   "numbers": [
-    9,2,5,6,91,0
+    9,2,5,6,81,0
   ],
   "words": [
     "Mary", "had", "a", "little", "lamb"
@@ -22,15 +22,21 @@
     "homework 2",
     "homework 10"
   ],
-  "named things": {
-    "thing 1": { "name":  "Bim" },
-    "thing 2": { "name":  "Bem" },
-    "cat": { "name":  "Cat In The Hat"}
-  },
   "records": [
     { "name": "Bob", "score":  10, "level": 5, "league": "small", "streak": 5, "difficulty": "hard", "ssn": "123-456-789" },
     { "name": "Alice",   "score":   3, "level": 3, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-678" },
     { "name": "Fazam", "score": 100, "level": 1, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-567" },
     { "name": "Grace", "score":  22, "level": 2, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-456" }
-  ]
+  ],
+  "high scores": {
+    "Zanzibar": 20,
+    "Aaron": 50,
+    "Charlize": 10,
+    "Zebulon": 2
+  },
+  "named things": {
+    "thing 1": { "name":  "Bim" },
+    "thing 2": { "name":  "Bem" },
+    "cat": { "name":  "Cat In The Hat"}
+  }
 }

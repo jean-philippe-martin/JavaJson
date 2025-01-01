@@ -125,12 +125,27 @@ public class JsonNodeMap extends JsonNode {
             return;
         }
 
-        ArrayList<String> keys = new ArrayList<String>(getKeysInOrder());
-        keys.sort(sorter);
-        this.displayOrder = keys.toArray(new String[0]);
-        this.whereIsDiplayed = new HashMap<>();
-        for (int i=0; i<displayOrder.length; i++) {
-            whereIsDiplayed.put(displayOrder[i], i);
+        if (sorter.getSortkeys()) {
+            ArrayList<String> keys = new ArrayList<String>(getKeysInOrder());
+            keys.sort(sorter);
+            this.displayOrder = keys.toArray(new String[0]);
+            this.whereIsDiplayed = new HashMap<>();
+            for (int i = 0; i < displayOrder.length; i++) {
+                whereIsDiplayed.put(displayOrder[i], i);
+            }
+        } else {
+            List<Object> values = kv.values().stream().toList();
+            List<String> keys = kv.sequencedKeySet().stream().toList();
+            List<Integer> indices = new ArrayList<>();
+            for (int i=0; i<values.size(); i++) {
+                indices.add(i);
+            }
+            SorterList<Object> sl = new SorterList<>(sorter, values);
+            int[] sortedIndices = indices.stream().sorted(sl).mapToInt(i->i).toArray();
+            this.displayOrder = new String[indices.size()];
+            for (int i : indices) {
+                displayOrder[i] = keys.get(sortedIndices[i]);
+            }
         }
     }
 
