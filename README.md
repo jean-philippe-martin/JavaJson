@@ -38,7 +38,7 @@ mvn package -DskipTests
 ## Running
 
 ```
-java -jar target/JavaJson-0.3-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
+java -jar target/JavaJson-0.3-jar-with-dependencies.jar testdata/list.json
 ```
 
 (Change the input file as desired)
