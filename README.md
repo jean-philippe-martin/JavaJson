@@ -16,9 +16,9 @@ Available features:
 - [text search](doc/features.md#search)
 - [sorting](doc/features.md#sorting)
 - help screen showing the supported keys (press 'h' or '?')
+- shift-Z to undo union or sort
 
 Missing features:
-- shift-Z to undo sort
 - unicode support
 - JSONL files
 - color choice that works on light-colored terminals

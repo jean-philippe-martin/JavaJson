@@ -1,5 +1,7 @@
 package org.example;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +23,7 @@ public class JsonNodeList extends JsonNode {
     private int[] displayOrder;
     // list index -> display index
     private int[] whereIsDiplayed;
+    private @Nullable Sorter sortOrder = null;
 
     /** We assume that the passed values list is never modified. **/
     protected JsonNodeList(List<Object> values, JsonNode parent, Cursor curToMe, JsonNode root) {
@@ -33,6 +36,7 @@ public class JsonNodeList extends JsonNode {
         // when index = display order, these two arrays are the same.
         this.whereIsDiplayed = displayOrder;
         this.children = new JsonNode[values.size()];
+        this.sortOrder = null;
     }
 
     public int size() {
@@ -134,6 +138,8 @@ public class JsonNodeList extends JsonNode {
             int index = displayOrder[pos];
             whereIsDiplayed[index] = pos;
         }
+        sorter.pack();
+        this.sortOrder = sorter;
     }
 
     @Override
@@ -143,7 +149,12 @@ public class JsonNodeList extends JsonNode {
         }
         // when index = display order, these two arrays are the same.
         this.whereIsDiplayed = displayOrder;
+        this.sortOrder = null;
     }
 
+    @Override
+    public @Nullable Sorter getSort() {
+        return this.sortOrder;
+    }
 
 }

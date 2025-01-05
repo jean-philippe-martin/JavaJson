@@ -5,15 +5,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+/** Instructions for how to sort. Conceptually immutable.
+ */
 public class Sorter implements Comparator<Object> {
 
-    private boolean reverse;
-    private boolean ignoreCase;
-    private boolean parseNumbers;
+    private final boolean reverse;
+    private final boolean ignoreCase;
+    private final boolean parseNumbers;
     // the field we're comparing (in objects aka maps), or null if we're not comparing maps.
-    private @Nullable String field;
-    private Map<String, ArrayList<Object>> numberified;
-    private boolean sortKeys;
+    private final @Nullable String field;
+    private final boolean sortKeys;
+    private @Nullable Map<String, ArrayList<Object>> numberified;
 
     public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers, @Nullable String field, boolean sortKeys) {
         this.reverse = reverse;
@@ -24,9 +26,42 @@ public class Sorter implements Comparator<Object> {
         this.sortKeys = sortKeys;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("sort(");
+        boolean first=true;
+        if (null!=field && !field.isEmpty()) {
+            sb.append("\"");
+            sb.append(field);
+            sb.append("\"");
+            first = false;
+        } else if (sortKeys) {
+            sb.append("(keys)");
+            first = false;
+        }
+        if (reverse) {
+            if (!first) sb.append(",");
+            first=false;
+            sb.append("R");
+        }
+        if (!ignoreCase) {
+            if (!first) sb.append(",");
+            first=false;
+            sb.append("Aa");
+        }
+        if (parseNumbers) {
+            if (!first) sb.append(",");
+            first=false;
+            sb.append("num");
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+
     // Removes intermediate sorting data
     public void pack() {
-        this.numberified.clear();
+        this.numberified = null;
     }
 
     /** if true, we're sorting by JSON map keys */
@@ -169,6 +204,7 @@ public class Sorter implements Comparator<Object> {
             return ret;
         }
         if (o instanceof String s) {
+            if (null==numberified) numberified = new HashMap<>();
             if (numberified.containsKey(s)) return numberified.get(s);
             char[] chars = new char[s.length()];
             s.getChars(0, s.length(), chars, 0);
@@ -202,14 +238,13 @@ public class Sorter implements Comparator<Object> {
             } else {
                 ret.add(stringBuilder.toString());
             }
+            if (null!=numberified) {
+                numberified.put(s, ret);
+            }
             return ret;
         }
-        if (o instanceof Map) {
-            // we're not set up to compare maps... return an empty list.
-            ret.add(o.toString());
-            return ret;
-        }
-        // If we get here it means we didn't recognize the type
-        throw new RuntimeException("Unrecognized type for " + o.toString());
+        // we're not set up to compare maps or lists...
+        ret.add(o.toString());
+        return ret;
     }
 }

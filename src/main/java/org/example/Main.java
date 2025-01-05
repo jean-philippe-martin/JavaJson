@@ -28,6 +28,9 @@ public class Main {
     private static JsonNode.SavedCursors cursorsBeforeFind = null;
     private static List<JsonNode> pastJson = new ArrayList<>();
 
+    private static OperationList operationList = new OperationList();
+    private static String notificationText = "";
+
     private static final String keys_help = """
                 ----------------[ Movement ]----------------
                 up/down         : navigate line
@@ -121,6 +124,17 @@ public class Main {
                 else if (showFind) {
                     findControl.draw(screen.newTextGraphics());
                 }
+
+                if (!notificationText.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(notificationText);
+                    while (sb.length() < g.getSize().getColumns()-1) {
+                        sb.append(" ");
+                    }
+                    g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
+                    notificationText = "";
+                }
+
                 screen.refresh(Screen.RefreshType.DELTA);
                 KeyStroke key = terminal.readInput();
                 if (showFind) {
@@ -185,18 +199,25 @@ public class Main {
                     // manage the sort dialog
                     Sorter s = sortControl.update(key);
                     if (s!=null) {
-                        for (JsonNode node : myJson.atAnyCursor()) {
-                            node.sort(s);
-                        }
+                        Operation sort = new Operation.Sort(myJson, s);
+                        notificationText = sort.toString();
+                        myJson = operationList.run(sort);
+//                        for (JsonNode node : myJson.atAnyCursor()) {
+//                            node.sort(s);
+//                        }
                         sortControl = null;
                     }
                     if (key.getKeyType()==KeyType.Escape) {
                         sortControl = null;
                     }
                     if (key.getKeyType()==KeyType.Character && key.getCharacter()=='x') {
-                        for (JsonNode node : myJson.atAnyCursor()) {
-                            node.unsort();
-                        }
+                        Operation sort = new Operation.Sort(myJson, null);
+                        notificationText = sort.toString();
+                        myJson = operationList.run(sort);
+
+//                        for (JsonNode node : myJson.atAnyCursor()) {
+//                            node.unsort();
+//                        }
                         sortControl = null;
                     }
                 }
@@ -265,15 +286,15 @@ public class Main {
                         cursorsBeforeFind = myJson.rootInfo.save();
                     }
                     if (key.getCharacter() != null && ('+' == key.getCharacter())) {
-                        JsonNode newRoot = TreeTransformer.UnionCursors(myJson);
-                        if (newRoot!=null) {
-                            pastJson.add(myJson);
-                            myJson = newRoot;
-                        }
+                        Operation union = new Operation.UnionCursors(myJson);
+                        notificationText = union.toString();
+                        myJson = operationList.run(union);
                     }
                     if (key.getCharacter() != null && ('Z' == key.getCharacter())) {
-                        if (!pastJson.isEmpty()) {
-                            myJson = pastJson.removeLast();
+                        Operation op = operationList.peek();
+                        if (null!=op) {
+                            notificationText = "undo " + op.toString();
+                            myJson = operationList.undo();
                         }
                     }
                     if (key.getCharacter() != null && ('s' == key.getCharacter())) {

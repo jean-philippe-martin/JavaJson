@@ -1,5 +1,7 @@
 package org.example;
 
+import org.jetbrains.annotations.Nullable;
+
 public class JsonNodeValue<T> extends JsonNode {
     protected T value;
 
@@ -107,6 +109,11 @@ public class JsonNodeValue<T> extends JsonNode {
     @Override
     public void unsort() {
         // Nothing to do
+    }
+
+    @Override
+    public @Nullable Sorter getSort() {
+        return null;
     }
 
 }

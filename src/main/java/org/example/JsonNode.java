@@ -490,10 +490,13 @@ public abstract class JsonNode {
         return rootInfo.root;
     }
 
-    /** Sort **/
+    /** Sort. But also save the sort order. **/
     public abstract void sort(Sorter sorter);
 
     /** Return to the original order. **/
     public abstract void unsort();
+
+    /** Return the current sort rules. Null = original sort order. */
+    public abstract @Nullable Sorter getSort();
 
 }

@@ -69,21 +69,46 @@ public class CursorSortedTest {
         assertEquals("Zanzibar", firstObject.get("name"));
     }
 
-//    @Test
-//    public void testSortingMaps() throws Exception {
-//        JsonNode state = JsonNode.parseJson("""
-//                {
-//                   "Zanzibar": 10,
-//                   "Aaron": 20,
-//                   "Charlize": 123456,
-//                }""");
-//
-//        JsonNodeMap jnm = (JsonNodeMap) state;
-//        jnm.sort(new Sorter(false, false, false, null));
-//
-//        state.cursorDown();
-//
-//    }
+    @Test
+    public void testSortingArrays() throws Exception {
+        JsonNode state = JsonNode.parseJson("""
+                {
+                    "maintenance": [
+                      {
+                        "date": "01/01/2021",
+                        "description": ["oil change", "oil filter replacement"]
+                      },
+                      {
+                        "date": "01/08/2021",
+                        "description": ["tire rotation"]
+                      }
+                    ]
+                }""");
+        assertTrue(state.isAtCursor());
+        state.cursorDown();
+        state.sort(new Sorter(false, true, true, "description", false));
+    }
+
+    @Test
+    public void testSortingMaps() throws Exception {
+        JsonNode state = JsonNode.parseJson("""
+                {
+                   "Zanzibar": 10,
+                   "Aaron": 20,
+                   "Charlize": 123456
+                }""");
+
+        JsonNodeMap jnm = (JsonNodeMap) state;
+        jnm.sort(new Sorter(false, false, false, null, true));
+
+        state.cursorDown();
+        assertEquals(".Aaron", state.rootInfo.userCursor.toString());
+
+        state.cursorUp();
+        jnm.sort(new Sorter(true, false, false, null, false));
+        state.cursorDown();
+        assertEquals(".Charlize", state.rootInfo.userCursor.toString());
+    }
 
 }
 

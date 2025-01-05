@@ -1,6 +1,7 @@
 package org.example;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -14,6 +15,8 @@ public class JsonNodeMap extends JsonNode {
     // For each key, where it stands in the display order.
     private @NotNull Map<String, Integer> whereIsDiplayed;
 
+    private @Nullable Sorter sortOrder = null;
+
 
     protected JsonNodeMap(LinkedHashMap<String, Object> kv, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
@@ -24,6 +27,7 @@ public class JsonNodeMap extends JsonNode {
         for (int i=0; i<displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
         }
+        sortOrder = null;
     }
 
     public SequencedCollection<String> getKeysInOrder() {
@@ -147,6 +151,8 @@ public class JsonNodeMap extends JsonNode {
                 displayOrder[i] = keys.get(sortedIndices[i]);
             }
         }
+        sorter.pack();
+        sortOrder = sorter;
     }
 
     @Override
@@ -156,6 +162,12 @@ public class JsonNodeMap extends JsonNode {
         for (int i=0; i<displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
         }
+        sortOrder = null;
+    }
+
+    @Override
+    public @Nullable Sorter getSort() {
+        return this.sortOrder;
     }
 
 }
