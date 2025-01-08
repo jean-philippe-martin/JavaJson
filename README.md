@@ -46,6 +46,8 @@ as needed.)
 
 (Change the input file as desired)
 
+The file can be in `JSON` or `JSONL` format (JSONL = each individual line is valid JSON). 
+
 Use the up and down arrows to navigate. h for help, q to quit.
 
 ## Intro to each feature
