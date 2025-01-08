@@ -9,7 +9,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Sort](#sorting)
 - Sibling selection
 - [Annotations](#annotations)
-- 
+
 ## Basic navigation
 
 You use `up arrow`, `down`, `page up`, `page down`, `home` and `end` to navigate through the document.

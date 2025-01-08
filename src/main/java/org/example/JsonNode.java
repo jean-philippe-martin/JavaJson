@@ -88,8 +88,32 @@ public abstract class JsonNode {
 
     public static JsonNode parse(Path path) throws IOException {
         // Read the file
-        String lines = String.join("\n", Files.readAllLines(path));
-        return JsonNode.parseJson(lines);
+        List<String> allLines = Files.readAllLines(path);
+        return JsonNode.parseLines(allLines.toArray(String[]::new));
+    }
+
+    // Try to read as either JSON or JSONL.
+    public static JsonNode parseLines(String[] lines) throws JsonProcessingException {
+
+        // Is each line individually valid?
+        List<Object> all = new ArrayList<>();
+        int i=0;
+        for (String l : lines) {
+            i++;
+            try {
+                if (l.isEmpty()) continue;
+                ObjectMapper parser = new ObjectMapper();
+                Object parsed = parser.readValue(l, Object.class);
+                all.add(parsed);
+            } catch (JsonProcessingException jpx) {
+                // Try the thing as a whole
+                String linesTogether = String.join("\n", lines);
+                return JsonNode.parseJson(linesTogether);
+            }
+        }
+        JsonNode ret = JsonNode.fromObject(all, null, new Cursor(), null);
+        ret.setAnnotation("JSONL");
+        return ret;
     }
 
     public static JsonNode parseJson(String jsonLines) throws JsonProcessingException {

@@ -13,9 +13,12 @@ import org.example.cursor.NoMultiCursor;
 import org.example.ui.FindControl;
 import org.example.ui.SortControl;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +29,6 @@ public class Main {
     private static FindControl findControl;
     private static SortControl sortControl;
     private static JsonNode.SavedCursors cursorsBeforeFind = null;
-    private static List<JsonNode> pastJson = new ArrayList<>();
 
     private static OperationList operationList = new OperationList();
     private static String notificationText = "";
@@ -67,10 +69,21 @@ public class Main {
             return;
         }
 
-        // load the json
-        Path path = FileSystems.getDefault().getPath(args[0]);
-        JsonNode myJson = JsonNode.parse(path);
+        JsonNode myJson;
+
+//        This doesn't work, it breaks the UI.. not sure why.
+//        if (args.length==1 && args[0].equals("-")) {
+//            // Read the JSON from stdin
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+//            List<String> lines = reader.lines().collect().toList();
+//            myJson = JsonNode.parseJson(String.join("\n", lines));
+//        }
+
+        // load the JSON, using NIO libraries if they were added to the classoath.
+        Path path = Paths.get(args[0]);
+        myJson = JsonNode.parse(path);
         findControl = new FindControl(myJson);
+
 
 
         /*
@@ -202,9 +215,6 @@ public class Main {
                         Operation sort = new Operation.Sort(myJson, s);
                         notificationText = sort.toString();
                         myJson = operationList.run(sort);
-//                        for (JsonNode node : myJson.atAnyCursor()) {
-//                            node.sort(s);
-//                        }
                         sortControl = null;
                     }
                     if (key.getKeyType()==KeyType.Escape) {
@@ -214,10 +224,6 @@ public class Main {
                         Operation sort = new Operation.Sort(myJson, null);
                         notificationText = sort.toString();
                         myJson = operationList.run(sort);
-
-//                        for (JsonNode node : myJson.atAnyCursor()) {
-//                            node.unsort();
-//                        }
                         sortControl = null;
                     }
                 }
@@ -251,10 +257,10 @@ public class Main {
                         // next cursor/match
                         myJson.cursorPrevCursor();
                     }
-                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
-                        // restart (for testing)
-                        myJson = JsonNode.parse(path);
-                    }
+//                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
+//                        // restart (for testing)
+//                        myJson = JsonNode.parse(path);
+//                    }
                     if (key.getKeyType() == KeyType.PageDown) {
                         for (int i = 0; i < g.getSize().getRows() - 2; i++) {
                             myJson.cursorDown();

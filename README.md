@@ -17,10 +17,10 @@ Available features:
 - [sorting](doc/features.md#sorting)
 - help screen showing the supported keys (press 'h' or '?')
 - shift-Z to undo union or sort
+- JSONL files
 
 Missing features:
 - unicode support
-- JSONL files
 - color choice that works on light-colored terminals
 
 ## Testing
@@ -40,6 +40,9 @@ mvn package -DskipTests
 ```
 java -jar target/JavaJson-0.4-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
 ```
+
+(If you're using a release JAR instead of building your own then adjust the jar's file name
+as needed.)
 
 (Change the input file as desired)
 

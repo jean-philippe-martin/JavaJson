@@ -24,4 +24,9 @@ public class TreeTransformer {
         JsonNode newRoot = JsonNode.fromObject(myList, null, new Cursor(), null);
         return newRoot;
     }
+
+    // TBD
+    public static void AggregateCount(JsonNode aggNode) {
+        // ...
+    }
 }

@@ -331,8 +331,10 @@ public class Drawer {
                     pos2 = pos2.withRelativeColumn(6);
                 }
             }
+            String countAnno = " // " + jsonList.getAnnotation();
+            if (!jsonList.getAnnotation().isEmpty()) countAnno += ", ";
             int c = jsonList.childCount();
-            String countAnno = " // " + c;
+            countAnno += c;
             if (c==1) countAnno += " entry";
             else countAnno += " entries";
             g.putString(pos2, countAnno);

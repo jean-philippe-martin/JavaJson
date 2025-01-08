@@ -1,0 +1,4 @@
+{  "name": "Alice",  "score": 10,  "category": "heavyweight",  "age": 32,  "fastest_move_in_seconds": 0.002 }
+{  "name": "Bob",  "score": 35,  "category": "heavyweight",  "age": 36,  "requests": "pillow on chair",  "fastest_move_in_seconds": 0.0015 }
+{  "name": "Charlie",  "score": 20,  "category": "guest",  "age": 78,  "pet": {  "name": "kittycat",    "age": 2,    "likes": ["pats", "tuna"]  }}
+
