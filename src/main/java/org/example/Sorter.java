@@ -127,7 +127,9 @@ public class Sorter implements Comparator<Object> {
             return 1;
         }
         // Both maps (at this point, it guaranteed to be the case)
-        if (o1 instanceof Map m1 && o2 instanceof Map m2) {
+        if (o1 instanceof Map && o2 instanceof Map) {
+            Map m1 = (Map)o1;
+            Map m2 = (Map)o2;
             Object got1 = null;
             if (m1.containsKey(field)) got1 = m1.get(field);
             Object got2 = null;
@@ -141,7 +143,9 @@ public class Sorter implements Comparator<Object> {
     // not parsing numbers into stuff
     public int compareObjects(@NotNull Object o1, @NotNull Object o2) {
         // Strings
-        if (o1 instanceof String s1 && o2 instanceof String s2) {
+        if (o1 instanceof String && o2 instanceof String) {
+            String s1 = (String)o1;
+            String s2 = (String)o2;
             if (ignoreCase) {
                 s1 = s1.toUpperCase();
                 s2 = s2.toUpperCase();
@@ -158,12 +162,16 @@ public class Sorter implements Comparator<Object> {
             return reverse?1:-1;
         }
         // Numbers
-        if (o1 instanceof Integer i1 && o2 instanceof Integer i2) {
+        if (o1 instanceof Integer && o2 instanceof Integer) {
+            Integer i1 = (Integer)o1;
+            Integer i2 = (Integer)o2;
             int ret = i1.compareTo(i2);
             if (reverse) ret = -ret;
             return ret;
         }
-        if (o1 instanceof Double d1 && o2 instanceof Double d2) {
+        if (o1 instanceof Double && o2 instanceof Double) {
+            Double d1 = (Double)o1;
+            Double d2 = (Double)o2;
             int ret = d1.compareTo(d2);
             if (reverse) ret = -ret;
             return ret;
@@ -171,7 +179,8 @@ public class Sorter implements Comparator<Object> {
         Double d1 = null;
         if (o1 instanceof Double) {
             d1 = (Double)o1;
-        } else if (o1 instanceof Integer i1) {
+        } else if (o1 instanceof Integer) {
+            Integer i1 = (Integer)o1;
             d1 = Double.valueOf(i1);
         } else {
             // Don't know how to handle this type
@@ -180,7 +189,8 @@ public class Sorter implements Comparator<Object> {
         Double d2 = null;
         if (o2 instanceof Double) {
             d2 = (Double)o2;
-        } else if (o2 instanceof Integer i2) {
+        } else if (o2 instanceof Integer) {
+            Integer i2 = (Integer)o2;
             d2 = Double.valueOf(i2);
         } else {
             // Don't know how to handle this type
@@ -195,15 +205,18 @@ public class Sorter implements Comparator<Object> {
     /** "Untitled (2)" -> ["Untitled (", 2.0, ")"] **/
     ArrayList<Object> translate(Object o) {
         ArrayList<Object> ret = new ArrayList<>();
-        if (o instanceof Double d) {
+        if (o instanceof Double) {
+            Double d = (Double)o;
             ret.add(d);
             return ret;
         }
-        if (o instanceof Integer i) {
+        if (o instanceof Integer) {
+            Integer i = (Integer)o;
             ret.add(Double.valueOf(i));
             return ret;
         }
-        if (o instanceof String s) {
+        if (o instanceof String) {
+            String s = (String)o;
             if (null==numberified) numberified = new HashMap<>();
             if (numberified.containsKey(s)) return numberified.get(s);
             char[] chars = new char[s.length()];

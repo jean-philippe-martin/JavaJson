@@ -85,20 +85,20 @@ public class JsonNodeList extends JsonNode {
         if (childCursor.getData().parent!=this) {
             throw new RuntimeException("invalid cursor: should be a child of this JSON node");
         }
-        switch (childCursor.getStep()) {
-            case Cursor.DescentIndex di -> {
-                int index = di.get();
-                // convert from the index in the original order (what's in the cursor)
-                // to the index in display order (the order we want to iterate in)
-                int displayed = whereIsDiplayed[index];
-                if (displayed+1>=displayOrder.length) {
-                    // out of bounds
-                    return null;
-                }
-                return get(displayOrder[displayed+1]);
+        Cursor.DescentStep step = childCursor.getStep();
+        if (step instanceof Cursor.DescentIndex) {
+            Cursor.DescentIndex di = (Cursor.DescentIndex)step;
+            int index = di.get();
+            // convert from the index in the original order (what's in the cursor)
+            // to the index in display order (the order we want to iterate in)
+            int displayed = whereIsDiplayed[index];
+            if (displayed+1>=displayOrder.length) {
+                // out of bounds
+                return null;
             }
-            default -> throw new RuntimeException("invalid cursor");
+            return get(displayOrder[displayed+1]);
         }
+        throw new RuntimeException("invalid cursor");
     }
 
     @Override
@@ -107,20 +107,20 @@ public class JsonNodeList extends JsonNode {
         if (childCursor.getData().parent!=this) {
             throw new RuntimeException("invalid cursor: should be a child of this JSON node");
         }
-        switch (childCursor.getStep()) {
-            case Cursor.DescentIndex di -> {
-                int index = di.get();
-                // convert from the index in the original order (what's in the cursor)
-                // to the index in display order (the order we want to iterate in)
-                int displayed = whereIsDiplayed[index];
-                if (displayed<=0) {
-                    // out of bounds
-                    return null;
-                }
-                return get(displayOrder[displayed-1]);
+        Cursor.DescentStep step = childCursor.getStep();
+        if (step instanceof Cursor.DescentIndex) {
+            Cursor.DescentIndex di = (Cursor.DescentIndex)step;
+            int index = di.get();
+            // convert from the index in the original order (what's in the cursor)
+            // to the index in display order (the order we want to iterate in)
+            int displayed = whereIsDiplayed[index];
+            if (displayed<=0) {
+                // out of bounds
+                return null;
             }
-            default -> throw new RuntimeException("invalid cursor");
+            return get(displayOrder[displayed-1]);
         }
+        throw new RuntimeException("invalid cursor");
     }
 
     @Override

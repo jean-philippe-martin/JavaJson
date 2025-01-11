@@ -129,13 +129,19 @@ public abstract class JsonNode {
             LinkedHashMap<String, Object> kv = (LinkedHashMap<String, Object>) json;
             return new JsonNodeMap(kv, parent, toMe, root);
         }
-        return switch (json) {
-            case String s -> new JsonNodeValue<String>(s, parent, toMe, root);
-            case Integer s -> new JsonNodeValue<Integer>(s, parent, toMe, root);
-            case Double s -> new JsonNodeValue<Double>(s, parent, toMe, root);
-            case List l -> new JsonNodeList(l, parent, toMe, root);
-            default -> throw new RuntimeException("Unknown type for json object " + json.getClass());
-        };
+        if (json instanceof String) {
+            return new JsonNodeValue<String>((String)json, parent, toMe, root);
+        }
+        if (json instanceof Integer) {
+            return new JsonNodeValue<Integer>((Integer)json, parent, toMe, root);
+        }
+        if (json instanceof Double) {
+            return new JsonNodeValue<Double>((Double)json, parent, toMe, root);
+        }
+        if (json instanceof List) {
+            return new JsonNodeList((List)json, parent, toMe, root);
+        }
+        throw new RuntimeException("Unknown type for json object " + json.getClass());
     }
 
     protected JsonNode(JsonNode parent, Cursor curToMe, JsonNode root) {
@@ -177,8 +183,8 @@ public abstract class JsonNode {
 
     // true if this node is where the fork is.
     public boolean isAtFork() {
-        if (rootInfo.secondaryCursors instanceof ForkCursor fc) {
-            return fc.getFork().getData() == this;
+        if (rootInfo.secondaryCursors instanceof ForkCursor) {
+            return ((ForkCursor)rootInfo.secondaryCursors).getFork().getData() == this;
         }
         return false;
     }

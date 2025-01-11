@@ -11,11 +11,11 @@ public class CursorSortedTest {
 
     @Test
     public void testCursorInSortedStrings() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                [
-                 "LOUD", "quiet", "a", "SENTENCE",
-                 "sentence", "A"
-                ]""");
+        JsonNode state = JsonNode.parseJson(
+                "[ "+
+                " \"LOUD\", \"quiet\", \"a\", \"SENTENCE\", "+
+                " \"sentence\", \"A\" "+
+                "] ");
         assertTrue(state.isAtCursor());
         JsonNodeList jnl = (JsonNodeList)state;
         // Case-sensitive sort
@@ -42,17 +42,17 @@ public class CursorSortedTest {
 
     @Test
     public void testCursorInSortedMaps() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                [
-                 {
-                   "name": "Zanzibar",
-                   "score": 10
-                 },
-                 {
-                   "name": "Aaron",
-                   "score": 20
-                 }
-                ]""");
+        JsonNode state = JsonNode.parseJson(
+               " [ \n"+
+               "  { \n"+
+               "    \"name\": \"Zanzibar\", \n"+
+               "    \"score\": 10 \n"+
+               "  }, \n"+
+               "  { \n"+
+               "    \"name\": \"Aaron\", \n"+
+               "    \"score\": 20 \n"+
+               "  } \n"+
+               " ] \n");
         assertTrue(state.isAtCursor());
         JsonNodeList jnl = (JsonNodeList) state;
         jnl.sort(new Sorter(false, false, false, "name", false));
@@ -71,19 +71,20 @@ public class CursorSortedTest {
 
     @Test
     public void testSortingArrays() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                    "maintenance": [
-                      {
-                        "date": "01/01/2021",
-                        "description": ["oil change", "oil filter replacement"]
-                      },
-                      {
-                        "date": "01/08/2021",
-                        "description": ["tire rotation"]
-                      }
-                    ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " { \n"+
+               "     \"maintenance\": [ \n"+
+               "       { \n"+
+               "         \"date\": \"01/01/2021\", \n"+
+               "         \"description\": [\"oil change\", \"oil filter replacement\"] \n"+
+               "       }, \n"+
+               "       { \n"+
+               "         \"date\": \"01/08/2021\", \n"+
+               "         \"description\": [\"tire rotation\"] \n"+
+               "       } \n"+
+               "     ] \n"+
+               " } \n");
+                
         assertTrue(state.isAtCursor());
         state.cursorDown();
         state.sort(new Sorter(false, true, true, "description", false));
@@ -91,12 +92,12 @@ public class CursorSortedTest {
 
     @Test
     public void testSortingMaps() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                   "Zanzibar": 10,
-                   "Aaron": 20,
-                   "Charlize": 123456
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               "{ \n"+
+               "   \"Zanzibar\": 10, \n"+
+               "   \"Aaron\": 20, \n"+
+               "   \"Charlize\": 123456 \n"+
+               "} \n");
 
         JsonNodeMap jnm = (JsonNodeMap) state;
         jnm.sort(new Sorter(false, false, false, null, true));

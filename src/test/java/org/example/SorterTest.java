@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -16,7 +17,7 @@ public class SorterTest {
     public void testAlphaSort() {
         String[] words = new String[] { "Bob", "Alice" };
         Sorter sort = new Sorter(false, false, false, null, false);
-        List<String> sorted = Arrays.stream(words).sorted(sort).toList();
+        List<String> sorted = Arrays.stream(words).sorted(sort).collect(Collectors.toList());
 
         assertEquals(2, sorted.size());
         assertEquals("Alice", sorted.get(0));
@@ -27,7 +28,7 @@ public class SorterTest {
     public void testObjSortWithStrings() {
         Object[] words = new Object[] { "Bob", "Alice" };
         Sorter sort = new Sorter(false, false, false, null, false);
-        List<Object> sorted = Arrays.stream(words).sorted(sort).toList();
+        List<Object> sorted = Arrays.stream(words).sorted(sort).collect(Collectors.toList());
 
         assertEquals(2, sorted.size());
         assertEquals("Alice", sorted.get(0));
@@ -38,7 +39,7 @@ public class SorterTest {
     public void testObjSortWithStringsAndNumbers() {
         Object[] words = new Object[] { "Bob", "Alice", 15, 12 };
         Sorter sort = new Sorter(false, false, false, null, false);
-        List<Object> sorted = Arrays.stream(words).sorted(sort).toList();
+        List<Object> sorted = Arrays.stream(words).sorted(sort).collect(Collectors.toList());
 
         assertEquals(4, sorted.size());
         assertEquals(12, sorted.get(0));
@@ -51,7 +52,7 @@ public class SorterTest {
     public void testObjSortWithStringsAndNumbersReversed() {
         Object[] words = new Object[] { "Alice", "Bob", 15.1, 12 };
         Sorter sort = new Sorter(true, false, false, null, false);
-        List<Object> sorted = Arrays.stream(words).sorted(sort).toList();
+        List<Object> sorted = Arrays.stream(words).sorted(sort).collect(Collectors.toList());
 
         assertEquals(4, sorted.size());
         assertEquals("Bob", sorted.get(0));

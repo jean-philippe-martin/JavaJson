@@ -7,8 +7,8 @@ import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Random;
-import java.util.SequencedCollection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -194,7 +194,7 @@ public class Drawer {
     // inFoldedContext = we're folded, only print pinned rows.
     public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext) {
         int line = 0;
-        SequencedCollection<String> keys = jsonMap.getKeysInOrder();
+        Collection<String> keys = jsonMap.getKeysInOrder();
         int indent = start.getColumn();
         TerminalPosition pos = start;
 
@@ -224,21 +224,19 @@ public class Drawer {
             }
             printMaybeReversed(g, pos, "\"" + key + "\"", jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos.withRelativeColumn(2 + key.length());
-            switch (child) {
-                case JsonNodeValue v -> {
+            if (child instanceof JsonNodeValue) {
+                    JsonNodeValue v = (JsonNodeValue) child;
                     Object val = v.getValue();
                     g.putString(pos2, ": ");
                     int height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext);
                     line += height;
                     pos = pos.withRelativeRow(height);
-                }
-                case JsonNode m -> {
+            } else {
                     g.putString(pos2, ": ");
                     int childOffset = key.length() + 4;
                     int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext);
                     line += childHeight;
                     pos = pos.withRelativeRow(childHeight);
-                }
             }
             // stop drawing if we're off the screen.
             if (drewCursor && pos.getRow() > g.getSize().getRows() + 10) break;
@@ -274,7 +272,8 @@ public class Drawer {
         if (json.isAtFork()) {
             g.putString(start.withColumn(0), "*");
         }
-        if (json instanceof JsonNodeValue jsonValue) {
+        if (json instanceof JsonNodeValue) {
+            JsonNodeValue jsonValue = (JsonNodeValue) json;
             int lines = 0;
             if (inFoldedContext && !json.hasPins()) {
                 // skip
@@ -288,12 +287,13 @@ public class Drawer {
             }
 
             Object value = jsonValue.getValue();
-            if (value instanceof String str) {
+            if (value instanceof String) {
+                String str = (String)value;
                 printMaybeReversed(g, start.withRelativeColumn(initialOffset), "\"" + str + "\"", json.isAtCursor());
                 lines += 1;
                 Matcher colorMatcher = colorPattern.matcher(str);
-                colorMatcher.find();
-                if (colorMatcher.hasMatch() && colorMatcher.groupCount()==3) {
+                boolean found = colorMatcher.find();
+                if (found && colorMatcher.groupCount()==3) {
                     int cr = Integer.parseInt(colorMatcher.group(1), 16);
                     int cg = Integer.parseInt(colorMatcher.group(2), 16);
                     int cb = Integer.parseInt(colorMatcher.group(3), 16);
@@ -310,7 +310,8 @@ public class Drawer {
                 return lines+1;
             }
         }
-        if (json instanceof JsonNodeList jsonList) {
+        if (json instanceof JsonNodeList) {
+            JsonNodeList jsonList = (JsonNodeList)json;
             inFoldedContext = (jsonList.folded || inFoldedContext) && !jsonList.getPinned();
             TerminalPosition pos = start;
             TerminalPosition pos2 = pos.withRelativeColumn(initialOffset);

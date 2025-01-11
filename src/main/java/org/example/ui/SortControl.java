@@ -55,17 +55,21 @@ public class SortControl {
         this.fieldChoices = new HashSet<>();
         this.sortingAMap = false;
         for (JsonNode node : this.selectedNodes) {
-            if (node instanceof JsonNodeMap jnm) {
+            if (node instanceof JsonNodeMap) {
+                JsonNodeMap jnm = (JsonNodeMap)node;
                 sortingAMap = true;
                 for (String key : jnm.getKeysInOrder()) {
-                    if (jnm.getChild(key) instanceof JsonNodeMap kid) {
+                    if (jnm.getChild(key) instanceof JsonNodeMap) {
+                        JsonNodeMap kid = (JsonNodeMap)(jnm.getChild(key));
                         fieldChoices.addAll(kid.getKeysInOrder());
                     }
                 }
             }
-            if (node instanceof JsonNodeList jnl) {
+            if (node instanceof JsonNodeList) {
+                JsonNodeList jnl = (JsonNodeList)node;
                 for (int i=0; i<jnl.childCount(); i++) {
-                    if (jnl.get(i) instanceof JsonNodeMap jnm) {
+                    if (jnl.get(i) instanceof JsonNodeMap) {
+                        JsonNodeMap jnm = (JsonNodeMap)jnl.get(i);
                         fieldChoices.addAll(jnm.getKeysInOrder());
                     }
                 }
@@ -89,28 +93,24 @@ public class SortControl {
 
     public void draw(TextGraphics g) {
         boolean skippedField = false;
-    String menu = """
-            ╭────────────[ SORT ]───────────────╮
-            │                                   │
-            ├───┬────┬─────┬────────────────────┤
-            │ R │ Aa │ num │                    │
-            """;
-    if (showHelp) menu += """
-            ├───┴────┴─────┴────────────────────┤
-            │ r : reverse order                 │
-            │ a : separate upper/lowercase      │
-            │ n : sort strings as numbers       │
-            ├───────────────────────────────────┤
-            │ TAB: show/hide choices            │
-            │ enter: sort                       │
-            │ esc : cancel                      │
-            │ x: return to original order       │
-            │ ? : toggle help text              │
-            ╰───────────────────────────────────╯
-            """;
-        else menu += """
-            ╰───┴────┴─────┴────────────────[?]─╯
-            """;
+    String menu =
+            "╭────────────[ SORT ]───────────────╮\n"+
+            "│                                   │\n"+
+            "├───┬────┬─────┬────────────────────┤\n"+
+            "│ R │ Aa │ num │                    │\n";
+    if (showHelp) menu +=
+            "├───┴────┴─────┴────────────────────┤\n"+
+            "│ r : reverse order                 │\n"+
+            "│ a : separate upper/lowercase      │\n"+
+            "│ n : sort strings as numbers       │\n"+
+            "├───────────────────────────────────┤\n"+
+            "│ TAB: show/hide choices            │\n"+
+            "│ enter: sort                       │\n"+
+            "│ esc : cancel                      │\n"+
+            "│ x: return to original order       │\n"+
+            "│ ? : toggle help text              │\n"+
+            "╰───────────────────────────────────╯\n";
+        else menu += "╰───┴────┴─────┴────────────────[?]─╯\n";
         TerminalSize s = g.getSize();
         g = g.newTextGraphics(new TerminalPosition(s.getColumns()-40,3), new TerminalSize(39,s.getRows()));
         String[] lines = menu.split("\n");

@@ -30,7 +30,8 @@ public class OperationList {
 
     /** undo the last operation and remove it from the list. */
     public @Nullable JsonNode undo() {
-        Operation op = ops.removeLast();
+        if (ops.isEmpty()) return null;
+        Operation op = ops.remove(ops.size()-1);
         JsonNode newRoot = op.undo();
         return newRoot;
     }

@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class JsonNodeMap extends JsonNode {
 
@@ -22,7 +23,7 @@ public class JsonNodeMap extends JsonNode {
         super(parent, curToMe, root);
         this.kv = kv;
         this.children = new HashMap<>();
-        this.displayOrder = kv.sequencedKeySet().toArray(new String[0]);
+        this.displayOrder = kv.keySet().toArray(new String[0]);
         this.whereIsDiplayed = new HashMap<>();
         for (int i=0; i<displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
@@ -30,7 +31,7 @@ public class JsonNodeMap extends JsonNode {
         sortOrder = null;
     }
 
-    public SequencedCollection<String> getKeysInOrder() {
+    public Collection<String> getKeysInOrder() {
         return new ArrayList<>(List.of(displayOrder));
     }
 
@@ -138,8 +139,8 @@ public class JsonNodeMap extends JsonNode {
                 whereIsDiplayed.put(displayOrder[i], i);
             }
         } else {
-            List<Object> values = kv.values().stream().toList();
-            List<String> keys = kv.sequencedKeySet().stream().toList();
+            List<Object> values = kv.values().stream().collect(Collectors.toList());
+            List<String> keys = kv.keySet().stream().collect(Collectors.toList());
             List<Integer> indices = new ArrayList<>();
             for (int i=0; i<values.size(); i++) {
                 indices.add(i);
@@ -157,7 +158,7 @@ public class JsonNodeMap extends JsonNode {
 
     @Override
     public void unsort() {
-        this.displayOrder = kv.sequencedKeySet().toArray(new String[0]);
+        this.displayOrder = kv.keySet().toArray(new String[0]);
         this.whereIsDiplayed = new HashMap<>();
         for (int i=0; i<displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);

@@ -33,22 +33,35 @@ public class Conversions {
     }
 
     private static String toString(UNITS unit) {
-        return switch (unit) {
-            case UNITS.MILLISECONDS -> "ms";
-            case UNITS.SECONDS -> "s";
-            case UNITS.MINUTES -> "min";
-            case UNITS.HOURS -> "h";
-            case UNITS.DAYS -> "d";
-        };
+        switch (unit) {
+            case MILLISECONDS:
+                return "ms";
+            case SECONDS:
+                return "s";
+            case MINUTES:
+                return "min";
+            case HOURS:
+                return "h";
+            case DAYS:
+                return "d";
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     private static double secondsIn(double value, UNITS sourceUnit) {
-        return switch (sourceUnit) {
-            case UNITS.MILLISECONDS -> value / 1000.0;
-            case UNITS.SECONDS -> value;
-            case UNITS.MINUTES -> value * 60;
-            case UNITS.HOURS -> value * 3600;
-            case UNITS.DAYS -> value * 3600 * 24;
+        switch (sourceUnit) {
+            case MILLISECONDS:
+                return value / 1000.0;
+            case SECONDS:
+                return value;
+            case MINUTES:
+                return value * 60;
+            case HOURS:
+                return value * 3600;
+            case DAYS:
+                return value * 3600 * 24;
         };
+        throw new IllegalArgumentException();
     }
 }

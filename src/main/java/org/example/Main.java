@@ -33,32 +33,31 @@ public class Main {
     private static OperationList operationList = new OperationList();
     private static String notificationText = "";
 
-    private static final String keys_help = """
-                ----------------[ Movement ]----------------
-                up/down         : navigate line
-                pg up / pg dn   : navigate page
-                home / end      : beginning/end of document
-                shift + up/down : navigate sibling
-                
-                ----------------[ View ]--------------------
-                left / right    : fold / unfold
-                p               : pin (show despite folds)
-                
-                ----------------[ Multicursor ]-------------
-                f               : find
-                e / *           : select all children
-                n / N           : navigate cursors
-                ESC             : remove secondary cursors
-                
-                ----------------[ Transform ]---------------
-                +               : union selected arrays
-                s               : sort selected array(s)
-                shift-Z         : undo last transform
-                
-                ----------------[ Program ]-----------------
-                h / ?           : show help page
-                q               : quit
-                """;
+    private static final String keys_help =
+                "----------------[ Movement ]----------------\n"+
+                "up/down         : navigate line             \n"+
+                "pg up / pg dn   : navigate page             \n"+
+                "home / end      : beginning/end of document \n"+
+                "shift + up/down : navigate sibling          \n"+
+                "                                            \n"+
+                "----------------[ View ]--------------------\n"+
+                "left / right    : fold / unfold             \n"+
+                "p               : pin (show despite folds)  \n"+
+                "                                            \n"+
+                "----------------[ Multicursor ]-------------\n"+
+                "f               : find                      \n"+
+                "e / *           : select all children       \n"+
+                "n / N           : navigate cursors          \n"+
+                "ESC             : remove secondary cursors  \n"+
+                "                                            \n"+
+                "----------------[ Transform ]---------------\n"+
+                "+               : union selected arrays     \n"+
+                "s               : sort selected array(s)    \n"+
+                "shift-Z         : undo last transform       \n"+
+                "                                            \n"+
+                "----------------[ Program ]-----------------\n"+
+                "h / ?           : show help page            \n"+
+                "q               : quit                      \n";
 
 
     public static void main(String[] args) throws Exception {
@@ -155,12 +154,15 @@ public class Main {
                     FindControl.Choice choice = findControl.update(key);
                     // find screen mode
                     switch (choice) {
-                        case FindControl.Choice.CANCEL -> {
+                        case CANCEL:
+                        {
                             showFind = false;
                             myJson.rootInfo.restore(cursorsBeforeFind);
                             cursorsBeforeFind = null;
+                            break;
                         }
-                        case FindControl.Choice.FIND -> {
+                        case FIND:
+                        {
                             // enter: select all
                             FindCursor fc = new FindCursor(
                                     findControl.getText(), findControl.getAllowSubstring(),
@@ -178,8 +180,10 @@ public class Main {
                                 myJson.cursorPrevCursor();
                             }
                             showFind = false;
+                            break;
                         }
-                        case FindControl.Choice.GOTO -> {
+                        case GOTO:
+                        {
                             // shift-enter: go to current find
                             JsonNode primary = myJson.rootInfo.userCursor.getData();
                             if (!primary.isAtSecondaryCursor()) {
@@ -192,8 +196,10 @@ public class Main {
                             myJson.rootInfo.restore(cursorsBeforeFind);
                             cursorsBeforeFind = null;
                             showFind = false;
+                            break;
                         }
-                        case FindControl.Choice.NONE -> {
+                        case NONE:
+                        {
                             // still in the "find" dialog, we preview the search results
                             if (!findControl.getText().isEmpty()) {
                                 FindCursor fc = new FindCursor(
@@ -205,6 +211,7 @@ public class Main {
                             } else {
                                 myJson.rootInfo.setSecondaryCursors(cursorsBeforeFind.secondaryCursors);
                             }
+                            break;
                         }
                     }
                 }

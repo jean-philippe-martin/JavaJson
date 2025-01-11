@@ -42,17 +42,16 @@ public class DrawTest {
     public void testSimpleObject() throws Exception {
         Screen screen = setupScreen(20,4);
         Drawer d = new Drawer();
-        String expected = """
-            {•••••••••••••••••••
-            ••"one":•"hello"••••
-            ••"two":•"world"••••
-            }•••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "one": "hello",
-                "two": "world"
-            }""");
+        String expected =
+            "{•••••••••••••••••••\n"+
+            "••\"one\":•\"hello\"••••\n"+
+            "••\"two\":•\"world\"••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+            "{"+
+            "    \"one\": \"hello\",\n"+
+            "    \"two\": \"world\"\n"+
+            "}\n");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
@@ -64,23 +63,22 @@ public class DrawTest {
         Screen screen = setupScreen(25,7);
         Drawer d = new Drawer();
 
-        String expected = """
-            {••••••••••••••••••••••••
-            ••"one":•{•••••••••••••••
-            ••••"prime":•"nope"••••••
-            ••••"positive":•"yup"••••
-            ••}••••••••••••••••••••••
-            ••"two":•"more"••••••••••
-            }••••••••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "one": {
-                    "prime": "nope",
-                    "positive": "yup"
-                },
-                "two": "more"
-            }""");
+        String expected =
+            "{••••••••••••••••••••••••\n"+
+            "••\"one\":•{•••••••••••••••\n"+
+            "••••\"prime\":•\"nope\"••••••\n"+
+            "••••\"positive\":•\"yup\"••••\n"+
+            "••}••••••••••••••••••••••\n"+
+            "••\"two\":•\"more\"••••••••••\n"+
+            "}••••••••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+            "{ \n"+
+            "    \"one\": { \n"+
+            "        \"prime\": \"nope\", \n"+
+            "        \"positive\": \"yup\" \n"+
+            "    }, \n"+
+            "    \"two\": \"more\" \n"+
+            "}");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
@@ -92,32 +90,31 @@ public class DrawTest {
         Screen screen = setupScreen(30,12);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•••••••••••••••••••••••••••••
-            ••"one":•{••••••••••••••••••••
-            ••••"prime":•"nope"•••••••••••
-            ••••"more_facts":•{•••••••••••
-            ••••••"negative":•"negative"••
-            ••••••"positive":•"yes"•••••••
-            ••••••"zero":•"nope"••••••••••
-            ••••}•••••••••••••••••••••••••
-            ••}•••••••••••••••••••••••••••
-            ••"two":•"more"•••••••••••••••
-            }•••••••••••••••••••••••••••••
-            ••••••••••••••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "one": {
-                    "prime": "nope",
-                    "more_facts": {
-                        "negative": "negative",
-                        "positive": "yes",
-                        "zero": "nope"
-                    }
-                },
-                "two": "more"
-            }""");
+        String expected = 
+            "{•••••••••••••••••••••••••••••\n"+
+            "••\"one\":•{••••••••••••••••••••\n"+
+            "••••\"prime\":•\"nope\"•••••••••••\n"+
+            "••••\"more_facts\":•{•••••••••••\n"+
+            "••••••\"negative\":•\"negative\"••\n"+
+            "••••••\"positive\":•\"yes\"•••••••\n"+
+            "••••••\"zero\":•\"nope\"••••••••••\n"+
+            "••••}•••••••••••••••••••••••••\n"+
+            "••}•••••••••••••••••••••••••••\n"+
+            "••\"two\":•\"more\"•••••••••••••••\n"+
+            "}•••••••••••••••••••••••••••••\n"+
+            "••••••••••••••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+"            { \n"+
+"                \"one\": { \n"+
+"                    \"prime\": \"nope\", \n"+
+"                    \"more_facts\": { \n"+
+"                        \"negative\": \"negative\", \n"+
+"                        \"positive\": \"yes\", \n"+
+"                        \"zero\": \"nope\" \n"+
+"                    } \n"+
+"                }, \n"+
+"                \"two\": \"more\" \n"+
+"            } \n");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
         assertEquals(expected, got);
@@ -129,33 +126,32 @@ public class DrawTest {
         Screen screen = setupScreen(30,12);
         Drawer d = new Drawer();
 
-        String expected = """
-           {•••••••••••••••••••••••••••••
-           ••"greeting":•"hello"•••••••••
-           ••"who":•"world"••••••••••••••
-           ••"nested":•{•••••••••••••••••
-           ••••"again":•{••••••••••••••••
-           ••••••"depth":•"two"••••••••••
-           ••••}•••••••••••••••••••••••••
-           ••••"depth":•"one"••••••••••••
-           ••••"sub_2":•"two"••••••••••••
-           ••}•••••••••••••••••••••••••••
-           ••"conclusion":•"good•bye"••••
-           }•••••••••••••••••••••••••••••
-           """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-               "greeting": "hello",
-               "who": "world",
-               "nested": {
-                 "again": {
-                   "depth": "two"
-                 },
-                 "depth": "one",
-                 "sub_2": "two"
-               },
-               "conclusion": "good bye"
-             }""");
+        String expected =
+           "{•••••••••••••••••••••••••••••\n"+
+           "••\"greeting\":•\"hello\"•••••••••\n"+
+           "••\"who\":•\"world\"••••••••••••••\n"+
+           "••\"nested\":•{•••••••••••••••••\n"+
+           "••••\"again\":•{••••••••••••••••\n"+
+           "••••••\"depth\":•\"two\"••••••••••\n"+
+           "••••}•••••••••••••••••••••••••\n"+
+           "••••\"depth\":•\"one\"••••••••••••\n"+
+           "••••\"sub_2\":•\"two\"••••••••••••\n"+
+           "••}•••••••••••••••••••••••••••\n"+
+           "••\"conclusion\":•\"good•bye\"••••\n"+
+           "}•••••••••••••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "    \"greeting\": \"hello\", \n"+
+           "    \"who\": \"world\", \n"+
+           "    \"nested\": { \n"+
+           "      \"again\": { \n"+
+           "        \"depth\": \"two\" \n"+
+           "      }, \n"+
+           "      \"depth\": \"one\", \n"+
+           "      \"sub_2\": \"two\" \n"+
+           "    }, \n"+
+           "    \"conclusion\": \"good bye\" \n"+
+           "  } \n");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
         assertEquals(expected, got);
@@ -166,17 +162,16 @@ public class DrawTest {
         Screen screen = setupScreen(20,4);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•...•••••••••••••••
-            P•"two":•"world"••••
-            }•••••••••••••••••••
-            ••••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "one": "hello",
-                "two": "world"
-            }""");
+        String expected = 
+            "{•...•••••••••••••••\n"+
+            "P•\"two\":•\"world\"••••\n"+
+            "}•••••••••••••••••••\n"+
+            "••••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+            "{ \n"+
+            "    \"one\": \"hello\", \n"+
+            "    \"two\": \"world\" \n"+
+            "} \n");
         // put pin at "two"
         state.cursorDown();
         state.cursorDown();
@@ -196,31 +191,30 @@ public class DrawTest {
         Screen screen = setupScreen(20,7);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•...•••••••••••••••
-            ••"players":•{•...••
-            ••••"Alex":•{•...•••
-            P•••••"score":•10•••
-            ••••}•••••••••••••••
-            ••}•••••••••••••••••
-            }•••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "players": {
-                    "Alex": {
-                      "score": 10,
-                      "category": "heavyweight",
-                      "age": 32
-                    },
-                    "Bob": {
-                      "score": 35,
-                      "category": "heavyweight",
-                      "age": 36,
-                      "requests": "pillow on chair"
-                    }
-                  }
-                }""");
+        String expected = 
+            "{•...•••••••••••••••\n"+
+            "••\"players\":•{•...••\n"+
+            "••••\"Alex\":•{•...•••\n"+
+            "P•••••\"score\":•10•••\n"+
+            "••••}•••••••••••••••\n"+
+            "••}•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+               " { \n"+
+               "   \"players\": { \n"+
+               "     \"Alex\": { \n"+
+               "       \"score\": 10, \n"+
+               "       \"category\": \"heavyweight\", \n"+
+               "       \"age\": 32 \n"+
+               "     }, \n"+
+               "     \"Bob\": { \n"+
+               "       \"score\": 35, \n"+
+               "       \"category\": \"heavyweight\", \n"+
+               "       \"age\": 36, \n"+
+               "       \"requests\": \"pillow on chair\" \n"+
+               "     } \n"+
+               "   } \n"+
+               " } \n");
         // put pin at "Alex.score"
         state.cursorDown();
         state.cursorDown();
@@ -243,20 +237,19 @@ public class DrawTest {
         Screen screen = setupScreen(20,5);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•...•••••••••••••••
-            ••"nested":•{•...•••
-            P•••"two":•"world"••
-            ••}•••••••••••••••••
-            }•••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "nested": {
-                    "one": "hello",
-                    "two": "world"
-                }
-            }""");
+        String expected =
+            "{•...•••••••••••••••\n"+
+            "••\"nested\":•{•...•••\n"+
+            "P•••\"two\":•\"world\"••\n"+
+            "••}•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     \"nested\": { \n"+
+           "         \"one\": \"hello\", \n"+
+           "         \"two\": \"world\" \n"+
+           "     } \n"+
+           " } \n");
         // put pin at "two"
         state.cursorDown();
         state.cursorDown();
@@ -277,21 +270,20 @@ public class DrawTest {
         Screen screen = setupScreen(20,6);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•••••••••••••••••••
-            ••"numbers":•[•//•2•
-            ••••10••••••••••••••
-            ••••11••••••••••••••
-            ••]•••••••••••••••••
-            }•••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "numbers": [
-                  10,
-                  11
-                ]
-            }""");
+        String expected =
+            "{•••••••••••••••••••\n"+
+            "••\"numbers\":•[•//•2•\n"+
+            "••••10••••••••••••••\n"+
+            "••••11••••••••••••••\n"+
+            "••]•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     \"numbers\": [ \n"+
+           "       10, \n"+
+           "       11 \n"+
+           "     ] \n"+
+           " }");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
         String got = extractAsString(screen);
 
@@ -303,18 +295,17 @@ public class DrawTest {
         Screen screen = setupScreen(30,3);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•••••••••••••••••••••••••••••
-            >>"numbers":•[•...•]•//•2•entr
-            }•••••••••••••••••••••••••••••
-            """;
-        JsonNode state = JsonNode.parseJson("""
-            {
-                "numbers": [
-                  10,
-                  11
-                ]
-            }""");
+        String expected =
+            "{•••••••••••••••••••••••••••••\n"+
+            ">>\"numbers\":•[•...•]•//•2•entr\n"+
+            "}•••••••••••••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+            "{\n"+
+            "    \"numbers\": [\n"+
+            "      10,\n"+
+            "      11\n"+
+            "    ]\n"+
+            "}\n");
         state.cursorDown();
         state.setFoldedAtCursors(true);
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
@@ -327,8 +318,8 @@ public class DrawTest {
     public void testMatcher() {
         String foo = "#1234af";
         Matcher m = Drawer.colorPattern.matcher(foo);
-        m.find();
-        assertTrue(m.hasMatch());
+        boolean found = m.find();
+        assertTrue(found);
         assertEquals(3, m.groupCount());
         assertEquals("12", m.group(1));
         assertEquals("34", m.group(2));
@@ -342,25 +333,24 @@ public class DrawTest {
         Screen screen = setupScreen(20,6);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•...•••••••••••••••
-            P•"numbers":•[•//•2•
-            ••••10••••••••••••••
-            ••••11••••••••••••••
-            ••]•••••••••••••••••
-            }•••••••••••••••••••
-            """;
-        JsonNode node = JsonNode.parseJson("""
-            {
-                "letters": [
-                  "a",
-                  "b"
-                ],
-                "numbers": [
-                  10,
-                  11
-                ]
-            }""");
+        String expected =
+            "{•...•••••••••••••••\n"+
+            "P•\"numbers\":•[•//•2•\n"+
+            "••••10••••••••••••••\n"+
+            "••••11••••••••••••••\n"+
+            "••]•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode node = JsonNode.parseJson(
+           " { \n"+
+           "     \"letters\": [ \n"+
+           "       \"a\", \n"+
+           "       \"b\" \n"+
+           "     ], \n"+
+           "     \"numbers\": [ \n"+
+           "       10, \n"+
+           "       11 \n"+
+           "     ] \n"+
+           " } \n");
         // pin 'numbers'
         node.cursorDown();
         node.cursorDown();
@@ -386,25 +376,24 @@ public class DrawTest {
         Screen screen = setupScreen(20,6);
         Drawer d = new Drawer();
 
-        String expected = """
-            {•...•••••••••••••••
-            P•"numbers":•{••••••
-            ••••"ten":•10•••••••
-            ••••"eleven":•11••••
-            ••}•••••••••••••••••
-            }•••••••••••••••••••
-            """;
-        JsonNode node = JsonNode.parseJson("""
-            {
-                "letters": [
-                  "a",
-                  "b"
-                ],
-                "numbers": {
-                  "ten": 10,
-                  "eleven": 11
-                }
-            }""");
+        String expected =
+            "{•...•••••••••••••••\n"+
+            "P•\"numbers\":•{••••••\n"+
+            "••••\"ten\":•10•••••••\n"+
+            "••••\"eleven\":•11••••\n"+
+            "••}•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode node = JsonNode.parseJson(
+           " { \n"+
+           "     \"letters\": [ \n"+
+           "       \"a\", \n"+
+           "       \"b\" \n"+
+           "     ], \n"+
+           "     \"numbers\": { \n"+
+           "       \"ten\": 10, \n"+
+           "       \"eleven\": 11 \n"+
+           "     } \n"+
+           " } \n");
         // pin 'numbers'
         node.cursorDown();
         node.cursorDown();

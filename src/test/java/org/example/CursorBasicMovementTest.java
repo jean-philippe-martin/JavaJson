@@ -11,11 +11,12 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDown1() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                    "one": "hello",
-                    "two": "world"
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "     \"one\": \"hello\",\n"+
+               "     \"two\": \"world\"\n"+
+               " }\n");
+                
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertTrue(state.isAtCursor("one"));
@@ -25,17 +26,18 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDownEntersObjects() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                    "one": {
-                        "isa": "number",
-                        "properties": {
-                            "prime": "nope",
-                            "positive": "yup"
-                        },
-                        "too_far": "oops"
-                     }
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               "{ \n"+
+               "    \"one\": { \n"+
+               "        \"isa\": \"number\", \n"+
+               "        \"properties\": { \n"+
+               "            \"prime\": \"nope\", \n"+
+               "            \"positive\": \"yup\" \n"+
+               "        }, \n"+
+               "        \"too_far\": \"oops\" \n"+
+               "     } \n"+
+               "} \n");
+                
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".one", state.rootInfo.userCursor.toString());
@@ -53,19 +55,20 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDownEntersObjects2() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                   "greeting": "hello",
-                   "who": "world",
-                   "nested": {
-                     "again": {
-                       "depth1": "two"
-                     },
-                     "depth2": "one",
-                     "sub_2": "two"
-                   },
-                   "conclusion": "good bye"
-                 }""");
+        JsonNode state = JsonNode.parseJson(
+               " { \n"+
+               "    \"greeting\": \"hello\", \n"+
+               "    \"who\": \"world\", \n"+
+               "    \"nested\": { \n"+
+               "      \"again\": { \n"+
+               "        \"depth1\": \"two\" \n"+
+               "      }, \n"+
+               "      \"depth2\": \"one\", \n"+
+               "      \"sub_2\": \"two\" \n"+
+               "    }, \n"+
+               "    \"conclusion\": \"good bye\" \n"+
+               "  } \n");
+                 
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".greeting", state.rootInfo.userCursor.toString());
@@ -84,19 +87,19 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDownLeavesObjects() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                   "down1": {
-                        "down2": {
-                            "down3": {
-                                "down4": {
-                                },
-                                "a_string": "hello"
-                            }
-                        }
-                   },
-                   "bookend": "ok"   
-                 }""");
+        JsonNode state = JsonNode.parseJson(
+                "{\n"+
+                "   \"down1\": {\n"+
+                "        \"down2\": {\n"+
+                "            \"down3\": {\n"+
+                "                \"down4\": {\n"+
+                "                },\n"+
+                "                \"a_string\": \"hello\"\n"+
+                "            }\n"+
+                "        }\n"+
+                "   },\n"+
+                "   \"bookend\": \"ok\"\n"+
+                " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".down1", state.rootInfo.userCursor.toString());
@@ -114,14 +117,14 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDownEntersLists() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "list": [
-                    "one",
-                    "two",
-                    "three"
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"list\": [\n"+
+               "     \"one\",\n"+
+               "     \"two\",\n"+
+               "     \"three\"\n"+
+               "   ]\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".list", state.rootInfo.userCursor.toString());
@@ -135,22 +138,22 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDownEntersEverything() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "list": [
-                    "one",
-                    {
-                        "subkey": "two",
-                        "subobject": {
-                            "hello": "there",
-                            "sublist": [
-                                10,
-                                20
-                            ]
-                        }
-                    }
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"list\": [\n"+
+               "     \"one\",\n"+
+               "     {\n"+
+               "         \"subkey\": \"two\",\n"+
+               "         \"subobject\": {\n"+
+               "             \"hello\": \"there\",\n"+
+               "             \"sublist\": [\n"+
+               "                 10,\n"+
+               "                 20\n"+
+               "             ]\n"+
+               "         }\n"+
+               "     }\n"+
+               "   ]\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".list", state.rootInfo.userCursor.toString());
@@ -174,21 +177,22 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testDownLeavesLists() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "list": [
-                    [
-                        [
-                            "one",
-                            [
-                                []
-                            ]
-                        ],
-                        "two"
-                    ],
-                    "three"
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"list\": [\n"+
+               "     [\n"+
+               "         [\n"+
+               "             \"one\",\n"+
+               "             [\n"+
+               "                 []\n"+
+               "             ]\n"+
+               "         ],\n"+
+               "         \"two\"\n"+
+               "     ],\n"+
+               "     \"three\"\n"+
+               "   ]\n"+
+               " }\n");
+                
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".list", state.rootInfo.userCursor.toString());
@@ -212,13 +216,13 @@ public class CursorBasicMovementTest {
 
     @Test
     public void testUpLeavesObjects() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "numbers": {
-                    "one": 1,
-                    "two": 2
-                  }
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"numbers\": {\n"+
+               "     \"one\": 1,\n"+
+               "     \"two\": 2\n"+
+               "   }\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         state.cursorDown();

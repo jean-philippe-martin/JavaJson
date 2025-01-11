@@ -28,17 +28,17 @@ public class CursorTest {
 
     @Test
     public void testMultiCursorIntoMap() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                  {
-                  "players": {
-                    "Alex": {
-                      "score": 10
-                    },
-                    "Bob": {
-                      "score": 35
-                    }
-                  }
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               "   {\n"+
+               "   \"players\": {\n"+
+               "     \"Alex\": {\n"+
+               "       \"score\": 10\n"+
+               "     },\n"+
+               "     \"Bob\": {\n"+
+               "       \"score\": 35\n"+
+               "     }\n"+
+               "   }\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         JsonNodeMap players = (JsonNodeMap) state.rootInfo.userCursor.getData();
@@ -65,17 +65,17 @@ public class CursorTest {
 
     @Test
     public void testMultiCursorIntoArray() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "players": [
-                    { "name": "Alex",
-                      "score": 10
-                    },
-                    { "name": "Bob",
-                      "score": 35
-                    }
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"players\": [\n"+
+               "     { \"name\": \"Alex\",\n"+
+               "       \"score\": 10\n"+
+               "     },\n"+
+               "     { \"name\": \"Bob\",\n"+
+               "       \"score\": 35\n"+
+               "     }\n"+
+               "   ]\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
@@ -102,15 +102,15 @@ public class CursorTest {
 
     @Test
     public void testMultiCursorIntoRootArray() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                [
-                  {
-                    "color": "red"
-                  },
-                  {
-                    "color": "blue"
-                  }
-                ]""");
+        JsonNode state = JsonNode.parseJson(
+               " [\n"+
+               "   {\n"+
+               "     \"color\": \"red\"\n"+
+               "   },\n"+
+               "   {\n"+
+               "     \"color\": \"blue\"\n"+
+               "   }\n"+
+               " ]\n");
         JsonNodeList stateArray = (JsonNodeList)state;
         assertTrue(state.isAtCursor());
 
@@ -135,25 +135,25 @@ public class CursorTest {
 
     @Test
     public void testMultiCursorIntNestedMap() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "players": {
-                    "Alex": {
-                      "score": 10,
-                      "stuff": {
-                        "foo": "go on",
-                        "bar": 12
-                      }
-                    },
-                    "Bob": {
-                      "score": 35,
-                      "stuff": {
-                        "foo": "go on",
-                        "bar": 12
-                      }
-                    }
-                  }
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"players\": {\n"+
+               "     \"Alex\": {\n"+
+               "       \"score\": 10,\n"+
+               "       \"stuff\": {\n"+
+               "         \"foo\": \"go on\",\n"+
+               "         \"bar\": 12\n"+
+               "       }\n"+
+               "     },\n"+
+               "     \"Bob\": {\n"+
+               "       \"score\": 35,\n"+
+               "       \"stuff\": {\n"+
+               "         \"foo\": \"go on\",\n"+
+               "         \"bar\": 12\n"+
+               "       }\n"+
+               "     }\n"+
+               "   }\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         assertEquals(".players", state.rootInfo.userCursor.toString());
@@ -169,28 +169,27 @@ public class CursorTest {
 
     @Test
     public void testMultiCursorSameTypeDifferentDepth() throws Exception {
-        JsonNode json = JsonNode.parseJson("""
-                {
-                  "players": [
-                    {
-                      "name": "Alice"
-                    },
-                    {
-                      "name": "Bob"
-                    },
-                    {
-                      "name": "Charlie",
-                      "pet": {
-                        "name": "kittycat",
-                        "likes": [
-                          "pats",
-                          "tuna"
-                        ]
-                      }
-                    }
-                  ]
-                }
-                """);
+        JsonNode json = JsonNode.parseJson(
+               " {\n"+
+               "   \"players\": [\n"+
+               "     {\n"+
+               "       \"name\": \"Alice\"\n"+
+               "     },\n"+
+               "     {\n"+
+               "       \"name\": \"Bob\"\n"+
+               "     },\n"+
+               "     {\n"+
+               "       \"name\": \"Charlie\",\n"+
+               "       \"pet\": {\n"+
+               "         \"name\": \"kittycat\",\n"+
+               "         \"likes\": [\n"+
+               "           \"pats\",\n"+
+               "           \"tuna\"\n"+
+               "         ]\n"+
+               "       }\n"+
+               "     }\n"+
+               "   ]\n"+
+               " }\n");
         // Point to "players"
         json.cursorDown();
         JsonNodeList players = (JsonNodeList) json.atCursor();
@@ -208,22 +207,21 @@ public class CursorTest {
 
     @Test
     public void testMultiCursorPinAndFold() throws Exception {
-        JsonNode json = JsonNode.parseJson("""
-                [
-                  {
-                    "name": "Fizbuzz Elementary",
-                    "address": "136 Learning Lane",
-                    "founded": 1942
-                  },
-                  {
-                    "name": "Mendingorium",
-                    "address": "631 Mending Lane"
-                  },
-                  {
-                    "nickname": "The secret place"
-                  }
-                ]
-                """);
+        JsonNode json = JsonNode.parseJson(
+               " [\n"+
+               "   {\n"+
+               "     \"name\": \"Fizbuzz Elementary\",\n"+
+               "     \"address\": \"136 Learning Lane\",\n"+
+               "     \"founded\": 1942\n"+
+               "   },\n"+
+               "   {\n"+
+               "     \"name\": \"Mendingorium\",\n"+
+               "     \"address\": \"631 Mending Lane\"\n"+
+               "   },\n"+
+               "   {\n"+
+               "     \"nickname\": \"The secret place\"\n"+
+               "   }\n"+
+               " ]\n");
         // Fold every object
         json.cursorDownToAllChildren();
         json.cursorDown();
@@ -235,19 +233,18 @@ public class CursorTest {
 
     @Test
     public void testCursorDownThroughVisible() throws Exception {
-        JsonNode json = JsonNode.parseJson("""
-                {
-                  "school": {
-                    "name": "Fizbuzz Elementary",
-                    "address": "136 Learning Lane",
-                    "founded": 1942
-                  },
-                  "hospital": {
-                    "name": "Mendingorium",
-                    "address": "631 Mending Lane"
-                  }
-                }
-                """);
+        JsonNode json = JsonNode.parseJson(
+               " {\n"+
+               "   \"school\": {\n"+
+               "     \"name\": \"Fizbuzz Elementary\",\n"+
+               "     \"address\": \"136 Learning Lane\",\n"+
+               "     \"founded\": 1942\n"+
+               "   },\n"+
+               "   \"hospital\": {\n"+
+               "     \"name\": \"Mendingorium\",\n"+
+               "     \"address\": \"631 Mending Lane\"\n"+
+               "   }\n"+
+               " }\n");
         // Point to "school.address"
         json.cursorDown();
         json.cursorDown();
@@ -276,19 +273,18 @@ public class CursorTest {
 
     @Test
     public void testDownThroughFolded() throws Exception {
-        JsonNode json = JsonNode.parseJson("""
-                [
-                  {
-                    "name": "Fizbuzz Elementary",
-                    "address": "136 Learning Lane",
-                    "founded": 1942
-                  },
-                  {
-                    "name": "Mendingorium",
-                    "address": "631 Mending Lane"
-                  }
-                ]
-                """);
+        JsonNode json = JsonNode.parseJson(
+               " [\n"+
+               "   {\n"+
+               "     \"name\": \"Fizbuzz Elementary\",\n"+
+               "     \"address\": \"136 Learning Lane\",\n"+
+               "     \"founded\": 1942\n"+
+               "   },\n"+
+               "   {\n"+
+               "     \"name\": \"Mendingorium\",\n"+
+               "     \"address\": \"631 Mending Lane\"\n"+
+               "   }\n"+
+               " ]\n");
         // Fold every object
         json.cursorDown();
         assertEquals("[0]", json.rootInfo.userCursor.toString());
@@ -305,20 +301,20 @@ public class CursorTest {
 
     @Test
     public void testNextCursorForFork() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "players": [
-                    { "name": "Alex",
-                      "score": 10
-                    },
-                    { "name": "Bob",
-                      "score": 35
-                    },
-                    { "name": "Charlie",
-                      "score": 70
-                    }
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"players\": [\n"+
+               "     { \"name\": \"Alex\",\n"+
+               "       \"score\": 10\n"+
+               "     },\n"+
+               "     { \"name\": \"Bob\",\n"+
+               "       \"score\": 35\n"+
+               "     },\n"+
+               "     { \"name\": \"Charlie\",\n"+
+               "       \"score\": 70\n"+
+               "     }\n"+
+               "   ]\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
@@ -355,20 +351,20 @@ public class CursorTest {
 
     @Test
     public void testNextCursorForFork2() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "players": [
-                    { "name": "Alex",
-                      "score": 10
-                    },
-                    { "name": "Bob",
-                      "score": 35
-                    },
-                    { "name": "Charlie",
-                      "score": 70
-                    }
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"players\": [\n"+
+               "     { \"name\": \"Alex\",\n"+
+               "       \"score\": 10\n"+
+               "     },\n"+
+               "     { \"name\": \"Bob\",\n"+
+               "       \"score\": 35\n"+
+               "     },\n"+
+               "     { \"name\": \"Charlie\",\n"+
+               "       \"score\": 70\n"+
+               "     }\n"+
+               "   ]\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
@@ -406,20 +402,20 @@ public class CursorTest {
 
     @Test
     public void testNextCursorForForkTricky() throws Exception {
-        JsonNode state = JsonNode.parseJson("""
-                {
-                  "players": [
-                    { "name": "Alex",
-                      "score": 10
-                    },
-                    { "nickname": "Little Bobby Tables",
-                      "score": 35
-                    },
-                    { "name": "Charlie",
-                      "score": 70
-                    }
-                  ]
-                }""");
+        JsonNode state = JsonNode.parseJson(
+               " {\n"+
+               "   \"players\": [\n"+
+               "     { \"name\": \"Alex\",\n"+
+               "       \"score\": 10\n"+
+               "     },\n"+
+               "     { \"nickname\": \"Little Bobby Tables\",\n"+
+               "       \"score\": 35\n"+
+               "     },\n"+
+               "     { \"name\": \"Charlie\",\n"+
+               "       \"score\": 70\n"+
+               "     }\n"+
+               "   ]\n"+
+               " }\n");
         assertTrue(state.isAtCursor());
         state.cursorDown();
         JsonNodeList players = (JsonNodeList) state.rootInfo.userCursor.getData();
@@ -445,25 +441,24 @@ public class CursorTest {
 
     @Test
     public void testNextCursorInFind() throws Exception {
-        JsonNode node = JsonNode.parseJson("""
-                {
-                  "red": {
-                    "code": "#ff0000",
-                    "closest": "pink"
-                  },
-                  "pink": {
-                    "code": "#ff1493",
-                    "closest": "red"
-                  },
-                  "orange": {
-                    "code": "#ffa500",
-                    "closest": "red"
-                  },
-                  "green": {
-                    "code": "#00ff00"
-                  }
-                }
-                """);
+        JsonNode node = JsonNode.parseJson(
+               " {\n"+
+               "   \"red\": {\n"+
+               "     \"code\": \"#ff0000\",\n"+
+               "     \"closest\": \"pink\"\n"+
+               "   },\n"+
+               "   \"pink\": {\n"+
+               "     \"code\": \"#ff1493\",\n"+
+               "     \"closest\": \"red\"\n"+
+               "   },\n"+
+               "   \"orange\": {\n"+
+               "     \"code\": \"#ffa500\",\n"+
+               "     \"closest\": \"red\"\n"+
+               "   },\n"+
+               "   \"green\": {\n"+
+               "     \"code\": \"#00ff00\"\n"+
+               "   }\n"+
+               " }\n");
         assertTrue(node.isAtCursor());
         node.rootInfo.setSecondaryCursors(new FindCursor("red"));
         assertEquals("", node.rootInfo.userCursor.toString());
@@ -484,25 +479,24 @@ public class CursorTest {
 
     @Test
     public void testPrevCursorInFind() throws Exception {
-        JsonNode node = JsonNode.parseJson("""
-                {
-                  "red": {
-                    "code": "#ff0000",
-                    "closest": "pink"
-                  },
-                  "pink": {
-                    "code": "#ff1493",
-                    "closest": "red"
-                  },
-                  "orange": {
-                    "code": "#ffa500",
-                    "closest": "red"
-                  },
-                  "green": {
-                    "code": "#00ff00"
-                  }
-                }
-                """);
+        JsonNode node = JsonNode.parseJson(
+               " {\n"+
+               "   \"red\": {\n"+
+               "     \"code\": \"#ff0000\",\n"+
+               "     \"closest\": \"pink\"\n"+
+               "   },\n"+
+               "   \"pink\": {\n"+
+               "     \"code\": \"#ff1493\",\n"+
+               "     \"closest\": \"red\"\n"+
+               "   },\n"+
+               "   \"orange\": {\n"+
+               "     \"code\": \"#ffa500\",\n"+
+               "     \"closest\": \"red\"\n"+
+               "   },\n"+
+               "   \"green\": {\n"+
+               "     \"code\": \"#00ff00\"\n"+
+               "   }\n"+
+               " }\n");
         assertTrue(node.isAtCursor());
         node.rootInfo.setSecondaryCursors(new FindCursor("red"));
         // go to the end

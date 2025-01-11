@@ -61,14 +61,14 @@ public class JsonNodeValue<T> extends JsonNode {
 
     public Double asDouble() throws NumberFormatException {
         double secs;
-        if (value instanceof Double d) {
-            secs = d;
-        } else if (value instanceof Integer i) {
-            secs = i.doubleValue();
-        } else if (value instanceof Float f) {
-            secs = f.doubleValue();
-        } else if (value instanceof String s) {
-            return Double.parseDouble(s);
+        if (value instanceof Double) {
+            secs = (Double)value;
+        } else if (value instanceof Integer) {
+            secs = ((Integer)value).doubleValue();
+        } else if (value instanceof Float) {
+            secs = ((Float)value).doubleValue();
+        } else if (value instanceof String) {
+            return Double.parseDouble((String)value);
         } else {
             // we don't recognize the type, don't know what to do with it
             return null;

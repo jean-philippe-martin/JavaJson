@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * A text-driven input field but you have to choose between a pre-set list of options.
@@ -120,7 +121,7 @@ public class ChoiceInputField {
             showChoices = !showChoices;
             displayIndex = 0;
             displayScroll = 0;
-            displayChoices = Arrays.stream(choices).filter(x -> x.startsWith(typed)).toList();
+            displayChoices = Arrays.stream(choices).filter(x -> x.startsWith(typed)).collect(Collectors.toList());
             // 2 for the border
             dropdownSize = displayChoices.size() + 2;
         } else if (key.getKeyType()==KeyType.ArrowUp) {
@@ -168,7 +169,7 @@ public class ChoiceInputField {
     private void updateDisplayChoices(String typed) {
         if (!showChoices) return;
         String oldDisplayed = displayChoices.get(displayIndex);
-        displayChoices = Arrays.stream(choices).filter(x -> x.startsWith(typed)).toList();
+        displayChoices = Arrays.stream(choices).filter(x -> x.startsWith(typed)).collect(Collectors.toList());
         displayIndex=0;
         displayScroll=0;
         String displayed = displayChoices.get(displayIndex);

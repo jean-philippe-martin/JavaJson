@@ -51,29 +51,26 @@ public class FindControl {
     public void draw(TextGraphics g) {
         TerminalSize s = g.getSize();
         g = g.newTextGraphics(new TerminalPosition(s.getColumns()-40,3), new TerminalSize(39,s.getRows()));
-        String menu = """
-                ╭────────────[ FIND ]────────────╮
-                │                                │
-                ├───────┬────┬─────┬────┬────────┤
-                │ Whole │ Aa │ K+V │ .* │        │
-                """;
-        if (showHelp) menu += """
-                ├───────┴────┴─────┴────┴────────┤
-                │ w: match whole words only      │
-                │ c/a: case-sensitive match      │
-                │ k/v: find in keys/values/both  │
-                │ r/.: regular expression        │
-                │ n/N: next/prev result          │
-                ├────────────────────────────────┤
-                │ enter: select all              │
-                │ g: go to current find only     │
-                │ esc : cancel find              │
-                │ ? : toggle help text           │
-                ╰────────────────────────────────╯
-                """;
-        else menu += """
-                ╰───────┴────┴─────┴────┴────[?]─╯
-                """;
+        String menu =
+                "╭────────────[ FIND ]────────────╮\n"+
+                "│                                │\n"+
+                "├───────┬────┬─────┬────┬────────┤\n"+
+                "│ Whole │ Aa │ K+V │ .* │        │\n";
+        if (showHelp) menu +=
+                "├───────┴────┴─────┴────┴────────┤\n"+
+                "│ w: match whole words only      │\n"+
+                "│ c/a: case-sensitive match      │\n"+
+                "│ k/v: find in keys/values/both  │\n"+
+                "│ r/.: regular expression        │\n"+
+                "│ n/N: next/prev result          │\n"+
+                "├────────────────────────────────┤\n"+
+                "│ enter: select all              │\n"+
+                "│ g: go to current find only     │\n"+
+                "│ esc : cancel find              │\n"+
+                "│ ? : toggle help text           │\n"+
+                "╰────────────────────────────────╯\n";
+        else menu +=
+                "╰───────┴────┴─────┴────┴────[?]─╯\n";
         String[] lines = menu.split("\n");
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
         TerminalPosition pos = top;
