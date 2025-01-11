@@ -111,6 +111,10 @@ public abstract class JsonNode {
                 return JsonNode.parseJson(linesTogether);
             }
         }
+        if (all.size()==1) {
+            // special case: a single line. Let's not say this is JSONL.
+            return JsonNode.fromObject(all.get(0), null, new Cursor(), null);
+        }
         JsonNode ret = JsonNode.fromObject(all, null, new Cursor(), null);
         ret.setAnnotation("JSONL");
         return ret;
