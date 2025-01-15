@@ -8,6 +8,9 @@
     "operator": "Joe",
     "vol_setting": 10.3
   },
+  "boolean": true,
+  "long": 43875628475648765,
+  "long_neg": -43875628475648765,
   "players": [
     {
     "name": "Alice",

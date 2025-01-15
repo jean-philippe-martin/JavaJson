@@ -111,6 +111,36 @@ public class CursorSortedTest {
         assertEquals(".Charlize", state.rootInfo.userCursor.toString());
     }
 
+    @Test
+    public void testSortByField() throws Exception {
+        JsonNode state = JsonNode.parseJson(
+                "[\n"+
+                "{\"name\": \"Bob\",        \"score\": 35,        \"category\": \"heavy\"},\n"+
+                "{\"name\": \"Alice\",      \"score\": 10,        \"category\": \"light\"}\n"+
+                "]\n");
+        state.cursorDownToAllChildren();
+        state.cursorUp();
+
+        // Sort in the same way that the main program does it
+        OperationList undoLog = new OperationList();
+        Sorter s = new Sorter(false, false, true, "name", false);
+        Operation sort = new Operation.Sort(state, s);
+        state = undoLog.run(sort);
+
+        // Key order should remain unchanged
+        state.cursorDown();
+        // [1] because we keep the original numbers: Alice is [1], Bob is [0]
+        assertEquals("[1]", state.rootInfo.userCursor.toString());
+        state.cursorDown();
+        assertEquals("[1].name", state.rootInfo.userCursor.toString());
+        state.cursorDown();
+        assertEquals("[1].score", state.rootInfo.userCursor.toString());
+        state.cursorDown();
+        assertEquals("[1].category", state.rootInfo.userCursor.toString());
+
+
+    }
+
 }
 
 

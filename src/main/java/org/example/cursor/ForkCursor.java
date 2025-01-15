@@ -27,6 +27,10 @@ public class ForkCursor implements MultiCursor {
         // there may be secondary cursors
         List<Cursor.DescentStep> atFork = fork.asListOfSteps();
         List<Cursor.DescentStep> atCursor = primaryCur.asListOfSteps();
+        if (atCursor.size()<=atFork.size()) {
+            // We're at or above the fork, nothing to add.
+            return;
+        }
         // ex: fork = ."foo" [1]
         //     cursor = ."foo" [1] [2] ."blah"
         //     so we visit all the children .foo[1][*].blah

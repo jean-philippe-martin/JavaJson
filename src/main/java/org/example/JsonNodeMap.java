@@ -60,6 +60,10 @@ public class JsonNodeMap extends JsonNode {
         return kv.size();
     }
 
+    public void setChildAggregateComment(String key, String comment) {
+        getChild(key).aggregateComment = comment;
+    }
+
     /** True if the userCursor is pointing to this key of ours. **/
     @Override
     public boolean isAtCursor(String key) {

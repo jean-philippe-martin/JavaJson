@@ -92,6 +92,7 @@ public class ParserTest {
     public void testParseSingleLine2() throws Exception {
         JsonNode json = JsonNode.parseLines(new String[] {
                 "\"hello\"",
+                "",
                 ""
         });
         // Even though a single line that is valid JSON can be construed as JSONL,
@@ -99,5 +100,17 @@ public class ParserTest {
         // Even if the file has multiple lines, but only one has data.
         assertTrue(json instanceof JsonNodeValue);
     }
+
+    @Test
+    public void testParseBoolean() throws Exception {
+        JsonNode json = JsonNode.parseLines(new String[] {
+                "true"
+        });
+        // Even though a single line that is valid JSON can be construed as JSONL,
+        // we should really keep this as JSON.
+        // Even if the file has multiple lines, but only one has data.
+        assertTrue(json instanceof JsonNodeValue);
+    }
+
 
 }

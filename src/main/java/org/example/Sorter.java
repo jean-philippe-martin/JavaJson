@@ -36,7 +36,8 @@ public class Sorter implements Comparator<Object> {
             sb.append(field);
             sb.append("\"");
             first = false;
-        } else if (sortKeys) {
+        }
+        if (sortKeys) {
             sb.append("(keys)");
             first = false;
         }

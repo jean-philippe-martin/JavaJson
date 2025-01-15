@@ -20,6 +20,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class Main {
@@ -78,9 +79,13 @@ public class Main {
 //            myJson = JsonNode.parseJson(String.join("\n", lines));
 //        }
 
-        // load the JSON, using NIO libraries if they were added to the classoath.
+        // load the JSON, using NIO libraries if they were added to the classpath.
         Path path = Paths.get(args[0]);
         myJson = JsonNode.parse(path);
+        if (myJson instanceof JsonNodeList) {
+            // TEMPORARY: fabricate a pretend aggregate so we can practice drawing it.
+            TreeTransformer.AggregateUniqueFields((JsonNodeList) myJson);
+        }
         findControl = new FindControl(myJson);
 
 
@@ -137,15 +142,19 @@ public class Main {
                     findControl.draw(screen.newTextGraphics());
                 }
 
-                if (!notificationText.isEmpty()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(notificationText);
-                    while (sb.length() < g.getSize().getColumns()-1) {
-                        sb.append(" ");
-                    }
-                    g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
-                    notificationText = "";
+                // Bar at the bottom: notification if there's one, or path.
+                String bottomText = notificationText;
+                if (bottomText.isEmpty()) {
+                    bottomText = myJson.rootInfo.userCursor.toString();
                 }
+                StringBuilder sb = new StringBuilder();
+                sb.append(bottomText);
+                while (sb.length() < g.getSize().getColumns()-1) {
+                    sb.append(" ");
+                }
+                g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
+                // Notifications last only one frame.
+                notificationText = "";
 
                 screen.refresh(Screen.RefreshType.DELTA);
                 KeyStroke key = terminal.readInput();

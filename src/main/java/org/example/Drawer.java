@@ -192,11 +192,15 @@ public class Drawer {
     }
 
     // inFoldedContext = we're folded, only print pinned rows.
-    public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext) {
+    public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext, boolean inSyntheticContext) {
         int line = 0;
         Collection<String> keys = jsonMap.getKeysInOrder();
         int indent = start.getColumn();
         TerminalPosition pos = start;
+
+        // we mark out aggregate data so it is visually distinct.
+        String prefix = "";
+        if (inSyntheticContext) prefix = "// ";
 
         // In a folded context, we only show pinned things.
         if (jsonMap.getFolded()) inFoldedContext = true;
@@ -205,16 +209,19 @@ public class Drawer {
 
         if (inFoldedContext) {
             if (!jsonMap.hasPins()) {
-                printMaybeReversed(g, pos.withRelativeColumn(initialOffset), "{ ... }", jsonMap.isAtCursor());
+                printMaybeReversed(g, pos.withRelativeColumn(initialOffset),  "{ ... }", jsonMap.isAtCursor());
                 return 1;
             }
             // we contain at least one thing that'll be shown, so open up.
-            printMaybeReversed(g, pos.withRelativeColumn(initialOffset), "{ ...", jsonMap.isAtCursor());
+            printMaybeReversed(g, pos.withRelativeColumn(initialOffset),   "{ ...", jsonMap.isAtCursor());
         } else {
-            printMaybeReversed(g, pos.withRelativeColumn(initialOffset), "{", jsonMap.isAtCursor());
+            printMaybeReversed(g, pos.withRelativeColumn(initialOffset),  "{", jsonMap.isAtCursor());
         }
 
-        pos = pos.withRelativeColumn(INDENT).withRelativeRow(1);
+        int myIndent = INDENT;
+        if (inSyntheticContext) myIndent += 3;
+        pos = pos.withRelativeColumn(myIndent).withRelativeRow(1);
+
         line += 1;
         for (String key : keys) {
             JsonNode child = jsonMap.getChild(key);
@@ -222,28 +229,41 @@ public class Drawer {
                 // skip this child
                 continue;
             }
-            printMaybeReversed(g, pos, "\"" + key + "\"", jsonMap.isAtCursor(key));
+            String aggComment = "";
+            if (child.aggregateComment != null && !child.aggregateComment.isEmpty()) {
+                aggComment = child.aggregateComment + " ";
+            }
+            printMaybeReversed(g, pos.withRelativeColumn(-myIndent), prefix, jsonMap.isAtCursor(key));
+            printMaybeReversed(g, pos, aggComment + "\"" + key + "\"", jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos.withRelativeColumn(2 + key.length());
-            if (child instanceof JsonNodeValue) {
+            if (inSyntheticContext) {
+                // TODO: if the child is an array of structs, aggregate those too.
+                int height = 1;
+                line += height;
+                pos = pos.withRelativeRow(height);
+            } else {
+                // normal case, user data.
+                if (child instanceof JsonNodeValue) {
                     JsonNodeValue v = (JsonNodeValue) child;
                     Object val = v.getValue();
                     g.putString(pos2, ": ");
-                    int height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext);
+                    int height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext);
                     line += height;
                     pos = pos.withRelativeRow(height);
-            } else {
+                } else {
                     g.putString(pos2, ": ");
                     int childOffset = key.length() + 4;
-                    int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext);
+                    int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext);
                     line += childHeight;
                     pos = pos.withRelativeRow(childHeight);
+                }
             }
             // stop drawing if we're off the screen.
             if (drewCursor && pos.getRow() > g.getSize().getRows() + 10) break;
         }
         line += 1;
-        pos = pos.withRelativeColumn(-INDENT);
-        g.putString(pos, "}");
+        pos = pos.withRelativeColumn(-myIndent);
+        g.putString(pos, prefix + "}");
         return line;
     }
 
@@ -251,12 +271,12 @@ public class Drawer {
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
     public int printJsonTree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
         this.drewCursor = false;
-        return printJsonSubtree(g, start, initialOffset, json, false);
+        return printJsonSubtree(g, start, initialOffset, json, false, false);
     }
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext) {
+    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
         int line = 0;
         if (json.isAtPrimaryCursor()) {
             this.cursorScreenLine = start.getRow();
@@ -345,6 +365,35 @@ public class Drawer {
             TerminalPosition pos3 = pos.withRelativeColumn(INDENT);
             line += 1;
             pos3 = pos3.withRelativeRow(1);
+            if (jsonList.aggregate!=null) {
+                TextColor old = g.getForegroundColor();
+                g.setForegroundColor(TextColor.ANSI.GREEN_BRIGHT);
+                JsonNodeMap kidMap = (JsonNodeMap) jsonList.aggregate;
+
+//                g.putString(pos3, "// " + jsonList.aggregateComment + " {");
+//                line += 1;
+//                pos3 = pos3.withRelativeRow(1);
+//                for (String k : kidMap.getKeysInOrder()) {
+//                    String comment = kidMap.getChild(k).aggregateComment;
+//                    if (comment==null) comment="";
+//                    g.putString(pos3, "//   " + comment + " \"" + k + "\"");
+//                    line += 1;
+//                    pos3 = pos3.withRelativeRow(1);
+//                }
+//                g.putString(pos3, "// }");
+//                line += 1;
+//                pos3 = pos3.withRelativeRow(1);
+
+                // show the aggregate info, behind "//" markers.
+                String s = "// " + jsonList.aggregateComment;
+                g.putString(pos3, s);
+                int offset = printJsonMap(g, kidMap, pos3, s.length()+1, inFoldedContext, true);
+                line += offset;
+                pos3 = pos3.withRelativeRow(offset);
+
+                g.setForegroundColor(old);
+            }
+
             int[] indexes = jsonList.getIndexesInOrder();
             for (int index=0; index<indexes.length; index++) {
                 JsonNode child = jsonList.get(indexes[index]);
@@ -352,7 +401,7 @@ public class Drawer {
                     // skip that one, we're folded and it's not pinned.
                     continue;
                 }
-                int height = printJsonSubtree(g, pos3, 0, child, inFoldedContext);
+                int height = printJsonSubtree(g, pos3, 0, child, inFoldedContext, inSyntheticContext);
                 line += height;
                 pos3 = pos3.withRelativeRow(height);
                 // stop drawing if we're off the screen.
@@ -367,7 +416,7 @@ public class Drawer {
             if (inFoldedContext && !(jsonMap.getPinned() || jsonMap.hasPins())) {
                 return 0; // hidden in the fold
             }
-            return printJsonMap(g, jsonMap, start, initialOffset, inFoldedContext);
+            return printJsonMap(g, jsonMap, start, initialOffset, inFoldedContext, inSyntheticContext);
         }
 
         throw new RuntimeException("Unrecognized type: " + json.getClass());

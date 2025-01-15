@@ -3,6 +3,7 @@ package org.example;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -235,6 +236,22 @@ public class CursorBasicMovementTest {
         state.cursorUp();
         assertTrue(state.isAtCursor());
         assertEquals("", state.rootInfo.userCursor.toString());
+    }
+
+    @Test
+    public void testMulti() throws Exception {
+        JsonNode state = JsonNode.parseJson(
+                "[\n"+
+                        "{\"name\": \"Bob\",        \"score\": 35,        \"category\": \"heavy\"},\n"+
+                        "{\"name\": \"Alice\",      \"score\": 10,        \"category\": \"light\"}\n"+
+                        "]\n");
+        state.cursorDownToAllChildren();
+        state.cursorUp();
+
+        List<JsonNode> atAnyCursor = state.atAnyCursor();
+
+        assertEquals(1, atAnyCursor.size());
+
     }
 
 }

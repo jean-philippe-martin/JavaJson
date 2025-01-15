@@ -3,14 +3,14 @@
       "name": "Alice",
       "score": 10,
       "category": "heavyweight",
-      "age": 32,
+      "age": 35,
       "fastest_move_in_seconds": 0.002
     },
     {
       "name": "Bob",
       "score": 35,
       "category": "heavyweight",
-      "age": 36,
+      "age": 32,
       "requests": "pillow on chair",
       "fastest_move_in_seconds": 0.0015
     },

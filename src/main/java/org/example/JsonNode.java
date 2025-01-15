@@ -85,6 +85,11 @@ public abstract class JsonNode {
     protected final JsonNode parent;
     // The number of pinned entries in my children.
     protected int pinnedUnderMe;
+    // This is meant for a list to be able to hold a JSON-like header
+    // that has, say, the number of distinct values for each field.
+    // Or the fraction of entries that have a given field.
+    protected @Nullable String aggregateComment;
+    protected JsonNode aggregate;
 
     public static JsonNode parse(Path path) throws IOException {
         // Read the file
@@ -133,19 +138,13 @@ public abstract class JsonNode {
             LinkedHashMap<String, Object> kv = (LinkedHashMap<String, Object>) json;
             return new JsonNodeMap(kv, parent, toMe, root);
         }
-        if (json instanceof String) {
-            return new JsonNodeValue<String>((String)json, parent, toMe, root);
-        }
-        if (json instanceof Integer) {
-            return new JsonNodeValue<Integer>((Integer)json, parent, toMe, root);
-        }
-        if (json instanceof Double) {
-            return new JsonNodeValue<Double>((Double)json, parent, toMe, root);
-        }
         if (json instanceof List) {
             return new JsonNodeList((List)json, parent, toMe, root);
         }
-        throw new RuntimeException("Unknown type for json object " + json.getClass());
+        if (json instanceof String) {
+            return new JsonNodeValue<String>((String)json, parent, toMe, root);
+        }
+        return new JsonNodeValue(json, parent, toMe, root);
     }
 
     protected JsonNode(JsonNode parent, Cursor curToMe, JsonNode root) {
