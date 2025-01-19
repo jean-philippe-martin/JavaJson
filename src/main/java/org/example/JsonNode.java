@@ -89,7 +89,10 @@ public abstract class JsonNode {
     // that has, say, the number of distinct values for each field.
     // Or the fraction of entries that have a given field.
     protected @Nullable String aggregateComment;
-    protected JsonNode aggregate;
+    // synthetic field. Should be true if it's someone's "aggregate" member
+    // or its descendant.
+    protected boolean isAggregate;
+    protected @Nullable JsonNode aggregate;
 
     public static JsonNode parse(Path path) throws IOException {
         // Read the file
@@ -299,6 +302,29 @@ public abstract class JsonNode {
         return true;
     }
 
+    public boolean isSynthetic() {
+        return isAggregate;
+    }
+
+    /** Assign an aggregate to this node. */
+    public void setAggregate(@Nullable JsonNode aggregate, @Nullable String aggregateComment) {
+        if (null!=aggregate) {
+            // Mark the aggregate and all its children
+            markAsSynthetic(aggregate);
+        }
+        this.aggregate = aggregate;
+        this.aggregateComment = aggregateComment;
+    }
+
+    // Mark this node and all descendants as "synthetic" (marked as a comment when drawn)
+    private void markAsSynthetic(JsonNode aggregate) {
+        aggregate.isAggregate = true;
+        for (JsonNodeIterator it = aggregate.iterateChildren(); it!=null; it = it.next()) {
+            JsonNode kid = it.get();
+            markAsSynthetic(kid);
+        }
+    }
+
     // Override this.
     /** Returns the next child after this one. If there's none, return null. **/
     public abstract JsonNode nextChild(Cursor pointingToAChild);
@@ -308,6 +334,8 @@ public abstract class JsonNode {
     public abstract JsonNode firstChild();
 
     public abstract JsonNode lastChild();
+
+    public abstract @Nullable JsonNodeIterator iterateChildren();
 
     public JsonNode nextSibling() {
         JsonNode dad = getParent();

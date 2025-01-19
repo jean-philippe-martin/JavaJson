@@ -92,4 +92,84 @@ public interface Operation {
         }
     }
 
+    public class AggUniqueFields implements Operation {
+
+        private JsonNode beforeRoot;
+        private final ArrayList<Cursor> cursors;
+        private final ArrayList<AggInfo> aggBefore;
+        // true = add aggregation, false = remove
+        private final boolean addAgg;
+
+
+        public AggUniqueFields(JsonNode beforeRoot, boolean addAgg) {
+            this.beforeRoot = beforeRoot;
+            this.cursors = new ArrayList<Cursor>();
+            this.aggBefore = new ArrayList<>();
+            this.addAgg = addAgg;
+
+        }
+
+        @Override
+        public JsonNode run() {
+            int cursorShouldGoUp = 0;
+            // save "before" state
+            int i=0;
+            for (JsonNode node : beforeRoot.atAnyCursor()) {
+                if (!addAgg) {
+                    // we can press "remove aggregate" from within the aggregate itself.
+                    // (sadly this doesn't work)
+                    while (node.getParent()!=null && node.isAggregate) {
+                        node = node.getParent();
+                        // the first cursor is main; so if we're removing the thing the cursor is in,
+                        // we need to move the cursor so it's on something that's still there.
+                        if (i==0) cursorShouldGoUp++;
+                    }
+                }
+                cursors.add(node.asCursor());
+                aggBefore.add(new AggInfo(node));
+                i++;
+            }
+
+            // make the change
+            int didSomething = 0;
+            for (Cursor cur : cursors) {
+                JsonNode node = cur.getData();
+                if (node instanceof JsonNodeList) {
+                    if (addAgg) {
+                        didSomething++;
+                        TreeTransformer.AggregateUniqueFields((JsonNodeList) node);
+                    } else {
+                        // remove aggregation
+                        if (node.aggregate != null) {
+                            didSomething++;
+                            node.aggregate = null;
+                            node.aggregateComment = null;
+                        }
+                    }
+                }
+            }
+            // move the cursor out of the thing we removed.
+            // technically there's a bug: we're not saving that cursor for undo.
+            for (i=0; i<cursorShouldGoUp; i++) {
+                beforeRoot.cursorParent();
+            }
+            if (didSomething==0) return null;
+            return beforeRoot;
+        }
+
+        @Override
+        public @NotNull JsonNode undo() {
+            for (int i=0; i<cursors.size(); i++) {
+                JsonNode node = cursors.get(i).getData();
+                aggBefore.get(i).restore(node);
+            }
+            return beforeRoot;
+        }
+
+        @Override
+        public String toString() {
+            if (!addAgg) return "remove_aggregates()";
+            return "unique_keys()";
+        }
+    }
 }

@@ -2,13 +2,9 @@ package org.example;
 
 import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.TextGraphics;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
-import com.googlecode.lanterna.screen.Screen;
+import org.example.ui.Theme;
 
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,160 +18,6 @@ public class Drawer {
     // If that was too low, maybe you'll want to adjust and try again?
     private int cursorScreenLine = 0;
     private boolean drewCursor = false;
-
-    // blocks
-    public static void demo(Screen screen) throws IOException {
-
-                    /*
-            Let's turn off the cursor for this tutorial
-             */
-        screen.setCursorPosition(null);
-
-            /*
-            Now let's draw some random content in the screen buffer
-             */
-        Random random = new Random();
-        TerminalSize terminalSize = screen.getTerminalSize();
-        for (int column = 0; column < terminalSize.getColumns(); column++) {
-            for (int row = 0; row < terminalSize.getRows(); row++) {
-                screen.setCharacter(column, row, new TextCharacter(
-                        ' ',
-                        TextColor.ANSI.DEFAULT,
-                        // This will pick a random background color
-                        TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)]));
-            }
-        }
-
-            /*
-            So at this point, we've only modified the back buffer in the screen, nothing is visible yet. In order to
-            move the content from the back buffer to the front buffer and refresh the screen, we need to call refresh()
-             */
-        screen.refresh();
-
-            /*
-            Now there should be completely random colored cells in the terminal (assuming your terminal (emulator)
-            supports colors). Let's look at it for two seconds or until the user press a key.
-             */
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < 2000) {
-            // The call to pollInput() is not blocking, unlike readInput()
-            if (screen.pollInput() != null) {
-                break;
-            }
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException ignore) {
-                break;
-            }
-        }
-
-        /*
-            Ok, now we loop and keep modifying the screen until the user exits by pressing escape on the keyboard or the
-            input stream is closed. When using the Swing/AWT bundled emulator, if the user closes the window this will
-            result in an EOF KeyStroke.
-             */
-        while (true) {
-            KeyStroke keyStroke = screen.pollInput();
-            if (keyStroke != null && (keyStroke.getKeyType() == KeyType.Escape || keyStroke.getKeyType() == KeyType.EOF)) {
-                break;
-            }
-
-                /*
-                Screens will automatically listen and record size changes, but you have to let the Screen know when is
-                a good time to update its internal buffers. Usually you should do this at the start of your "drawing"
-                loop, if you have one. This ensures that the dimensions of the buffers stays constant and doesn't change
-                while you are drawing content. The method doReizeIfNecessary() will check if the terminal has been
-                resized since last time it was called (or since the screen was created if this is the first time
-                calling) and update the buffer dimensions accordingly. It returns null if the terminal has not changed
-                size since last time.
-                 */
-            TerminalSize newSize = screen.doResizeIfNecessary();
-            if (newSize != null) {
-                terminalSize = newSize;
-            }
-
-            // Increase this to increase speed
-            final int charactersToModifyPerLoop = 10;
-            for (int i = 0; i < charactersToModifyPerLoop; i++) {
-                    /*
-                    We pick a random location
-                     */
-                TerminalPosition cellToModify = new TerminalPosition(
-                        random.nextInt(terminalSize.getColumns()),
-                        random.nextInt(terminalSize.getRows()));
-
-                    /*
-                    Pick a random background color again
-                     */
-                TextColor.ANSI color = TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)];
-
-                    /*
-                    Update it in the back buffer, notice that just like TerminalPosition and TerminalSize, TextCharacter
-                    objects are immutable so the withBackgroundColor(..) call below returns a copy with the background color
-                    modified.
-                     */
-                TextCharacter characterInBackBuffer = screen.getBackCharacter(cellToModify);
-                characterInBackBuffer = characterInBackBuffer.withBackgroundColor(color);
-                characterInBackBuffer = characterInBackBuffer.withCharacter(' ');   // Because of the label box further down, if it shrinks
-                screen.setCharacter(cellToModify, characterInBackBuffer);
-            }
-
-                /*
-                Just like with Terminal, it's probably easier to draw using TextGraphics. Let's do that to put a little
-                box with information on the size of the terminal window
-                 */
-            String sizeLabel = "Terminal Size: " + terminalSize;
-            TerminalPosition labelBoxTopLeft = new TerminalPosition(1, 1);
-            TerminalSize labelBoxSize = new TerminalSize(sizeLabel.length() + 2, 3);
-            TerminalPosition labelBoxTopRightCorner = labelBoxTopLeft.withRelativeColumn(labelBoxSize.getColumns() - 1);
-            TextGraphics textGraphics = screen.newTextGraphics();
-            //This isn't really needed as we are overwriting everything below anyway, but just for demonstrative purpose
-            textGraphics.fillRectangle(labelBoxTopLeft, labelBoxSize, ' ');
-
-                /*
-                Draw horizontal lines, first upper then lower
-                 */
-            textGraphics.drawLine(
-                    labelBoxTopLeft.withRelativeColumn(1),
-                    labelBoxTopLeft.withRelativeColumn(labelBoxSize.getColumns() - 2),
-                    Symbols.DOUBLE_LINE_HORIZONTAL);
-            textGraphics.drawLine(
-                    labelBoxTopLeft.withRelativeRow(2).withRelativeColumn(1),
-                    labelBoxTopLeft.withRelativeRow(2).withRelativeColumn(labelBoxSize.getColumns() - 2),
-                    Symbols.DOUBLE_LINE_HORIZONTAL);
-
-                /*
-                Manually do the edges and (since it's only one) the vertical lines, first on the left then on the right
-                 */
-            textGraphics.setCharacter(labelBoxTopLeft, Symbols.DOUBLE_LINE_TOP_LEFT_CORNER);
-            textGraphics.setCharacter(labelBoxTopLeft.withRelativeRow(1), Symbols.DOUBLE_LINE_VERTICAL);
-            textGraphics.setCharacter(labelBoxTopLeft.withRelativeRow(2), Symbols.DOUBLE_LINE_BOTTOM_LEFT_CORNER);
-            textGraphics.setCharacter(labelBoxTopRightCorner, Symbols.DOUBLE_LINE_TOP_RIGHT_CORNER);
-            textGraphics.setCharacter(labelBoxTopRightCorner.withRelativeRow(1), Symbols.DOUBLE_LINE_VERTICAL);
-            textGraphics.setCharacter(labelBoxTopRightCorner.withRelativeRow(2), Symbols.DOUBLE_LINE_BOTTOM_RIGHT_CORNER);
-
-                /*
-                Finally put the text inside the box
-                 */
-            textGraphics.putString(labelBoxTopLeft.withRelative(1, 1), sizeLabel);
-
-                /*
-                Ok, we are done and can display the change. Let's also be nice and allow the OS to schedule other
-                threads so we don't clog up the core completely.
-                 */
-            screen.refresh();
-            Thread.yield();
-
-                /*
-                Every time we call refresh, the whole terminal is NOT re-drawn. Instead, the Screen will compare the
-                back and front buffers and figure out only the parts that have changed and only update those. This is
-                why in the code drawing the size information box above, we write it out every time we loop but it's
-                actually not sent to the terminal except for the first time because the Screen knows the content is
-                already there and has not changed. Because of this, you should never use the underlying Terminal object
-                when working with a Screen because that will cause modifications that the Screen won't know about.
-                 */
-        }
-    }
 
     public static void printMaybeReversed(TextGraphics g, TerminalPosition pos, String s, boolean bolded) {
         if (bolded) {
@@ -200,7 +42,7 @@ public class Drawer {
 
         // we mark out aggregate data so it is visually distinct.
         String prefix = "";
-        if (inSyntheticContext) prefix = "// ";
+        if (inSyntheticContext) prefix = "//   ";
 
         // In a folded context, we only show pinned things.
         if (jsonMap.getFolded()) inFoldedContext = true;
@@ -219,12 +61,13 @@ public class Drawer {
         }
 
         int myIndent = INDENT;
-        if (inSyntheticContext) myIndent += 3;
+        //if (inSyntheticContext) myIndent += 3;
         pos = pos.withRelativeColumn(myIndent).withRelativeRow(1);
 
         line += 1;
-        for (String key : keys) {
-            JsonNode child = jsonMap.getChild(key);
+        for (JsonNodeIterator it = jsonMap.iterateChildren(); it!=null; it=it.next()) {
+            JsonNode child = it.get();
+            String key = (String)it.key();
             if (inFoldedContext && !child.hasPins()) {
                 // skip this child
                 continue;
@@ -233,37 +76,38 @@ public class Drawer {
             if (child.aggregateComment != null && !child.aggregateComment.isEmpty()) {
                 aggComment = child.aggregateComment + " ";
             }
-            printMaybeReversed(g, pos.withRelativeColumn(-myIndent), prefix, jsonMap.isAtCursor(key));
+
+            printMaybeReversed(g, pos.withColumn(2), prefix, jsonMap.isAtCursor(key));
             printMaybeReversed(g, pos, aggComment + "\"" + key + "\"", jsonMap.isAtCursor(key));
-            TerminalPosition pos2 = pos.withRelativeColumn(2 + key.length());
-            if (inSyntheticContext) {
-                // TODO: if the child is an array of structs, aggregate those too.
-                int height = 1;
-                line += height;
-                pos = pos.withRelativeRow(height);
-            } else {
+            TerminalPosition pos2 = pos.withRelativeColumn(aggComment.length() + 2 + key.length());
                 // normal case, user data.
                 if (child instanceof JsonNodeValue) {
-                    JsonNodeValue v = (JsonNodeValue) child;
-                    Object val = v.getValue();
-                    g.putString(pos2, ": ");
-                    int height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext);
+                    int height;
+                    if (inSyntheticContext) {
+                        printGutterIndicator(g, pos, child);
+                        height = 1;
+                    } else {
+                        JsonNodeValue v = (JsonNodeValue) child;
+                        Object val = v.getValue();
+                        g.putString(pos2, ": ");
+                        height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext);
+                    }
                     line += height;
                     pos = pos.withRelativeRow(height);
                 } else {
                     g.putString(pos2, ": ");
-                    int childOffset = key.length() + 4;
+                    int childOffset = aggComment.length() + key.length() + 4;
                     int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext);
                     line += childHeight;
                     pos = pos.withRelativeRow(childHeight);
                 }
-            }
             // stop drawing if we're off the screen.
             if (drewCursor && pos.getRow() > g.getSize().getRows() + 10) break;
         }
         line += 1;
         pos = pos.withRelativeColumn(-myIndent);
-        g.putString(pos, prefix + "}");
+        g.putString(pos.withColumn(2), prefix);
+        g.putString(pos, "}");
         return line;
     }
 
@@ -274,10 +118,7 @@ public class Drawer {
         return printJsonSubtree(g, start, initialOffset, json, false, false);
     }
 
-    // Returns how many lines it went down, beyond the initial one.
-    // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
-        int line = 0;
+    public void printGutterIndicator(TextGraphics g, TerminalPosition start, JsonNode json) {
         if (json.isAtPrimaryCursor()) {
             this.cursorScreenLine = start.getRow();
             this.drewCursor = true;
@@ -292,6 +133,13 @@ public class Drawer {
         if (json.isAtFork()) {
             g.putString(start.withColumn(0), "*");
         }
+    }
+
+    // Returns how many lines it went down, beyond the initial one.
+    // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
+    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
+        int line = 0;
+        printGutterIndicator(g, start, json);
         if (json instanceof JsonNodeValue) {
             JsonNodeValue jsonValue = (JsonNodeValue) json;
             int lines = 0;
@@ -301,7 +149,8 @@ public class Drawer {
             }
             String annotation = jsonValue.getAnnotation();
             if (!annotation.isEmpty()) {
-                printMaybeReversed(g, start.withRelativeColumn(initialOffset), "// " + annotation, false);
+                printMaybeReversed(g, start.withColumn(2), "// ", false);
+                printMaybeReversed(g, start.withRelativeColumn(initialOffset), annotation, false);
                 start = start.withRelativeRow(1);
                 lines++;
             }
@@ -358,50 +207,36 @@ public class Drawer {
             countAnno += c;
             if (c==1) countAnno += " entry";
             else countAnno += " entries";
-            g.putString(pos2, countAnno);
+            TextGraphics green = Theme.withColor(g, Theme.synthetic);
+            green.putString(pos2, countAnno);
             if (inFoldedContext && !jsonList.hasPins()) {
                 return 1;
             }
             TerminalPosition pos3 = pos.withRelativeColumn(INDENT);
             line += 1;
             pos3 = pos3.withRelativeRow(1);
-            if (jsonList.aggregate!=null) {
-                TextColor old = g.getForegroundColor();
-                g.setForegroundColor(TextColor.ANSI.GREEN_BRIGHT);
-                JsonNodeMap kidMap = (JsonNodeMap) jsonList.aggregate;
 
-//                g.putString(pos3, "// " + jsonList.aggregateComment + " {");
-//                line += 1;
-//                pos3 = pos3.withRelativeRow(1);
-//                for (String k : kidMap.getKeysInOrder()) {
-//                    String comment = kidMap.getChild(k).aggregateComment;
-//                    if (comment==null) comment="";
-//                    g.putString(pos3, "//   " + comment + " \"" + k + "\"");
-//                    line += 1;
-//                    pos3 = pos3.withRelativeRow(1);
-//                }
-//                g.putString(pos3, "// }");
-//                line += 1;
-//                pos3 = pos3.withRelativeRow(1);
-
-                // show the aggregate info, behind "//" markers.
-                String s = "// " + jsonList.aggregateComment;
-                g.putString(pos3, s);
-                int offset = printJsonMap(g, kidMap, pos3, s.length()+1, inFoldedContext, true);
-                line += offset;
-                pos3 = pos3.withRelativeRow(offset);
-
-                g.setForegroundColor(old);
-            }
-
-            int[] indexes = jsonList.getIndexesInOrder();
-            for (int index=0; index<indexes.length; index++) {
-                JsonNode child = jsonList.get(indexes[index]);
+            for (JsonNodeIterator it = jsonList.iterateChildren(); it!=null; it=it.next()) {
+                JsonNode child = it.get();
                 if (inFoldedContext && !child.hasPins()) {
                     // skip that one, we're folded and it's not pinned.
                     continue;
                 }
-                int height = printJsonSubtree(g, pos3, 0, child, inFoldedContext, inSyntheticContext);
+                TextColor oldColor = g.getForegroundColor();
+                String intro = "";
+                TerminalPosition pos4 = pos3;
+                if (it.isAggregate()) {
+                    g.setForegroundColor(Theme.synthetic);
+                    g.putString(pos4.withColumn(2), "//");
+                    intro = jsonList.aggregateComment + "() ";
+                    if (pos4.getColumn()<=5) {
+                        // move to the right to make room for the comment symbols
+                        pos4 = pos4.withColumn(5);
+                    }
+                    g.putString(pos4, intro);
+                }
+                int height = printJsonSubtree(g, pos4, intro.length(), child, inFoldedContext, inSyntheticContext || it.isAggregate());
+                g.setForegroundColor(oldColor);
                 line += height;
                 pos3 = pos3.withRelativeRow(height);
                 // stop drawing if we're off the screen.

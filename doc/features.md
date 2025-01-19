@@ -375,10 +375,11 @@ you should be able to sort them.
 
 ## Sibling selection
 
-TBD
-
 Select all the children of the current node by pressing `e` or `*`.
 Press `ESC` to remove the secondary cursors.
+
+While you have multiple cursors, all the operations you do (like fold, pin, sort, etc.) will apply
+to all the cursors.
 
 ## Annotations
 
@@ -413,6 +414,92 @@ Annotations include:
       }
     ```
   
+## Unique keys
+
+### Check keys are unique
+
+Sometimes your JSON includes a list of repeated maps, all with the same structure. Something like this example:
+
+```
+[ // 1000 entries
+  { "name": "Joe", "fave color": "blue" },
+  { "name": "Alice", "fave color": "purple" }
+  ...
+```
+
+Here I only show two, but there could be a lot of entries. How do you check that all the maps have "name"
+and "fave color" spelled correctly? A typo could cause problems to whatever needs to process the JSON.
+
+Move the cursor to the list (the `[` line), then
+press the `a` key to open the "aggregates" menu.
+Highlight "unique keys" (in this menu you use the up/down arrows to move the highlight)
+and press `enter` (or press the shortcut key, `u`). This adds the "unique_keys()" annotation:
+
+```
+[ // 1000 entries
+  // unique_keys() {
+  //  =100% "name"
+  //    99% "fave color"
+  //     1% "fav color"
+  // }
+...
+```
+
+This tells you that most of the children have a "fave color" key, and one has "fav color" instead!
+You found a typo! 
+
+The count will say "=100%" when every single row has that value, to distinguish from a case with many
+entries where almost all the rows have that value to the point that it rounds up to 100%.
+
+You can navigate through this aggregate as normal, fold it, pin it, search it etc. 
+You can press `shift-Z` to undo adding the aggregation (see also below).
+
+The search dialog has an option called "exclude comments" you can use if you do not want the
+results to include the aggregate information.
+
+### Remove unique keys indication
+
+You can remove the "unique_keys" indication by navigating to it (or the list that contains it), then
+press `a` to open the aggregate menu and select "remove aggregate".
+
+This will remove the whole "unique_keys" section. This will work even if you have done multiple
+other operations since, whereas undo (`shift-Z`) will start by undoing the latest operation.
+
+### Hierarchical unique keys
+
+Consider the case where the things in your list have lists of their own.
+Here is an example:
+
+```
+[ // 1000 entries
+  {
+    "name": "Zaphod",
+    "friends": [
+      {"name": "Arthur"},
+    ]
+  }
+  ...
+```
+
+Can you check that all the friends have the "name" key? Yes!
+
+If you enable "unique_keys()", you will see something like this:
+
+```
+[ // 1000 entries
+  // unique_keys() {
+  //   =100% "name"
+  //     80% "friends": {
+  //       =100% "name"
+  //         30% "eye color"  
+  // }
+    
+```
+
+This means that all the entries have a "name" key, and 80% of them have "friends".
+Considering only those that have a "friends" list, here all the friends have a "name"
+key and 30% of them have an "eye color" field.
+
 # Related
 
 Return to [README](../README.md).

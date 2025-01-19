@@ -10,6 +10,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import org.example.cursor.FindCursor;
 import org.example.cursor.NoMultiCursor;
+import org.example.ui.AggregateMenu;
 import org.example.ui.FindControl;
 import org.example.ui.SortControl;
 
@@ -29,6 +30,7 @@ public class Main {
     private static boolean showFind = false;
     private static FindControl findControl;
     private static SortControl sortControl;
+    private static AggregateMenu aggregateMenu;
     private static JsonNode.SavedCursors cursorsBeforeFind = null;
 
     private static OperationList operationList = new OperationList();
@@ -53,6 +55,7 @@ public class Main {
                 "                                            \n"+
                 "----------------[ Transform ]---------------\n"+
                 "+               : union selected arrays     \n"+
+                "a               : aggregate sel. array(s)   \n"+
                 "s               : sort selected array(s)    \n"+
                 "shift-Z         : undo last transform       \n"+
                 "                                            \n"+
@@ -82,10 +85,6 @@ public class Main {
         // load the JSON, using NIO libraries if they were added to the classpath.
         Path path = Paths.get(args[0]);
         myJson = JsonNode.parse(path);
-        if (myJson instanceof JsonNodeList) {
-            // TEMPORARY: fabricate a pretend aggregate so we can practice drawing it.
-            TreeTransformer.AggregateUniqueFields((JsonNodeList) myJson);
-        }
         findControl = new FindControl(myJson);
 
 
@@ -140,6 +139,8 @@ public class Main {
                 }
                 else if (showFind) {
                     findControl.draw(screen.newTextGraphics());
+                } else if (aggregateMenu!=null) {
+                    aggregateMenu.draw(screen.newTextGraphics());
                 }
 
                 // Bar at the bottom: notification if there's one, or path.
@@ -177,6 +178,7 @@ public class Main {
                                     findControl.getText(), findControl.getAllowSubstring(),
                                     findControl.getIgnoreCase(),
                                     findControl.getSearchKeys(), findControl.getSearchValues(),
+                                    findControl.getIgnoreComments(),
                                     findControl.getUseRegexp());
                             myJson.rootInfo.setSecondaryCursors(fc);
                             // TODO: set primary cursor to first match (or first match after cursor?)
@@ -215,6 +217,7 @@ public class Main {
                                         findControl.getText(), findControl.getAllowSubstring(),
                                         findControl.getIgnoreCase(),
                                         findControl.getSearchKeys(), findControl.getSearchValues(),
+                                        findControl.getIgnoreComments(),
                                         findControl.getUseRegexp());
                                 myJson.rootInfo.setSecondaryCursors(fc);
                             } else {
@@ -241,6 +244,39 @@ public class Main {
                         notificationText = sort.toString();
                         myJson = operationList.run(sort);
                         sortControl = null;
+                    }
+                }
+                else if (null!=aggregateMenu) {
+                    // manage the aggregate menu
+                    AggregateMenu.Choice choice = aggregateMenu.update(key);
+                    if (choice== AggregateMenu.Choice.CANCEL) {
+                        aggregateMenu = null;
+                    }
+                    if (choice== AggregateMenu.Choice.UNIQUE_FIELDS) {
+                        Operation aggOp = new Operation.AggUniqueFields(myJson.root, true);
+                        JsonNode newRoot = operationList.run(aggOp);
+                        if (null==newRoot) {
+                            // We didn't do anything
+                            notificationText = "unique_fields() requires a list of maps";
+                        } else {
+                            myJson = newRoot;
+                            notificationText = "unique_fields()";
+                        }
+                        aggregateMenu = null;
+                    }
+                    if (choice== AggregateMenu.Choice.REMOVE_AGGREGATE) {
+                        if (myJson!=null) {
+                            Operation aggOp = new Operation.AggUniqueFields(myJson.root, false);
+                            JsonNode newRoot = operationList.run(aggOp);
+                            if (null == newRoot) {
+                                // We didn't do anything
+                                notificationText = "No aggregation found; move cursor to parent of aggregate";
+                            } else {
+                                myJson = newRoot;
+                                notificationText = "remove_aggregates()";
+                            }
+                        }
+                        aggregateMenu = null;
                     }
                 }
                 else {
@@ -270,8 +306,12 @@ public class Main {
                         myJson.cursorNextCursor();
                     }
                     if ((key.getCharacter() != null && 'N' == key.getCharacter())) {
-                        // next cursor/match
+                        // prev cursor/match
                         myJson.cursorPrevCursor();
+                    }
+                    if ((key.getCharacter() != null && 'a' == key.getCharacter())) {
+                        // aggregate
+                        aggregateMenu = new AggregateMenu();
                     }
 //                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
 //                        // restart (for testing)

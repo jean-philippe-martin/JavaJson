@@ -8,6 +8,53 @@ import java.util.stream.Collectors;
 
 public class JsonNodeMap extends JsonNode {
 
+    /** Iterate through our children, in display order. **/
+    public class JsonNodeMapIterator implements JsonNodeIterator<String> {
+        final JsonNodeMap dad;
+        final int displayIndex;
+
+        public JsonNodeMapIterator(JsonNodeMap dad) {
+            this.dad = dad;
+            if (this.dad.aggregate != null) {
+                this.displayIndex = -1;
+            } else {
+                this.displayIndex = 0;
+            }
+        }
+
+        public JsonNodeMapIterator(JsonNodeMap dad, int displayIndex) {
+            this.dad = dad;
+            this.displayIndex = displayIndex;
+        }
+
+        @Override
+        public @NotNull JsonNode get() {
+            if (displayIndex==-1) {
+                return dad.aggregate;
+            }
+            return dad.getChild(dad.displayOrder[displayIndex]);
+        }
+
+        @Override
+        public @NotNull String key() {
+            if (displayIndex==-1) {
+                return dad.aggregateComment;
+            }
+            return dad.displayOrder[displayIndex];
+        }
+
+        @Override
+        public boolean isAggregate() {
+            return displayIndex<0;
+        }
+
+        @Override
+        public @Nullable JsonNodeIterator next() {
+            if (displayIndex + 1 >= dad.childCount()) return null;
+            return new JsonNodeMap.JsonNodeMapIterator(dad, displayIndex + 1);
+        }
+    }
+
     private final LinkedHashMap<String, Object> kv;
     private final HashMap<String, JsonNode> children;
 
@@ -60,6 +107,8 @@ public class JsonNodeMap extends JsonNode {
         return kv.size();
     }
 
+
+
     public void setChildAggregateComment(String key, String comment) {
         getChild(key).aggregateComment = comment;
     }
@@ -87,6 +136,12 @@ public class JsonNodeMap extends JsonNode {
     public JsonNode lastChild() {
         if (displayOrder.length==0) return null;
         return getChild(displayOrder[displayOrder.length-1]);
+    }
+
+    @Override
+    public @Nullable JsonNodeIterator iterateChildren() {
+        if (childCount()==0) return null;
+        return new JsonNodeMapIterator(this);
     }
 
     @Override

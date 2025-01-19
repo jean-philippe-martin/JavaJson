@@ -82,6 +82,11 @@ public class JsonNodeValue<T> extends JsonNode {
     }
 
     @Override
+    public @Nullable JsonNodeIterator iterateChildren() {
+        return null;
+    }
+
+    @Override
     public JsonNode firstChild() {
         return null;
     }

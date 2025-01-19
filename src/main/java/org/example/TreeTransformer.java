@@ -27,47 +27,8 @@ public class TreeTransformer {
         return newRoot;
     }
 
-    // TBD
     public static void AggregateUniqueFields(JsonNodeList aggNode) {
-
-        HashMap<String, Long> counts = new HashMap<String, Long>();
-        long total = 0;
-
-        for (int i=0; i<aggNode.childCount(); i++) {
-            JsonNode kid = aggNode.get(i);
-            if (!(kid instanceof JsonNodeMap)) continue;
-            total += 1;
-            JsonNodeMap map = (JsonNodeMap) kid;
-            for (String k : map.getKeysInOrder()) {
-                if (!counts.containsKey(k)) {
-                    counts.put(k, Long.valueOf(0));
-                }
-                Long oldCount = counts.get(k);
-                oldCount += 1;
-                counts.put(k, oldCount);
-            }
-        }
-
-
-        LinkedHashMap<String, Object> kv = new LinkedHashMap<>();
-        for (String k : counts.keySet()) {
-            kv.put(k, "");
-        }
-        JsonNodeMap aggregate = new JsonNodeMap(kv, aggNode, aggNode.asCursor().enterKey("unique_fields()"), aggNode.root);
-        aggNode.aggregate = aggregate;
-        aggNode.aggregateComment = "unique_fields";
-        for (String k : counts.keySet()) {
-            Long fieldCount = counts.get(k);
-            if (fieldCount.equals(total)) {
-                aggregate.setChildAggregateComment(k, "=100%");
-            } else {
-                int pct = (int)(100.0 * fieldCount / (1.0*total) + 0.5);
-                String pctStr = "" + pct + "%";
-                while (pctStr.length()<5) {
-                    pctStr = " " + pctStr;
-                }
-                aggregate.setChildAggregateComment(k, pctStr);
-            }
-        }
+        AggUniqueFields aggregator = new AggUniqueFields(aggNode);
+        aggregator.write(aggNode);
     }
 }

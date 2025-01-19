@@ -30,6 +30,7 @@ public class FindControl {
     boolean careAboutCase = false;
     boolean searchKey=true;
     boolean searchValue=true;
+    boolean skipComments = false;
     boolean regExp = false;
     boolean showHelp = true;
     // Which row is selected (has input focus)
@@ -54,13 +55,14 @@ public class FindControl {
         String menu =
                 "╭────────────[ FIND ]────────────╮\n"+
                 "│                                │\n"+
-                "├───────┬────┬─────┬────┬────────┤\n"+
-                "│ Whole │ Aa │ K+V │ .* │        │\n";
+                "├───────┬────┬─────┬────┬────┬───┤\n"+
+                "│ Whole │ Aa │ K+V │ // │ .* │   │\n";
         if (showHelp) menu +=
-                "├───────┴────┴─────┴────┴────────┤\n"+
+                "├───────┴────┴─────┴────┴────┴───┤\n"+
                 "│ w: match whole words only      │\n"+
                 "│ c/a: case-sensitive match      │\n"+
                 "│ k/v: find in keys/values/both  │\n"+
+                "│ /: exclude comments            │\n"+
                 "│ r/.: regular expression        │\n"+
                 "│ n/N: next/prev result          │\n"+
                 "├────────────────────────────────┤\n"+
@@ -70,7 +72,7 @@ public class FindControl {
                 "│ ? : toggle help text           │\n"+
                 "╰────────────────────────────────╯\n";
         else menu +=
-                "╰───────┴────┴─────┴────┴────[?]─╯\n";
+                "╰───────┴────┴─────┴────┴─────[?]╯\n";
         String[] lines = menu.split("\n");
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
         TerminalPosition pos = top;
@@ -94,8 +96,11 @@ public class FindControl {
             else {
                     g.putString(top.withRelativeColumn(14).withRelativeRow(3), kvChoice, SGR.REVERSE);
         }
+        if (this.skipComments) {
+            g.putString(top.withRelativeColumn(20).withRelativeRow(3), " // ", SGR.REVERSE);
+        }
         if (this.regExp) {
-            g.putString(top.withRelativeColumn(20).withRelativeRow(3), " .* ", SGR.REVERSE);
+            g.putString(top.withRelativeColumn(25).withRelativeRow(3), " .* ", SGR.REVERSE);
         }
         findInput.setFocused(row==0);
         if (row==0) {
@@ -107,7 +112,7 @@ public class FindControl {
             g.putString(top.withRelativeColumn(13), "[ FIND ]");
             g.setForegroundColor(fc);
         } else {
-            int[] sep = new int[] {0, 8, 13, 19, 24};
+            int[] sep = new int[] {0, 8, 13, 19, 24, 29};
             TextColor fc = g.getForegroundColor();
             g.setForegroundColor(TextColor.ANSI.CYAN);
             Rectangle.drawBold(g, top.withRelative(sep[col], 2), new TerminalSize(sep[col+1]-sep[col]+1, 3));
@@ -168,7 +173,10 @@ public class FindControl {
             if (key.getKeyType()== KeyType.Character &&  key.getCharacter()=='v' && (!searchKey || searchValue)) {
                 this.searchKey = !this.searchKey;
             }
-            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==3) || key.getCharacter()=='r' || key.getCharacter()=='.')) {
+            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==3) || key.getCharacter()=='/')) {
+                this.skipComments = !this.skipComments;
+            }
+            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==4) || key.getCharacter()=='r' || key.getCharacter()=='.')) {
                 this.regExp = !this.regExp;
             }
             if (key.getKeyType()== KeyType.Character && key.getCharacter()=='n') {
@@ -215,6 +223,10 @@ public class FindControl {
 
     public boolean getSearchValues() {
         return searchValue;
+    }
+
+    public boolean getIgnoreComments() {
+        return skipComments;
     }
 
     public boolean getUseRegexp() {

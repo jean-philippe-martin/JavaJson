@@ -22,6 +22,7 @@ public class FindCursor implements MultiCursor {
     // Whether we search the values.
     // Note: we have to always search in at least one of them.
     protected boolean inValue;
+    protected boolean ignoreComments;
 
 
     /**
@@ -33,17 +34,19 @@ public class FindCursor implements MultiCursor {
         this.ignoreCase = false;
         this.inKey = true;
         this.inValue = true;
+        this.ignoreComments = false;
     }
 
     /**
      * Search for substring matches of "substring" (that is, anything that contains "substring")
      */
-    public FindCursor(@NotNull String substring, boolean allowSubstring, boolean ignoreCase, boolean inKey, boolean inValue, boolean isRegExp) {
+    public FindCursor(@NotNull String substring, boolean allowSubstring, boolean ignoreCase, boolean inKey, boolean inValue, boolean ignoreComments, boolean isRegExp) {
         this.pattern = substring;
         this.substring = allowSubstring;
         this.ignoreCase = ignoreCase;
         this.inKey = inKey;
         this.inValue = inValue;
+        this.ignoreComments = ignoreComments;
         if (!inKey && !inValue) throw new RuntimeException("cannot search by neither key nor value.");
         if (isRegExp) {
             int flags = 0;
@@ -60,6 +63,7 @@ public class FindCursor implements MultiCursor {
 
     private boolean matches(@Nullable JsonNode node) {
         if (null==node) return false;
+        if (ignoreComments && node.isSynthetic()) return false;
         // check the key that holds this guy
         if (inKey && node.asCursor().getStep() instanceof Cursor.DescentKey) {
             Cursor.DescentKey dk = (Cursor.DescentKey)(node.asCursor().getStep());

@@ -12,7 +12,7 @@ public class OperationList {
     public OperationList() {}
 
     /** run this operation and add it to the list if successful.
-     *  Return the new root if sucessful.
+     *  Return the new root if successful.
      *  Lack of success is shown by returning null. */
     public @Nullable JsonNode run(Operation op) {
         JsonNode newRoot = op.run();
