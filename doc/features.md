@@ -7,7 +7,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Multicursor](#multicursor)
 - [Find](#search)
 - [Sort](#sorting)
-- Sibling selection
+- [Sibling selection](#sibling-selection)
 - [Annotations](#annotations)
 - [Unique keys](#Unique-keys)
 
@@ -133,7 +133,7 @@ Pinning interacts with [folding](#folding) and [multicursors](#multicursor). Pin
 
 Multicursor is that idea that you can select multiple parts of the document at once and act on all of them simultaneously.
 
-There are two main ways to get multiple cursors: [text search](#search) and *sibling selection*.
+There are two main ways to get multiple cursors: [text search](#search) and [sibling selection](#sibling-selection).
 
 Search is the easiest to explain, so let's start there.
 
