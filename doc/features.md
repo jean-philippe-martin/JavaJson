@@ -9,6 +9,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Sort](#sorting)
 - Sibling selection
 - [Annotations](#annotations)
+- [Unique keys](#Unique-keys)
 
 ## Basic navigation
 
