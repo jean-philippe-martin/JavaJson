@@ -183,11 +183,12 @@ Here is what you will see when you press `f` to open the "find" dialog.
 ┏━━━━━━━━━━━━[ FIND ]━━━━━━━━━━━━┓
 > █                              <
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-│ Whole │ Aa │ K+V │ .* │        │
-├───────┴────┴─────┴────┴────────┤
+│ Whole │ Aa │ K+V │ // │ .* │   │
+├───────┴────┴─────┴────┴────┴───┤
 │ w: match whole words only      │
 │ c/a: case-sensitive match      │
 │ k/v: find in keys/values/both  │
+│ /: exclude comments            │
 │ r/.: regular expression        │
 │ n/N: next/prev result          │
 ├────────────────────────────────┤
