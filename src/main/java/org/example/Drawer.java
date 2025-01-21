@@ -149,8 +149,8 @@ public class Drawer {
             }
             String annotation = jsonValue.getAnnotation();
             if (!annotation.isEmpty()) {
-                printMaybeReversed(g, start.withColumn(2), "// ", false);
-                printMaybeReversed(g, start.withRelativeColumn(initialOffset), annotation, false);
+                TextGraphics gg = Theme.withColor(g, Theme.synthetic);
+                printMaybeReversed(gg, start.withRelativeColumn(initialOffset), "// " + annotation, false);
                 start = start.withRelativeRow(1);
                 lines++;
             }
@@ -166,12 +166,11 @@ public class Drawer {
                     int cr = Integer.parseInt(colorMatcher.group(1), 16);
                     int cg = Integer.parseInt(colorMatcher.group(2), 16);
                     int cb = Integer.parseInt(colorMatcher.group(3), 16);
-                    g.putString(start.withRelativeColumn(initialOffset + 3 + str.length()), "//");
-                    TextColor fg = g.getForegroundColor();
+                    TextGraphics gg = Theme.withColor(g, Theme.synthetic);
+                    gg.putString(start.withRelativeColumn(initialOffset + 3 + str.length()), "//");
                     TextColor col = TextColor.Indexed.fromRGB(cr, cg, cb);
-                    g.setForegroundColor(col);
-                    g.putString(start.withRelativeColumn(initialOffset + 6 + str.length()), "██");
-                    g.setForegroundColor(fg);
+                    gg.setForegroundColor(col);
+                    gg.putString(start.withRelativeColumn(initialOffset + 6 + str.length()), "██");
                 }
                 return lines;
             } else {

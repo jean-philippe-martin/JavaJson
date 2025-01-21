@@ -1,5 +1,14 @@
 package org.example;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.TimeZone;
+
 public class Conversions {
     public enum UNITS {
         MILLISECONDS,
@@ -28,11 +37,32 @@ public class Conversions {
         return bestUnit;
     }
 
-    public static String toString(double value, UNITS unit) {
+    public static @NotNull String toString(double value, UNITS unit) {
         return String.format("%.2f %s", value, Conversions.toString(unit));
     }
 
-    private static String toString(UNITS unit) {
+    /** guesses if it's seconds, milliseconds, or microseconds since epoch. */
+    public static @NotNull Date epochToDate(long sinceEpoch) {
+        if (sinceEpoch >= 100000000000000L) {
+            // large number, assume microseconds (1E-6s) since epoch
+            sinceEpoch = (long) (sinceEpoch / 1e6);
+        } else if (sinceEpoch < 10000000000L) {
+            // small number, must be seconds since epoch
+            sinceEpoch = sinceEpoch * 1000;
+        }
+        // Now we have ms since epoch, can convert to a Date
+        return new Date(sinceEpoch);
+    }
+
+    public static @NotNull String dateToString(@NotNull Date date) {
+        SimpleDateFormat ourFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSSZ", java.util.Locale.ENGLISH);
+        // no need, we already default to the local timezone
+//        ZoneId ourTimeZone = ZonedDateTime.now().getZone();
+//        ourFormat.setTimeZone(TimeZone.getTimeZone(ourTimeZone));
+        return ourFormat.format(date);
+    }
+
+    private static @NotNull String toString(UNITS unit) {
         switch (unit) {
             case MILLISECONDS:
                 return "ms";

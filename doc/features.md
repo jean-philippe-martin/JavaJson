@@ -407,6 +407,15 @@ Annotations include:
                         5300
     ```
 
+- conversion from some date formats to local timzeone
+
+    ```
+      "s_since_epoch": // 2021-11-20 05:36:58.000-0800
+                       1637415418
+      "created_at": // 2022-11-08 15:29:25.000-0800
+                    "2022-11-08T23:29:25Z"
+    ```
+
 - color previews
     
     ```
