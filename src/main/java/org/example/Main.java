@@ -66,7 +66,13 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length==1 && args[0].equals("--help")) {
+        if (args.length==0 || (args.length==1 && args[0].equals("--help"))) {
+            System.out.println("Usage:");
+            System.out.println("java -jar JavaJson*.jar myfile.json");
+            System.out.println();
+            System.out.println("Example:");
+            System.out.println("java -jar target/JavaJson-1.0-jar-with-dependencies.jar testdata/hello.json");
+            System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);
             return;
