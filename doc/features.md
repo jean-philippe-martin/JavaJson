@@ -28,7 +28,7 @@ Start the program as shown below (you can skip the compilation step if you downl
 
 ```shell
 mvn package -DskipTests
-java -jar target/JavaJson-1.0-jar-with-dependencies.jar testdata/hello.json
+java -jar target/JavaJson-1.1-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json
 ```
 
 Here is what you'd see after pressing `arrow down` a few times to reach "count_to_five".
@@ -87,7 +87,7 @@ For example, let's open the car_maintenance test file (you can skip the build st
 
 ```shell
  mvn package -DskipTests
- java -jar target/JavaJson-1.0-jar-with-dependencies.jar testdata/car_maintenance.json
+ java -jar target/JavaJson-1.1-SNAPSHOT-jar-with-dependencies.jar testdata/car_maintenance.json
 ```
 Here's what it looks like after we lower the cursor a few times with `arrow down`:
 
@@ -141,7 +141,7 @@ Let's open the car_maintenance test file (you can skip the build step if you alr
 
 ```shell
  mvn package -DskipTests
- java -jar target/JavaJson-1.0-jar-with-dependencies.jar testdata/car_maintenance.json
+ java -jar target/JavaJson-1.1-SNAPSHOT-jar-with-dependencies.jar testdata/car_maintenance.json
 ```
 
 Now press the `f` key to open the find dialog, type `make` and press the `enter` key.
@@ -238,7 +238,7 @@ Let's open the `sortme` test file (you can skip the build step if you already ha
 
 ```shell
  mvn package -DskipTests
- java -jar target/JavaJson-1.0-jar-with-dependencies.jar testdata/sortme.json
+ java -jar target/JavaJson-1.1-SNAPSHOT-jar-with-dependencies.jar testdata/sortme.json
 ```
 
 Press `down arrow` once to move the cursor to the "numbers" section and press the `s` key.
