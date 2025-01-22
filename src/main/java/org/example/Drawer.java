@@ -73,7 +73,7 @@ public class Drawer {
                 continue;
             }
             String aggComment = "";
-            if (child.aggregateComment != null && !child.aggregateComment.isEmpty()) {
+            if (inSyntheticContext && child.aggregateComment != null && !child.aggregateComment.isEmpty()) {
                 aggComment = child.aggregateComment + " ";
             }
 
