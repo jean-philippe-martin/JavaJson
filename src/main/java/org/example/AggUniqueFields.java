@@ -129,9 +129,7 @@ public class AggUniqueFields {
     }
 
     public void write(JsonNodeList aggNode) {
-
         LinkedHashMap<String, Object> kv = asHashMap();
-
         JsonNodeMap aggregate = new JsonNodeMap(kv, aggNode, aggNode.asCursor().enterKey("unique_keys()"), aggNode.root);
         aggNode.setAggregate(aggregate, "unique_keys");
         setChildrenComments(aggregate);

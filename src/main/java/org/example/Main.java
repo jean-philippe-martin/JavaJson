@@ -8,11 +8,14 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import org.example.cursor.FindCursor;
 import org.example.cursor.NoMultiCursor;
 import org.example.ui.AggregateMenu;
 import org.example.ui.FindControl;
 import org.example.ui.SortControl;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,14 +30,20 @@ import java.util.List;
 public class Main {
 
     // All about the search feature
-    private static boolean showFind = false;
-    private static FindControl findControl;
-    private static SortControl sortControl;
-    private static AggregateMenu aggregateMenu;
-    private static JsonNode.SavedCursors cursorsBeforeFind = null;
+    private boolean showFind = false;
+    private FindControl findControl;
+    private SortControl sortControl;
+    private AggregateMenu aggregateMenu;
+    private JsonNode.SavedCursors cursorsBeforeFind = null;
+    private JsonNode myJson;
+    private Terminal terminal;
+    private Screen screen;
+    private Drawer drawer;
+    private int scroll;
+    private int rowLimit;
 
-    private static OperationList operationList = new OperationList();
-    private static String notificationText = "";
+    private OperationList operationList = new OperationList();
+    private String notificationText = "";
 
     private static final String keys_help =
                 "----------------[ Movement ]----------------\n"+
@@ -64,9 +73,348 @@ public class Main {
                 "q               : quit                      \n";
 
 
+    public static Main fromPathStr(@NotNull String pathStr) throws IOException {
+        return Main.fromPathStr(pathStr, null);
+    }
+
+    public static Main fromPathStrAndVirtual(@NotNull String pathStr, int width, int height) throws IOException {
+        Terminal term = new DefaultVirtualTerminal(new TerminalSize(width, height));
+        return Main.fromPathStr(pathStr, term);
+    }
+
+    public static Main fromLinesAndVirtual(@NotNull String[] lines, int width, int height) throws IOException {
+        Terminal term = new DefaultVirtualTerminal(new TerminalSize(width, height));
+        JsonNode myJson = JsonNode.parseLines(lines);
+        return new Main(myJson, term);
+    }
+
+    protected static Main fromPathStr(@NotNull String pathStr, @Nullable Terminal terminalOverride) throws IOException {
+        // load the JSON, using NIO libraries if they were added to the classpath.
+        Path path = Paths.get(pathStr);
+        JsonNode myJson = JsonNode.parse(path);
+        return new Main(myJson, terminalOverride);
+    }
+
+    private Main(@NotNull JsonNode root, @Nullable Terminal terminalOverride) throws IOException {
+        myJson = root;
+        findControl = new FindControl(myJson);
+
+        DefaultTerminalFactory defaultTerminalFactory = new DefaultTerminalFactory();
+        screen = null;
+        if (null==terminalOverride) {
+            terminal = defaultTerminalFactory.createTerminal();
+        } else {
+            terminal = terminalOverride;
+        }
+        screen = new TerminalScreen(terminal);
+        drawer = new Drawer();
+        // TUI mode
+        screen.startScreen();
+        // hide cursor
+        screen.setCursorPosition(null);
+        scroll = 0;
+        rowLimit = screen.getTerminalSize().getRows()-2;
+    }
+
+    /**
+     * Display the UI, including any menu open at the time.
+     **/
+    public void display() throws IOException {
+        screen.doResizeIfNecessary();
+        rowLimit = screen.getTerminalSize().getRows()-2;
+        TextGraphics g = screen.newTextGraphics();
+        screen.clear();
+
+        drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+        if (drawer.getCursorLineLastTime()>rowLimit) {
+            scroll += (drawer.getCursorLineLastTime()-rowLimit);
+            screen.clear();
+            drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+        } else if (drawer.getCursorLineLastTime()<0) {
+            scroll += drawer.getCursorLineLastTime();
+            screen.clear();
+            drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+        }
+        if (null!=sortControl) {
+            sortControl.draw(screen.newTextGraphics());
+        }
+        else if (showFind) {
+            findControl.draw(screen.newTextGraphics());
+        } else if (aggregateMenu!=null) {
+            aggregateMenu.draw(screen.newTextGraphics());
+        }
+
+        // Bar at the bottom: notification if there's one, or path.
+        String bottomText = notificationText;
+        if (bottomText.isEmpty()) {
+            bottomText = myJson.rootInfo.userCursor.toString();
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(bottomText);
+        while (sb.length() < g.getSize().getColumns()-1) {
+            sb.append(" ");
+        }
+        g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
+        // Notifications last only one frame.
+        notificationText = "";
+
+        screen.refresh(Screen.RefreshType.DELTA);
+    }
+
+    public KeyStroke waitForKey() throws IOException {
+        return terminal.readInput();
+    }
+
+    /**
+     * Updates the state based on the key pressed.
+     * Returns TRUE if you should continue, FALSE if quitting.
+     **/
+    public boolean actOnKey(KeyStroke key) throws IOException {
+        if (showFind) {
+            // Incremental find mode...
+            FindControl.Choice choice = findControl.update(key);
+            // find screen mode
+            switch (choice) {
+                case CANCEL:
+                {
+                    showFind = false;
+                    myJson.rootInfo.restore(cursorsBeforeFind);
+                    cursorsBeforeFind = null;
+                    break;
+                }
+                case FIND:
+                {
+                    // enter: select all
+                    FindCursor fc = new FindCursor(
+                            findControl.getText(), findControl.getAllowSubstring(),
+                            findControl.getIgnoreCase(),
+                            findControl.getSearchKeys(), findControl.getSearchValues(),
+                            findControl.getIgnoreComments(),
+                            findControl.getUseRegexp());
+                    myJson.rootInfo.setSecondaryCursors(fc);
+                    // TODO: set primary cursor to first match (or first match after cursor?)
+
+                    JsonNode primary = myJson.rootInfo.userCursor.getData();
+                    if (!primary.isAtSecondaryCursor()) {
+                        myJson.cursorNextCursor();
+                    }
+                    if (!primary.isAtSecondaryCursor()) {
+                        myJson.cursorPrevCursor();
+                    }
+                    showFind = false;
+                    break;
+                }
+                case GOTO:
+                {
+                    // shift-enter: go to current find
+                    JsonNode primary = myJson.rootInfo.userCursor.getData();
+                    if (!primary.isAtSecondaryCursor()) {
+                        myJson.cursorNextCursor();
+                    }
+                    if (!primary.isAtSecondaryCursor()) {
+                        myJson.cursorPrevCursor();
+                    }
+                    cursorsBeforeFind.primaryCursor = myJson.rootInfo.userCursor;
+                    myJson.rootInfo.restore(cursorsBeforeFind);
+                    cursorsBeforeFind = null;
+                    showFind = false;
+                    break;
+                }
+                case NONE:
+                {
+                    // still in the "find" dialog, we preview the search results
+                    if (!findControl.getText().isEmpty()) {
+                        FindCursor fc = new FindCursor(
+                                findControl.getText(), findControl.getAllowSubstring(),
+                                findControl.getIgnoreCase(),
+                                findControl.getSearchKeys(), findControl.getSearchValues(),
+                                findControl.getIgnoreComments(),
+                                findControl.getUseRegexp());
+                        myJson.rootInfo.setSecondaryCursors(fc);
+                    } else {
+                        myJson.rootInfo.setSecondaryCursors(cursorsBeforeFind.secondaryCursors);
+                    }
+                    break;
+                }
+            }
+        }
+        else if (null!=sortControl) {
+            // manage the sort dialog
+            Sorter s = sortControl.update(key);
+            if (s!=null) {
+                Operation sort = new Operation.Sort(myJson, s);
+                notificationText = sort.toString();
+                myJson = operationList.run(sort);
+                sortControl = null;
+            }
+            if (key.getKeyType()==KeyType.Escape) {
+                sortControl = null;
+            }
+            if (key.getKeyType()==KeyType.Character && key.getCharacter()=='x') {
+                Operation sort = new Operation.Sort(myJson, null);
+                notificationText = sort.toString();
+                myJson = operationList.run(sort);
+                sortControl = null;
+            }
+        }
+        else if (null!=aggregateMenu) {
+            // manage the aggregate menu
+            AggregateMenu.Choice choice = aggregateMenu.update(key);
+            if (choice== AggregateMenu.Choice.CANCEL) {
+                aggregateMenu = null;
+            }
+            if (choice== AggregateMenu.Choice.UNIQUE_FIELDS) {
+                Operation aggOp = new Operation.AggUniqueFields(myJson.root, true);
+                JsonNode newRoot = operationList.run(aggOp);
+                if (null==newRoot) {
+                    // We didn't do anything
+                    notificationText = "unique_fields() requires a list of maps";
+                } else {
+                    myJson = newRoot;
+                    notificationText = "unique_fields()";
+                }
+                aggregateMenu = null;
+            }
+            if (choice== AggregateMenu.Choice.REMOVE_AGGREGATE) {
+                if (myJson!=null) {
+                    Operation aggOp = new Operation.AggUniqueFields(myJson.root, false);
+                    JsonNode newRoot = operationList.run(aggOp);
+                    if (null == newRoot) {
+                        // We didn't do anything
+                        notificationText = "No aggregation found; move cursor to parent of aggregate";
+                    } else {
+                        myJson = newRoot;
+                        notificationText = "remove_aggregates()";
+                    }
+                }
+                aggregateMenu = null;
+            }
+            if (choice==AggregateMenu.Choice.AGG_TOTAL) {
+                if (myJson!=null) {
+                    Operation sumOp = new Operation.AggTotalOp(myJson.root);
+                    JsonNode newRoot = operationList.run(sumOp);
+                    if (null!=newRoot) {
+                        notificationText = AggTotal.OPNAME + "()";
+                        myJson = newRoot;
+                    } else {
+                        notificationText = "Nothing to sum; move cursor to a list of numbers";
+                    }
+                }
+                aggregateMenu = null;
+            }
+        }
+        else {
+            // normal key handling
+            if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) myJson.cursorDown();
+            if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
+            if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) myJson.cursorUp();
+            if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
+            if (key.getKeyType() == KeyType.ArrowLeft) {
+                if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
+                    myJson.cursorParent();
+                }
+            }
+            if (key.getKeyType() == KeyType.ArrowRight
+                    || (key.getCharacter() != null && 'f' == key.getCharacter())) {
+                myJson.setFoldedAtCursors(false);
+            }
+            if (key.getCharacter() != null && ('e' == key.getCharacter() || '*' == key.getCharacter())) {
+                myJson.cursorDownToAllChildren();
+            }
+            if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
+                boolean pinned = myJson.getPinnedAtCursor();
+                myJson.setPinnedAtCursors(!pinned);
+            }
+            if ((key.getCharacter() != null && 'n' == key.getCharacter())) {
+                // next cursor/match
+                myJson.cursorNextCursor();
+            }
+            if ((key.getCharacter() != null && 'N' == key.getCharacter())) {
+                // prev cursor/match
+                myJson.cursorPrevCursor();
+            }
+            if ((key.getCharacter() != null && 'a' == key.getCharacter())) {
+                // aggregate
+                aggregateMenu = new AggregateMenu();
+            }
+//                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
+//                        // restart (for testing)
+//                        myJson = JsonNode.parse(path);
+//                    }
+            if (key.getKeyType() == KeyType.PageDown) {
+                for (int i = 0; i < rowLimit; i++) {
+                    myJson.cursorDown();
+                }
+            }
+            if (key.getKeyType() == KeyType.PageUp) {
+                for (int i = 0; i < rowLimit; i++) {
+                    myJson.cursorUp();
+                }
+            }
+            if (key.getKeyType() == KeyType.Home) {
+                myJson.rootInfo.setPrimaryCursor(myJson.whereIAm);
+            }
+            if (key.getKeyType() == KeyType.End) {
+                JsonNode lastChild = myJson;
+                for (int i=0; i<100; i++) {
+                    JsonNode x = lastChild.lastChild();
+                    if (x==null || x==lastChild) break;
+                    lastChild = x;
+                }
+                myJson.rootInfo.setPrimaryCursor(lastChild.whereIAm);
+            }
+            if (key.getCharacter() != null && ('h' == key.getCharacter() || '?' == key.getCharacter())) {
+                helpScreen(terminal, screen);
+            }
+            if (key.getCharacter() != null && ('f' == key.getCharacter())) {
+                showFind = true;
+                findControl.init();
+                cursorsBeforeFind = myJson.rootInfo.save();
+            }
+            if (key.getCharacter() != null && ('+' == key.getCharacter())) {
+                Operation union = new Operation.UnionCursors(myJson);
+                notificationText = union.toString();
+                myJson = operationList.run(union);
+            }
+            if (key.getCharacter() != null && ('Z' == key.getCharacter())) {
+                Operation op = operationList.peek();
+                if (null!=op) {
+                    notificationText = "undo " + op.toString();
+                    myJson = operationList.undo();
+                }
+            }
+            if (key.getCharacter() != null && ('s' == key.getCharacter())) {
+                boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
+                if (!allValues) {
+                    sortControl = new SortControl(myJson.atAnyCursor());
+                }
+            }
+            if (key.getKeyType() == KeyType.Escape) {
+                myJson.rootInfo.secondaryCursors = new NoMultiCursor();
+            }
+            if (key.getCharacter() != null && 'q' == key.getCharacter())
+                return false;
+        }
+        return true;
+    }
+
+    public void closeScreen() {
+        if (screen != null) {
+            try {
+                    /*
+                    The close() call here will restore the terminal by exiting from private mode which was done in
+                    the call to startScreen(), and also restore things like echo mode and intr
+                     */
+                screen.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
-        if (args.length==0 || (args.length==1 && args[0].equals("--help"))) {
+        if (args.length==0 || (args.length==1 && args[0].equals("--help")) || args.length!=1) {
             System.out.println("Usage:");
             System.out.println("java -jar JavaJson*.jar myfile.json");
             System.out.println();
@@ -78,321 +426,17 @@ public class Main {
             return;
         }
 
-        JsonNode myJson;
-
-//        This doesn't work, it breaks the UI.. not sure why.
-//        if (args.length==1 && args[0].equals("-")) {
-//            // Read the JSON from stdin
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-//            List<String> lines = reader.lines().collect().toList();
-//            myJson = JsonNode.parseJson(String.join("\n", lines));
-//        }
-
-        // load the JSON, using NIO libraries if they were added to the classpath.
-        Path path = Paths.get(args[0]);
-        myJson = JsonNode.parse(path);
-        findControl = new FindControl(myJson);
-
-
-
-        /*
-        A Screen works similar to double-buffered video memory, it has two surfaces than can be directly addressed and
-        modified and by calling a special method that content of the back-buffer is move to the front. Instead of pixels
-        though, a Screen holds two text character surfaces (front and back) which corresponds to each "cell" in the
-        terminal. You can freely modify the back "buffer" and you can read from the front "buffer", calling the
-        refreshScreen() method to copy content from the back buffer to the front buffer, which will make Lanterna also
-        apply the changes so that the user can see them in the terminal.
-         */
-        DefaultTerminalFactory defaultTerminalFactory = new DefaultTerminalFactory();
-        Screen screen = null;
+        Main main = Main.fromPathStr(args[0]);
         try {
-            Terminal terminal = defaultTerminalFactory.createTerminal();
-            screen = new TerminalScreen(terminal);
-            Drawer d = new Drawer();
-
-            /*
-            Screens will only work in private mode and while you can call methods to mutate its state, before you can
-            make any of these changes visible, you'll need to call startScreen() which will prepare and setup the
-            terminal.
-             */
-            screen.startScreen();
-
-            // show a changing jumble of colors
-            //demo(screen);
-
-            // hide cursor
-            screen.setCursorPosition(null);
-
-            int scroll = 0;
-            int rowLimit = screen.getTerminalSize().getRows()-2;
-            TextGraphics g2 = null;
-            while (true) {
-                screen.doResizeIfNecessary();
-                TextGraphics g = screen.newTextGraphics();
-                screen.clear();
-                d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
-                if (d.getCursorLineLastTime()>rowLimit) {
-                    scroll += (d.getCursorLineLastTime()-rowLimit);
-                    screen.clear();
-                    d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
-                } else if (d.getCursorLineLastTime()<0) {
-                    scroll += d.getCursorLineLastTime();
-                    screen.clear();
-                    d.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
-                }
-                if (null!=sortControl) {
-                    sortControl.draw(screen.newTextGraphics());
-                }
-                else if (showFind) {
-                    findControl.draw(screen.newTextGraphics());
-                } else if (aggregateMenu!=null) {
-                    aggregateMenu.draw(screen.newTextGraphics());
-                }
-
-                // Bar at the bottom: notification if there's one, or path.
-                String bottomText = notificationText;
-                if (bottomText.isEmpty()) {
-                    bottomText = myJson.rootInfo.userCursor.toString();
-                }
-                StringBuilder sb = new StringBuilder();
-                sb.append(bottomText);
-                while (sb.length() < g.getSize().getColumns()-1) {
-                    sb.append(" ");
-                }
-                g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
-                // Notifications last only one frame.
-                notificationText = "";
-
-                screen.refresh(Screen.RefreshType.DELTA);
-                KeyStroke key = terminal.readInput();
-                if (showFind) {
-                    // Incremental find mode...
-                    FindControl.Choice choice = findControl.update(key);
-                    // find screen mode
-                    switch (choice) {
-                        case CANCEL:
-                        {
-                            showFind = false;
-                            myJson.rootInfo.restore(cursorsBeforeFind);
-                            cursorsBeforeFind = null;
-                            break;
-                        }
-                        case FIND:
-                        {
-                            // enter: select all
-                            FindCursor fc = new FindCursor(
-                                    findControl.getText(), findControl.getAllowSubstring(),
-                                    findControl.getIgnoreCase(),
-                                    findControl.getSearchKeys(), findControl.getSearchValues(),
-                                    findControl.getIgnoreComments(),
-                                    findControl.getUseRegexp());
-                            myJson.rootInfo.setSecondaryCursors(fc);
-                            // TODO: set primary cursor to first match (or first match after cursor?)
-
-                            JsonNode primary = myJson.rootInfo.userCursor.getData();
-                            if (!primary.isAtSecondaryCursor()) {
-                                myJson.cursorNextCursor();
-                            }
-                            if (!primary.isAtSecondaryCursor()) {
-                                myJson.cursorPrevCursor();
-                            }
-                            showFind = false;
-                            break;
-                        }
-                        case GOTO:
-                        {
-                            // shift-enter: go to current find
-                            JsonNode primary = myJson.rootInfo.userCursor.getData();
-                            if (!primary.isAtSecondaryCursor()) {
-                                myJson.cursorNextCursor();
-                            }
-                            if (!primary.isAtSecondaryCursor()) {
-                                myJson.cursorPrevCursor();
-                            }
-                            cursorsBeforeFind.primaryCursor = myJson.rootInfo.userCursor;
-                            myJson.rootInfo.restore(cursorsBeforeFind);
-                            cursorsBeforeFind = null;
-                            showFind = false;
-                            break;
-                        }
-                        case NONE:
-                        {
-                            // still in the "find" dialog, we preview the search results
-                            if (!findControl.getText().isEmpty()) {
-                                FindCursor fc = new FindCursor(
-                                        findControl.getText(), findControl.getAllowSubstring(),
-                                        findControl.getIgnoreCase(),
-                                        findControl.getSearchKeys(), findControl.getSearchValues(),
-                                        findControl.getIgnoreComments(),
-                                        findControl.getUseRegexp());
-                                myJson.rootInfo.setSecondaryCursors(fc);
-                            } else {
-                                myJson.rootInfo.setSecondaryCursors(cursorsBeforeFind.secondaryCursors);
-                            }
-                            break;
-                        }
-                    }
-                }
-                else if (null!=sortControl) {
-                    // manage the sort dialog
-                    Sorter s = sortControl.update(key);
-                    if (s!=null) {
-                        Operation sort = new Operation.Sort(myJson, s);
-                        notificationText = sort.toString();
-                        myJson = operationList.run(sort);
-                        sortControl = null;
-                    }
-                    if (key.getKeyType()==KeyType.Escape) {
-                        sortControl = null;
-                    }
-                    if (key.getKeyType()==KeyType.Character && key.getCharacter()=='x') {
-                        Operation sort = new Operation.Sort(myJson, null);
-                        notificationText = sort.toString();
-                        myJson = operationList.run(sort);
-                        sortControl = null;
-                    }
-                }
-                else if (null!=aggregateMenu) {
-                    // manage the aggregate menu
-                    AggregateMenu.Choice choice = aggregateMenu.update(key);
-                    if (choice== AggregateMenu.Choice.CANCEL) {
-                        aggregateMenu = null;
-                    }
-                    if (choice== AggregateMenu.Choice.UNIQUE_FIELDS) {
-                        Operation aggOp = new Operation.AggUniqueFields(myJson.root, true);
-                        JsonNode newRoot = operationList.run(aggOp);
-                        if (null==newRoot) {
-                            // We didn't do anything
-                            notificationText = "unique_fields() requires a list of maps";
-                        } else {
-                            myJson = newRoot;
-                            notificationText = "unique_fields()";
-                        }
-                        aggregateMenu = null;
-                    }
-                    if (choice== AggregateMenu.Choice.REMOVE_AGGREGATE) {
-                        if (myJson!=null) {
-                            Operation aggOp = new Operation.AggUniqueFields(myJson.root, false);
-                            JsonNode newRoot = operationList.run(aggOp);
-                            if (null == newRoot) {
-                                // We didn't do anything
-                                notificationText = "No aggregation found; move cursor to parent of aggregate";
-                            } else {
-                                myJson = newRoot;
-                                notificationText = "remove_aggregates()";
-                            }
-                        }
-                        aggregateMenu = null;
-                    }
-                }
-                else {
-                    // normal key handling
-                    if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) myJson.cursorDown();
-                    if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
-                    if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) myJson.cursorUp();
-                    if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
-                    if (key.getKeyType() == KeyType.ArrowLeft) {
-                        if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
-                            myJson.cursorParent();
-                        }
-                    }
-                    if (key.getKeyType() == KeyType.ArrowRight
-                            || (key.getCharacter() != null && 'f' == key.getCharacter())) {
-                        myJson.setFoldedAtCursors(false);
-                    }
-                    if (key.getCharacter() != null && ('e' == key.getCharacter() || '*' == key.getCharacter())) {
-                        myJson.cursorDownToAllChildren();
-                    }
-                    if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
-                        boolean pinned = myJson.getPinnedAtCursor();
-                        myJson.setPinnedAtCursors(!pinned);
-                    }
-                    if ((key.getCharacter() != null && 'n' == key.getCharacter())) {
-                        // next cursor/match
-                        myJson.cursorNextCursor();
-                    }
-                    if ((key.getCharacter() != null && 'N' == key.getCharacter())) {
-                        // prev cursor/match
-                        myJson.cursorPrevCursor();
-                    }
-                    if ((key.getCharacter() != null && 'a' == key.getCharacter())) {
-                        // aggregate
-                        aggregateMenu = new AggregateMenu();
-                    }
-//                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
-//                        // restart (for testing)
-//                        myJson = JsonNode.parse(path);
-//                    }
-                    if (key.getKeyType() == KeyType.PageDown) {
-                        for (int i = 0; i < g.getSize().getRows() - 2; i++) {
-                            myJson.cursorDown();
-                        }
-                    }
-                    if (key.getKeyType() == KeyType.PageUp) {
-                        for (int i = 0; i < g.getSize().getRows() - 2; i++) {
-                            myJson.cursorUp();
-                        }
-                    }
-                    if (key.getKeyType() == KeyType.Home) {
-                        myJson.rootInfo.setPrimaryCursor(myJson.whereIAm);
-                    }
-                    if (key.getKeyType() == KeyType.End) {
-                        JsonNode lastChild = myJson;
-                        for (int i=0; i<100; i++) {
-                            JsonNode x = lastChild.lastChild();
-                            if (x==null || x==lastChild) break;
-                            lastChild = x;
-                        }
-                        myJson.rootInfo.setPrimaryCursor(lastChild.whereIAm);
-                    }
-                    if (key.getCharacter() != null && ('h' == key.getCharacter() || '?' == key.getCharacter())) {
-                        helpScreen(terminal, screen);
-                    }
-                    if (key.getCharacter() != null && ('f' == key.getCharacter())) {
-                        showFind = true;
-                        findControl.init();
-                        cursorsBeforeFind = myJson.rootInfo.save();
-                    }
-                    if (key.getCharacter() != null && ('+' == key.getCharacter())) {
-                        Operation union = new Operation.UnionCursors(myJson);
-                        notificationText = union.toString();
-                        myJson = operationList.run(union);
-                    }
-                    if (key.getCharacter() != null && ('Z' == key.getCharacter())) {
-                        Operation op = operationList.peek();
-                        if (null!=op) {
-                            notificationText = "undo " + op.toString();
-                            myJson = operationList.undo();
-                        }
-                    }
-                    if (key.getCharacter() != null && ('s' == key.getCharacter())) {
-                        boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
-                        if (!allValues) {
-                            sortControl = new SortControl(myJson.atAnyCursor());
-                        }
-                    }
-                    if (key.getKeyType() == KeyType.Escape) {
-                        myJson.rootInfo.secondaryCursors = new NoMultiCursor();
-                    }
-                    if (key.getCharacter() != null && 'q' == key.getCharacter())
-                        break;
-                }
+            while(true) {
+                main.display();
+                KeyStroke key = main.waitForKey();
+                if (!(main.actOnKey(key))) break;
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (screen != null) {
-                try {
-                    /*
-                    The close() call here will restore the terminal by exiting from private mode which was done in
-                    the call to startScreen(), and also restore things like echo mode and intr
-                     */
-                    screen.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            main.closeScreen();
         }
 
     }

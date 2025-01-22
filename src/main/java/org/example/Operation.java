@@ -172,4 +172,54 @@ public interface Operation {
             return "unique_keys()";
         }
     }
+
+    public class AggTotalOp implements Operation {
+
+        JsonNode beforeRoot;
+        private final ArrayList<Cursor> cursors;
+        private final ArrayList<AggInfo> aggBefore;
+
+
+        public AggTotalOp(JsonNode root) {
+            this.beforeRoot = root.rootInfo.root;
+            this.cursors = new ArrayList<>();
+            this.aggBefore = new ArrayList<>();
+        }
+
+        @Override
+        public JsonNode run() {
+
+            // Save the past
+            for (JsonNode node : beforeRoot.atAnyCursor()) {
+                cursors.add(node.asCursor());
+                aggBefore.add(new AggInfo(node));
+            }
+
+            // Do the thing
+            boolean happened = false;
+            for (JsonNode node : beforeRoot.atAnyCursor()) {
+                AggTotal agg = new org.example.AggTotal(node);
+                JsonNode foo = agg.write(node);
+                if (null!=foo) happened=true;
+            }
+            if (!happened) return null;
+            return beforeRoot;
+        }
+
+        @Override
+        public @NotNull JsonNode undo() {
+            for (int i=0; i<cursors.size(); i++) {
+                JsonNode node = cursors.get(i).getData();
+                aggBefore.get(i).restore(node);
+            }
+            return beforeRoot;
+
+        }
+
+        @Override
+        public String toString() {
+            return AggTotal.OPNAME + "()";
+        }
+
+    }
 }

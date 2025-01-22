@@ -112,6 +112,7 @@ public class JsonNodeList extends JsonNode {
 
     @Override
     public @Nullable JsonNodeIterator iterateChildren() {
+        if (children.length==0 && null==this.aggregate) return null;
         return new JsonNodeListIterator(this);
     }
 

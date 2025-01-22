@@ -90,7 +90,7 @@ public class JsonNodeValue<T> extends JsonNode {
         }
     }
 
-    public Double asDouble() throws NumberFormatException {
+    public @Nullable Double asDouble() throws NumberFormatException {
         double secs;
         if (value instanceof Double) {
             secs = (Double)value;
@@ -101,7 +101,12 @@ public class JsonNodeValue<T> extends JsonNode {
         } else if (value instanceof Float) {
             secs = ((Float)value).doubleValue();
         } else if (value instanceof String) {
-            return Double.parseDouble((String)value);
+            try {
+                return Double.parseDouble((String) value);
+            } catch (NumberFormatException _ex) {
+                // not a number after all
+                return null;
+            }
         } else {
             // we don't recognize the type, don't know what to do with it
             return null;

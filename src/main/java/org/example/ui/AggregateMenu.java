@@ -24,6 +24,7 @@ public class AggregateMenu {
         CANCEL,
         // Aggregation choices:
         UNIQUE_FIELDS,
+        AGG_TOTAL,
         REMOVE_AGGREGATE,
     }
 
@@ -37,6 +38,7 @@ public class AggregateMenu {
         String menu =
                         "╭─────────[ AGGREGATE ]─────────╮\n"+
                         "│ u: unique keys                │\n"+
+                        "│ t: total                      │\n"+
                         "│ x: remove aggregate           │\n"+
                         "├───────────────────────────────┤\n"+
                         "│ esc : cancel                  │\n"+
@@ -78,11 +80,13 @@ public class AggregateMenu {
         if (key.getKeyType()==KeyType.Enter) {
             if (row==maxRow) return Choice.CANCEL;
             if (row==0) return Choice.UNIQUE_FIELDS;
-            if (row==1) return Choice.REMOVE_AGGREGATE;
+            if (row==1) return Choice.AGG_TOTAL;
+            if (row==2) return Choice.REMOVE_AGGREGATE;
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (key.getCharacter()) {
                 case 'u': return Choice.UNIQUE_FIELDS;
+                case 't': return Choice.AGG_TOTAL;
                 case 'x': return Choice.REMOVE_AGGREGATE;
                 case 'q': return Choice.CANCEL;
             }
