@@ -2,7 +2,7 @@
 
 A simple folding JSON viewer for the terminal, written in Java.
 
-The basic functionality is there, it should be usable.
+The basic functionality is there, it should be usable. There may still be some bugs though.
 
 Available features:
 
@@ -37,7 +37,7 @@ mvn package -DskipTests
 ## Running
 
 ```
-java -jar target/JavaJson-1.1-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
+java -jar target/JavaJson-1.1-jar-with-dependencies.jar testdata/list.json
 ```
 
 (If you're using a release JAR instead of building your own then adjust the jar's file name

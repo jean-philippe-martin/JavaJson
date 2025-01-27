@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>JavaJson</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
 
 
     <packaging>jar</packaging>
@@ -55,12 +55,6 @@
             <artifactId>lanterna</artifactId>
             <version>3.1.2</version>
         </dependency>
-        <!-- Uses json with a "data leak vuln" that doesn't really matter. But it doesn't retain key order. -->
-<!--        <dependency>-->
-<!--            <groupId>com.googlecode.json-simple</groupId>-->
-<!--            <artifactId>json-simple</artifactId>-->
-<!--            <version>1.1.1</version>-->
-<!--        </dependency>-->
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
