@@ -178,6 +178,7 @@ public interface Operation {
         JsonNode beforeRoot;
         private final ArrayList<Cursor> cursors;
         private final ArrayList<AggInfo> aggBefore;
+        private AggOpBasicStats.Unit unit = AggOpBasicStats.Unit.NOTHING;
 
 
         public AggTotalOp(JsonNode root) {

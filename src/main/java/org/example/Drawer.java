@@ -75,6 +75,7 @@ public class Drawer {
             String aggComment = "";
             if (inSyntheticContext && child.aggregateComment != null && !child.aggregateComment.isEmpty()) {
                 aggComment = child.aggregateComment + " ";
+                printMaybeReversed(g, pos.withColumn(2), "//", false);
             }
 
             TextGraphics g2 = g;

@@ -25,4 +25,8 @@ replay_pid*
 
 # stuff
 old_releases/
-
+.DS_Store
+.idea/
+target/
+JavaJson.iml
+view.sh

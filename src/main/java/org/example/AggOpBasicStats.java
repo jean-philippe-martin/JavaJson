@@ -105,6 +105,7 @@ public class AggOpBasicStats {
 
     public static class Sum implements INodeVisitor<Double> {
         AggOpBasicStats stats;
+        Unit unit = Unit.NOTHING;
 
         public Sum() {
             stats = new AggOpBasicStats();
@@ -112,6 +113,7 @@ public class AggOpBasicStats {
 
         @Override
         public @NotNull String getName() {
+            if (unit==Unit.LENGTH) return "sum_length";
             return "sum";
         }
 
@@ -122,8 +124,13 @@ public class AggOpBasicStats {
 
         @Override
         public Double get() {
-            Unit unit = stats.getUnit();
+            unit = stats.getUnit();
             return stats.getSum(unit);
+        }
+
+        /** only valid after calling "get" */
+        public Unit getUnit() {
+            return unit;
         }
     }
 

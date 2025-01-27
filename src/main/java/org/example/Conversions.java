@@ -53,7 +53,7 @@ public class Conversions {
         return new Date(sinceEpoch);
     }
 
-    // convert either a string or a seconds-since-epoch.
+    // convert either a string or a seconds/ms/us-since-epoch.
     public static @Nullable Date nodeToDate(@Nullable JsonNodeValue node) {
         if (null==node) return null;
         try {
@@ -67,6 +67,7 @@ public class Conversions {
         }
     }
 
+    // parse a date if it's just the right way
     public static @Nullable Date stringToDate(@Nullable String maybeDate) {
         if (null==maybeDate) return null;
         // try to interpret as a date

@@ -15,7 +15,7 @@ public class AggTotal {
 
     public static final String OPNAME="sum";
 
-    private INodeVisitor<Double> summer = new AggOpBasicStats.Sum();
+    private AggOpBasicStats.Sum summer = new AggOpBasicStats.Sum();
 
     public AggTotal(JsonNode aggNode) {
         int count = 0;
@@ -29,8 +29,15 @@ public class AggTotal {
     public @Nullable JsonNode write(JsonNode aggNode) {
         Double sum = summer.get();
         if (null==sum) return null;
-        JsonNodeValue<Double> aggregate = new JsonNodeValue<>(sum, aggNode, aggNode.asCursor().enterKey(OPNAME+"()"), aggNode.rootInfo.root);
-        aggNode.setAggregate(aggregate, OPNAME);
+        if (summer.getUnit()== AggOpBasicStats.Unit.LENGTH) {
+            // special case for length: diff function name, and int instead of double
+            JsonNodeValue<Integer> aggregate = new JsonNodeValue<>(sum.intValue(), aggNode, aggNode.asCursor().enterKey(summer.getName() + "()"), aggNode.rootInfo.root);
+            aggNode.setAggregate(aggregate, summer.getName());
+        } else {
+            // normal case: sum, and double
+            JsonNodeValue<Double> aggregate = new JsonNodeValue<>(sum, aggNode, aggNode.asCursor().enterKey(summer.getName() + "()"), aggNode.rootInfo.root);
+            aggNode.setAggregate(aggregate, summer.getName());
+        }
         return aggNode;
     }
 }

@@ -16,6 +16,7 @@ import org.example.ui.FindControl;
 import org.example.ui.SortControl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -116,6 +117,7 @@ public class Main {
         rowLimit = screen.getTerminalSize().getRows()-2;
     }
 
+
     /**
      * Display the UI, including any menu open at the time.
      **/
@@ -163,6 +165,90 @@ public class Main {
 
     public KeyStroke waitForKey() throws IOException {
         return terminal.readInput();
+    }
+
+
+    /**
+     * Behave as if the user had selected that aggregation via menu or key.
+     * @return true if we did something.
+     **/
+    public boolean applyAggregation(AggregateMenu.Choice choice) {
+        if (choice== AggregateMenu.Choice.CANCEL) {
+            aggregateMenu = null;
+            return true;
+        } else if (choice== AggregateMenu.Choice.UNIQUE_FIELDS) {
+            Operation aggOp = new Operation.AggUniqueFields(myJson.root, true);
+            JsonNode newRoot = operationList.run(aggOp);
+            if (null==newRoot) {
+                // We didn't do anything
+                notificationText = "unique_fields() requires a list of maps";
+            } else {
+                myJson = newRoot;
+                notificationText = "unique_fields()";
+            }
+            aggregateMenu = null;
+            return true;
+        } else
+        if (choice== AggregateMenu.Choice.REMOVE_AGGREGATE) {
+            if (myJson!=null) {
+                Operation aggOp = new Operation.AggUniqueFields(myJson.root, false);
+                JsonNode newRoot = operationList.run(aggOp);
+                if (null == newRoot) {
+                    // We didn't do anything
+                    notificationText = "No aggregation found; move cursor to parent of aggregate";
+                } else {
+                    myJson = newRoot;
+                    notificationText = "remove_aggregates()";
+                }
+            }
+            aggregateMenu = null;
+            return true;
+        } else
+        if (choice==AggregateMenu.Choice.AGG_TOTAL) {
+            if (myJson!=null) {
+                Operation sumOp = new Operation.AggTotalOp(myJson.root);
+                JsonNode newRoot = operationList.run(sumOp);
+                if (null!=newRoot) {
+                    notificationText = AggTotal.OPNAME + "()";
+                    myJson = newRoot;
+                } else {
+                    notificationText = "Nothing to sum; move cursor to a list of numbers";
+                }
+            }
+            aggregateMenu = null;
+            return true;
+        } else
+        if (choice==AggregateMenu.Choice.AGG_MIN_MAX) {
+            if (myJson != null) {
+                Operation op = new Operation.AggMinMaxOp(myJson.root);
+                JsonNode newRoot = operationList.run(op);
+                if (null != newRoot) {
+                    notificationText = op.toString();
+                    myJson = newRoot;
+                } else {
+                    notificationText = "Nothing to min-max; move cursor to a list of numbers";
+                }
+            }
+            aggregateMenu = null;
+            return true;
+        } else if (choice== AggregateMenu.Choice.NONE) {
+            return false;
+        }
+        return false;
+    }
+
+    @VisibleForTesting
+    public String getTestViewOfScreen() {
+        StringBuilder ret = new StringBuilder();
+        for (int row=0; row<screen.getTerminalSize().getRows(); row++) {
+            for (int col=0; col<screen.getTerminalSize().getColumns(); col++) {
+                String c = screen.getBackCharacter(col, row).getCharacterString();
+                if (" ".equals(c)) c="•";
+                ret.append(c);
+            }
+            ret.append("\n");
+        }
+        return ret.toString();
     }
 
     /**
@@ -260,63 +346,7 @@ public class Main {
         else if (null!=aggregateMenu) {
             // manage the aggregate menu
             AggregateMenu.Choice choice = aggregateMenu.update(key);
-            if (choice== AggregateMenu.Choice.CANCEL) {
-                aggregateMenu = null;
-            } else
-            if (choice== AggregateMenu.Choice.UNIQUE_FIELDS) {
-                Operation aggOp = new Operation.AggUniqueFields(myJson.root, true);
-                JsonNode newRoot = operationList.run(aggOp);
-                if (null==newRoot) {
-                    // We didn't do anything
-                    notificationText = "unique_fields() requires a list of maps";
-                } else {
-                    myJson = newRoot;
-                    notificationText = "unique_fields()";
-                }
-                aggregateMenu = null;
-            } else
-            if (choice== AggregateMenu.Choice.REMOVE_AGGREGATE) {
-                if (myJson!=null) {
-                    Operation aggOp = new Operation.AggUniqueFields(myJson.root, false);
-                    JsonNode newRoot = operationList.run(aggOp);
-                    if (null == newRoot) {
-                        // We didn't do anything
-                        notificationText = "No aggregation found; move cursor to parent of aggregate";
-                    } else {
-                        myJson = newRoot;
-                        notificationText = "remove_aggregates()";
-                    }
-                }
-                aggregateMenu = null;
-            } else
-            if (choice==AggregateMenu.Choice.AGG_TOTAL) {
-                if (myJson!=null) {
-                    Operation sumOp = new Operation.AggTotalOp(myJson.root);
-                    JsonNode newRoot = operationList.run(sumOp);
-                    if (null!=newRoot) {
-                        notificationText = AggTotal.OPNAME + "()";
-                        myJson = newRoot;
-                    } else {
-                        notificationText = "Nothing to sum; move cursor to a list of numbers";
-                    }
-                }
-                aggregateMenu = null;
-            } else
-            if (choice==AggregateMenu.Choice.AGG_MIN_MAX) {
-                if (myJson!=null) {
-                    Operation op = new Operation.AggMinMaxOp(myJson.root);
-                    JsonNode newRoot = operationList.run(op);
-                    if (null!=newRoot) {
-                        notificationText = op.toString();
-                        myJson = newRoot;
-                    } else {
-                        notificationText = "Nothing to min-max; move cursor to a list of numbers";
-                    }
-                }
-                aggregateMenu = null;
-            } else if (choice!=AggregateMenu.Choice.NONE) {
-                notificationText = "Unknown aggregate: " + choice;
-            }
+            applyAggregation(choice);
         }
         else {
             // normal key handling
