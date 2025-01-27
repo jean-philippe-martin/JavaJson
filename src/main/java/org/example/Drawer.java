@@ -77,30 +77,41 @@ public class Drawer {
                 aggComment = child.aggregateComment + " ";
             }
 
-            printMaybeReversed(g, pos.withColumn(2), prefix, jsonMap.isAtCursor(key));
+            TextGraphics g2 = g;
             printMaybeReversed(g, pos, aggComment + "\"" + key + "\"", jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos.withRelativeColumn(aggComment.length() + 2 + key.length());
-                // normal case, user data.
-                if (child instanceof JsonNodeValue) {
-                    int height;
-                    if (inSyntheticContext) {
-                        printGutterIndicator(g, pos, child);
-                        height = 1;
-                    } else {
-                        JsonNodeValue v = (JsonNodeValue) child;
-                        Object val = v.getValue();
-                        g.putString(pos2, ": ");
-                        height = printJsonSubtree(g, pos, pos2.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext);
-                    }
-                    line += height;
-                    pos = pos.withRelativeRow(height);
+            // normal case, user data.
+            if (child instanceof JsonNodeValue) {
+                int height;
+                if (inSyntheticContext) {
+                    printGutterIndicator(g, pos, child);
+                    height = 1;
                 } else {
-                    g.putString(pos2, ": ");
-                    int childOffset = aggComment.length() + key.length() + 4;
-                    int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext);
-                    line += childHeight;
-                    pos = pos.withRelativeRow(childHeight);
+                    JsonNodeValue v = (JsonNodeValue) child;
+                    Object val = v.getValue();
+                    TerminalPosition pos4 = pos2;
+                    if (it.isAggregate()) {
+                        g2 = Theme.withColor(g, Theme.synthetic);
+                        g2.putString(pos4.withColumn(2), "//");
+                        String intro = jsonMap.aggregateComment + "() ";
+                        if (pos4.getColumn()<=5) {
+                            // move to the right to make room for the comment symbols
+                            pos4 = pos4.withColumn(5);
+                        }
+                        g2.putString(pos4, intro);
+                    }
+                    g2.putString(pos4, ": ");
+                    height = printJsonSubtree(g2, pos, pos4.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext || v.isSynthetic());
                 }
+                line += height;
+                pos = pos.withRelativeRow(height);
+            } else {
+                g.putString(pos2, ": ");
+                int childOffset = aggComment.length() + key.length() + 4;
+                int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext);
+                line += childHeight;
+                pos = pos.withRelativeRow(childHeight);
+            }
             // stop drawing if we're off the screen.
             if (drewCursor && pos.getRow() > g.getSize().getRows() + 10) break;
         }

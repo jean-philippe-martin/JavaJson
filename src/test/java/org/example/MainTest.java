@@ -26,6 +26,23 @@ public class MainTest {
             " \"innermost\" } } } }"
     };
 
+    static final String[] MIX_OF_TYPES = new String[]{
+            "{ \"map1\": {",
+            "  \"map2\": {",
+            "      \"alist\": [ ",
+            "          { \"number\": 12, \"string\": \"hello\", \"boolean\": true },",
+            "          { \"number\": 12, \"string\": \"hello\", \"boolean\": true }",
+            "       ],",
+            "       \"another_bool\": false",
+            "} } }"
+    };
+
+    static final String[] MAP_OF_NUMBERS = new String[]{
+            "{ \"a\": 3,",
+            "  \"b\": 2,",
+            "  \"c\": 1}"
+    };
+
     @Test
     public void testEmptyName() throws Exception {
         Main.main(new String[]{});
@@ -71,6 +88,49 @@ public class MainTest {
             main.actOnKey(KeyStroke.fromString("<Left>"));
             main.display();
             main.actOnKey(KeyStroke.fromString("<Up>"));
+            main.display();
+        }
+
+    }
+
+    @Test
+    public void testFoldNested2() throws Exception {
+        Main main = Main.fromLinesAndVirtual(MIX_OF_TYPES, 40, 5);
+        main.display();
+        // fold top level
+        main.actOnKey(KeyStroke.fromString("<Left>"));
+        main.display();
+        main.actOnKey(KeyStroke.fromString("<Right>"));
+        main.display();
+        // go deeper
+        for (int i=0; i<10; i++) {
+            main.actOnKey(KeyStroke.fromString("<Down>"));
+            main.display();
+        }
+        // fold on your way up
+        for (int i=0; i<10; i++) {
+            main.actOnKey(KeyStroke.fromString("<Left>"));
+            main.display();
+            main.actOnKey(KeyStroke.fromString("<Right>"));
+            main.display();
+            main.actOnKey(KeyStroke.fromString("<Left>"));
+            main.display();
+            main.actOnKey(KeyStroke.fromString("<Up>"));
+            main.display();
+        }
+
+    }
+
+    @Test
+    public void testTotalOnAMap() throws Exception {
+        Main main = Main.fromLinesAndVirtual(MAP_OF_NUMBERS, 40, 5);
+        main.display();
+        // total
+        main.actOnKey(KeyStroke.fromString("a"));
+        main.actOnKey(KeyStroke.fromString("t"));
+        main.display();
+        for (int i=0; i<2; i++) {
+            main.actOnKey(KeyStroke.fromString("<Down>"));
             main.display();
         }
 

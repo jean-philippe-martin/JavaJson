@@ -222,4 +222,58 @@ public interface Operation {
         }
 
     }
+
+    public class AggMinMaxOp implements Operation {
+
+        JsonNode beforeRoot;
+        private final ArrayList<Cursor> cursors;
+        private final ArrayList<AggInfo> aggBefore;
+
+
+        public AggMinMaxOp(JsonNode root) {
+            this.beforeRoot = root.rootInfo.root;
+            this.cursors = new ArrayList<>();
+            this.aggBefore = new ArrayList<>();
+        }
+
+        @Override
+        public JsonNode run() {
+
+            // Save the past
+            for (JsonNode node : beforeRoot.atAnyCursor()) {
+                cursors.add(node.asCursor());
+                aggBefore.add(new AggInfo(node));
+            }
+
+            // Do the thing
+            boolean happened = false;
+            for (JsonNode node : beforeRoot.atAnyCursor()) {
+                INodeVisitor<String> vis = new AggOpBasicStats.MinMax();
+                Traverse.values(node, vis);
+                String result = vis.get();
+                if (null==result) continue;
+                happened = true;
+                JsonNodeValue<String> aggregate = new JsonNodeValue<>(result, node, node.asCursor().enterKey(vis.getName()+"()"), node.rootInfo.root);
+                node.setAggregate(aggregate, vis.getName());
+            }
+            if (!happened) return null;
+            return beforeRoot;
+        }
+
+        @Override
+        public @NotNull JsonNode undo() {
+            for (int i=0; i<cursors.size(); i++) {
+                JsonNode node = cursors.get(i).getData();
+                aggBefore.get(i).restore(node);
+            }
+            return beforeRoot;
+
+        }
+
+        @Override
+        public String toString() {
+            return new AggOpBasicStats.MinMax().getName() + "()";
+        }
+
+    }
 }

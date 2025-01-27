@@ -262,7 +262,7 @@ public class Main {
             AggregateMenu.Choice choice = aggregateMenu.update(key);
             if (choice== AggregateMenu.Choice.CANCEL) {
                 aggregateMenu = null;
-            }
+            } else
             if (choice== AggregateMenu.Choice.UNIQUE_FIELDS) {
                 Operation aggOp = new Operation.AggUniqueFields(myJson.root, true);
                 JsonNode newRoot = operationList.run(aggOp);
@@ -274,7 +274,7 @@ public class Main {
                     notificationText = "unique_fields()";
                 }
                 aggregateMenu = null;
-            }
+            } else
             if (choice== AggregateMenu.Choice.REMOVE_AGGREGATE) {
                 if (myJson!=null) {
                     Operation aggOp = new Operation.AggUniqueFields(myJson.root, false);
@@ -288,7 +288,7 @@ public class Main {
                     }
                 }
                 aggregateMenu = null;
-            }
+            } else
             if (choice==AggregateMenu.Choice.AGG_TOTAL) {
                 if (myJson!=null) {
                     Operation sumOp = new Operation.AggTotalOp(myJson.root);
@@ -301,6 +301,21 @@ public class Main {
                     }
                 }
                 aggregateMenu = null;
+            } else
+            if (choice==AggregateMenu.Choice.AGG_MIN_MAX) {
+                if (myJson!=null) {
+                    Operation op = new Operation.AggMinMaxOp(myJson.root);
+                    JsonNode newRoot = operationList.run(op);
+                    if (null!=newRoot) {
+                        notificationText = op.toString();
+                        myJson = newRoot;
+                    } else {
+                        notificationText = "Nothing to min-max; move cursor to a list of numbers";
+                    }
+                }
+                aggregateMenu = null;
+            } else if (choice!=AggregateMenu.Choice.NONE) {
+                notificationText = "Unknown aggregate: " + choice;
             }
         }
         else {

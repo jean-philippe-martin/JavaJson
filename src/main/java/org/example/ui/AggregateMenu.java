@@ -4,18 +4,12 @@ import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
-import com.googlecode.lanterna.screen.Screen;
-import org.example.JsonNode;
-import org.example.cursor.FindCursor;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public class AggregateMenu {
 
     private int row = 0;
     // the max allowed row value
-    private int maxRow = 2;
+    private final int maxRow = 4;
 
     public enum Choice {
         // leave the menu visible
@@ -25,12 +19,12 @@ public class AggregateMenu {
         // Aggregation choices:
         UNIQUE_FIELDS,
         AGG_TOTAL,
+        AGG_MIN_MAX,
         REMOVE_AGGREGATE,
     }
 
     public void init() {
         row = 0;
-        maxRow = 1;
     }
 
     public void draw(TextGraphics g) {
@@ -39,6 +33,7 @@ public class AggregateMenu {
                         "╭─────────[ AGGREGATE ]─────────╮\n"+
                         "│ u: unique keys                │\n"+
                         "│ t: total                      │\n"+
+                        "│ -: min-max                    │\n"+
                         "│ x: remove aggregate           │\n"+
                         "├───────────────────────────────┤\n"+
                         "│ esc : cancel                  │\n"+
@@ -81,12 +76,14 @@ public class AggregateMenu {
             if (row==maxRow) return Choice.CANCEL;
             if (row==0) return Choice.UNIQUE_FIELDS;
             if (row==1) return Choice.AGG_TOTAL;
-            if (row==2) return Choice.REMOVE_AGGREGATE;
+            if (row==2) return Choice.AGG_MIN_MAX;
+            if (row==3) return Choice.REMOVE_AGGREGATE;
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (key.getCharacter()) {
                 case 'u': return Choice.UNIQUE_FIELDS;
                 case 't': return Choice.AGG_TOTAL;
+                case '-': return Choice.AGG_MIN_MAX;
                 case 'x': return Choice.REMOVE_AGGREGATE;
                 case 'q': return Choice.CANCEL;
             }

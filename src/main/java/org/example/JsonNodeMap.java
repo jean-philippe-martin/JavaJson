@@ -107,8 +107,6 @@ public class JsonNodeMap extends JsonNode {
         return kv.size();
     }
 
-
-
     public void setChildAggregateComment(String key, String comment) {
         getChild(key).aggregateComment = comment;
     }
@@ -116,8 +114,13 @@ public class JsonNodeMap extends JsonNode {
     /** True if the userCursor is pointing to this key of ours. **/
     @Override
     public boolean isAtCursor(String key) {
-        JsonNode hypothetical = getChild(key);
-        return hypothetical.isAtCursor();
+        try {
+            JsonNode hypothetical = getChild(key);
+            return hypothetical.isAtCursor();
+        } catch (NoSuchElementException _ex) {
+            // if we don't have that child, then clearly it's not at the cursor.
+            return false;
+        }
     }
 
     /** Whether this child is folded **/

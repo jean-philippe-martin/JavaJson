@@ -15,25 +15,21 @@ public class AggTotal {
 
     public static final String OPNAME="sum";
 
-    private Double total;
+    private INodeVisitor<Double> summer = new AggOpBasicStats.Sum();
 
     public AggTotal(JsonNode aggNode) {
         int count = 0;
         double sum = 0.0;
         for (JsonNodeIterator it = aggNode.iterateChildren(); it!=null; it=it.next()) {
             JsonNode kid = it.get();
-            if (!(kid instanceof JsonNodeValue)) continue;
-            count+=1;
-            sum += ((JsonNodeValue<?>) kid).asDouble();
-        }
-        if (count>0) {
-            this.total = sum;
+            summer.visit(kid);
         }
     }
 
     public @Nullable JsonNode write(JsonNode aggNode) {
-        if (null==total) return null;
-        JsonNodeValue<Double> aggregate = new JsonNodeValue<>(total, aggNode, aggNode.asCursor().enterKey(OPNAME+"()"), aggNode.rootInfo.root);
+        Double sum = summer.get();
+        if (null==sum) return null;
+        JsonNodeValue<Double> aggregate = new JsonNodeValue<>(sum, aggNode, aggNode.asCursor().enterKey(OPNAME+"()"), aggNode.rootInfo.root);
         aggNode.setAggregate(aggregate, OPNAME);
         return aggNode;
     }
