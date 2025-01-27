@@ -3,9 +3,8 @@ package org.example;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -54,8 +53,32 @@ public class Conversions {
         return new Date(sinceEpoch);
     }
 
+    // convert either a string or a seconds-since-epoch.
+    public static @Nullable Date nodeToDate(@Nullable JsonNodeValue node) {
+        if (null==node) return null;
+        try {
+            double sinceEpoch = node.asDouble();
+            long somethingSinceEpoch = (long)sinceEpoch;
+            return Conversions.epochToDate(somethingSinceEpoch);
+        } catch (NumberFormatException | NullPointerException _x) {
+            // value isn't a number. Maybe it's a string?
+            if (!(node.getValue() instanceof String)) return null;
+            return stringToDate((String)node.getValue());
+        }
+    }
+
+    public static @Nullable Date stringToDate(@Nullable String maybeDate) {
+        if (null==maybeDate) return null;
+        // try to interpret as a date
+        SimpleDateFormat guess = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.ENGLISH);
+        guess.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date = guess.parse(maybeDate, new ParsePosition(0));
+        return date;
+    }
+
+    // But importantly, string in the format & timezone we want.
     public static @NotNull String dateToString(@NotNull Date date) {
-        SimpleDateFormat ourFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSSZ", java.util.Locale.ENGLISH);
+        SimpleDateFormat ourFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSS Z", java.util.Locale.ENGLISH);
         // no need, we already default to the local timezone
 //        ZoneId ourTimeZone = ZonedDateTime.now().getZone();
 //        ourFormat.setTimeZone(TimeZone.getTimeZone(ourTimeZone));

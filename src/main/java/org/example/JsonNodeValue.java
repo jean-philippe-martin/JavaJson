@@ -2,12 +2,7 @@ package org.example;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class JsonNodeValue<T> extends JsonNode {
     protected T value;
@@ -66,23 +61,9 @@ public class JsonNodeValue<T> extends JsonNode {
                 return;
             }
         }
-        if (key.endsWith("On") || key.endsWith("_epoch") || key.endsWith("_timestamp") || "timestamp".equalsIgnoreCase(key)) {
+        if (key.endsWith("On") || key.endsWith("_epoch") || key.endsWith("_at") ||  key.endsWith("_timestamp") || key.endsWith("Timestamp") || "timestamp".equalsIgnoreCase(key)) {
             // "CreatedOn", "bootedOn", etc. Assume we are getting a time value in epoch smth.
-            try {
-                double sinceEpoch = asDouble();
-                long somethingSinceEpoch = (long)sinceEpoch;
-                Date date = Conversions.epochToDate(somethingSinceEpoch);
-                annotation = Conversions.dateToString(date);
-            } catch (NumberFormatException | NullPointerException _x) {
-                // value isn't a number, just do nothing
-                return;
-            }
-        }
-        if (key.endsWith("_at") && (value instanceof String)) {
-            // try to interpret as a date
-            SimpleDateFormat guess = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.ENGLISH);
-            guess.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Date date = guess.parse((String)value, new ParsePosition(0));
+            Date date = Conversions.nodeToDate(this);
             if (date!=null) {
                 // We were actually able to parse the date! Let's convert to local timezone.
                 annotation = Conversions.dateToString(date);
