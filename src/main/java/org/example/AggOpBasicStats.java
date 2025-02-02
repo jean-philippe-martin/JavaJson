@@ -9,18 +9,18 @@ import org.jetbrains.annotations.Nullable;
  *
  */
 public class AggOpBasicStats {
-    Double minNum = null;
-    Double maxNum = null;
-    String minStr = null;
-    String maxStr = null;
-    Integer minLength = null;
-    Integer maxLength = null;
+    Double minNum;
+    Double maxNum;
+    String minStr;
+    String maxStr;
+    Integer minLength;
+    Integer maxLength;
+    Double total = (double) 0;
     long totalLength = 0;
     int numCount = 0;
     int strCount = 0;
     int lenCount = 0;
     int otherCount = 0;
-    Double total = (double) 0;
 
     public enum Unit {
         NOTHING,
@@ -35,6 +35,11 @@ public class AggOpBasicStats {
 
         public Min() {
             stats = new AggOpBasicStats();
+        }
+
+        @Override
+        public void init() {
+            stats.init();
         }
 
         @Override
@@ -62,6 +67,11 @@ public class AggOpBasicStats {
         }
 
         @Override
+        public void init() {
+            stats.init();
+        }
+
+        @Override
         public @NotNull String getName() {
             return "max";
         }
@@ -80,13 +90,22 @@ public class AggOpBasicStats {
 
     public static class MinMax implements INodeVisitor<String> {
         AggOpBasicStats stats;
+        Unit unit;
 
         public MinMax() {
             stats = new AggOpBasicStats();
         }
 
         @Override
+        public void init() {
+            stats.init();
+        }
+
+        @Override
         public @NotNull String getName() {
+            if (unit==Unit.LENGTH) {
+                return "min_max_length";
+            }
             return "min_max";
         }
 
@@ -97,18 +116,28 @@ public class AggOpBasicStats {
 
         @Override
         public String get() {
-            Unit unit = stats.getUnit();
+            unit = stats.getUnit();
             if (unit == Unit.NOTHING) return null;
-            return stats.stringify(unit, stats.getMin(unit)) + " - " + stats.stringify(unit, stats.getMax(unit));
+            if (unit==Unit.LENGTH) {
+                // special case: remove decimal point
+                return stats.stringify(unit, (Integer)stats.getMin(unit)) + " - " + stats.stringify(unit, (Integer)stats.getMax(unit));
+            } else {
+                return stats.stringify(unit, stats.getMin(unit)) + " - " + stats.stringify(unit, stats.getMax(unit));
+            }
         }
     }
 
-    public static class Sum implements INodeVisitor<Double> {
+    public static class Sum implements INodeVisitor<Object> {
         AggOpBasicStats stats;
         Unit unit = Unit.NOTHING;
 
         public Sum() {
             stats = new AggOpBasicStats();
+        }
+
+        @Override
+        public void init() {
+            stats.init();
         }
 
         @Override
@@ -123,9 +152,55 @@ public class AggOpBasicStats {
         }
 
         @Override
+        public Object get() {
+            unit = stats.getUnit();
+            if (unit==Unit.LENGTH) {
+                return (Integer) stats.getSum(unit).intValue();
+            } else {
+                return stats.getSum(unit);
+            }
+        }
+
+        /** only valid after calling "get" */
+        public Unit getUnit() {
+            return unit;
+        }
+    }
+
+    public static class Avg implements INodeVisitor<Double> {
+        AggOpBasicStats stats;
+        Unit unit = Unit.NOTHING;
+
+        public Avg() {
+            stats = new AggOpBasicStats();
+        }
+
+        @Override
+        public void init() {
+            stats.init();
+        }
+
+        @Override
+        public @NotNull String getName() {
+            if (unit==Unit.LENGTH) return "avg_length";
+            return "avg";
+        }
+
+        @Override
+        public void visit(JsonNode node) {
+            stats.visit(node);
+        }
+
+        @Override
         public Double get() {
             unit = stats.getUnit();
-            return stats.getSum(unit);
+            if (unit==Unit.LENGTH) {
+                return stats.getSum(unit) / stats.lenCount;
+            }
+            if (unit==Unit.NUMBER) {
+                return stats.getSum(unit) / stats.numCount;
+            }
+            return null;
         }
 
         /** only valid after calling "get" */
@@ -136,6 +211,22 @@ public class AggOpBasicStats {
 
 
     public AggOpBasicStats() {
+        init();
+    }
+
+    public void init() {
+        minNum = null;
+        maxNum = null;
+        minStr = null;
+        maxStr = null;
+        minLength = null;
+        maxLength = null;
+        totalLength = 0;
+        numCount = 0;
+        strCount = 0;
+        lenCount = 0;
+        otherCount = 0;
+        total = (double) 0;
     }
 
     public void visit(JsonNode node) {

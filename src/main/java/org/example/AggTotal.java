@@ -20,13 +20,12 @@ public class AggTotal {
     public AggTotal(JsonNode aggNode) {
         int count = 0;
         double sum = 0.0;
-        for (JsonNodeIterator it = aggNode.iterateChildren(); it!=null; it=it.next()) {
-            JsonNode kid = it.get();
-            summer.visit(kid);
-        }
+        Traverse.values(aggNode, summer);
     }
 
     public @Nullable JsonNode write(JsonNode aggNode) {
+        return aggNode;
+        /*
         Double sum = summer.get();
         if (null==sum) return null;
         if (summer.getUnit()== AggOpBasicStats.Unit.LENGTH) {
@@ -39,5 +38,6 @@ public class AggTotal {
             aggNode.setAggregate(aggregate, summer.getName());
         }
         return aggNode;
+        */
     }
 }

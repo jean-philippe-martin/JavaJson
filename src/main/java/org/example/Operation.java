@@ -173,28 +173,21 @@ public interface Operation {
         }
     }
 
+    /*
     public class AggTotalOp implements Operation {
 
-        JsonNode beforeRoot;
-        private final ArrayList<Cursor> cursors;
-        private final ArrayList<AggInfo> aggBefore;
-        private AggOpBasicStats.Unit unit = AggOpBasicStats.Unit.NOTHING;
-
+        private final JsonNode beforeRoot;
+        private AggSaver before;
 
         public AggTotalOp(JsonNode root) {
             this.beforeRoot = root.rootInfo.root;
-            this.cursors = new ArrayList<>();
-            this.aggBefore = new ArrayList<>();
         }
 
         @Override
         public JsonNode run() {
 
             // Save the past
-            for (JsonNode node : beforeRoot.atAnyCursor()) {
-                cursors.add(node.asCursor());
-                aggBefore.add(new AggInfo(node));
-            }
+            this.before = new AggSaver(beforeRoot);
 
             // Do the thing
             boolean happened = false;
@@ -209,12 +202,7 @@ public interface Operation {
 
         @Override
         public @NotNull JsonNode undo() {
-            for (int i=0; i<cursors.size(); i++) {
-                JsonNode node = cursors.get(i).getData();
-                aggBefore.get(i).restore(node);
-            }
-            return beforeRoot;
-
+            return before.restore();
         }
 
         @Override
@@ -223,38 +211,33 @@ public interface Operation {
         }
 
     }
+*/
 
-    public class AggMinMaxOp implements Operation {
+    public class AggGeneric<T> implements Operation {
 
-        JsonNode beforeRoot;
-        private final ArrayList<Cursor> cursors;
-        private final ArrayList<AggInfo> aggBefore;
+        private final INodeVisitor<T> visitor;
+        private final JsonNode beforeRoot;
+        private AggSaver before;
 
-
-        public AggMinMaxOp(JsonNode root) {
+        public AggGeneric(JsonNode root, INodeVisitor<T> visitor) {
+            this.visitor = visitor;
             this.beforeRoot = root.rootInfo.root;
-            this.cursors = new ArrayList<>();
-            this.aggBefore = new ArrayList<>();
         }
 
         @Override
         public JsonNode run() {
-
             // Save the past
-            for (JsonNode node : beforeRoot.atAnyCursor()) {
-                cursors.add(node.asCursor());
-                aggBefore.add(new AggInfo(node));
-            }
-
+            this.before = new AggSaver(beforeRoot);
             // Do the thing
             boolean happened = false;
             for (JsonNode node : beforeRoot.atAnyCursor()) {
-                INodeVisitor<String> vis = new AggOpBasicStats.MinMax();
+                visitor.init();
+                INodeVisitor<T> vis = visitor;
                 Traverse.values(node, vis);
-                String result = vis.get();
+                T result = vis.get();
                 if (null==result) continue;
                 happened = true;
-                JsonNodeValue<String> aggregate = new JsonNodeValue<>(result, node, node.asCursor().enterKey(vis.getName()+"()"), node.rootInfo.root);
+                JsonNodeValue<T> aggregate = new JsonNodeValue<>(result, node, node.asCursor().enterKey(vis.getName()+"()"), node.rootInfo.root);
                 node.setAggregate(aggregate, vis.getName());
             }
             if (!happened) return null;
@@ -263,18 +246,36 @@ public interface Operation {
 
         @Override
         public @NotNull JsonNode undo() {
-            for (int i=0; i<cursors.size(); i++) {
-                JsonNode node = cursors.get(i).getData();
-                aggBefore.get(i).restore(node);
-            }
-            return beforeRoot;
-
+            return before.restore();
         }
 
         @Override
         public String toString() {
-            return new AggOpBasicStats.MinMax().getName() + "()";
+            return visitor.getName() + "()";
+        }
+    }
+
+    public class AggMinMaxOp extends AggGeneric<String> {
+
+        public AggMinMaxOp(JsonNode root) {
+            super(root, new AggOpBasicStats.MinMax());
         }
 
     }
+
+    public class AggTotalOp extends AggGeneric<Object> {
+
+        public AggTotalOp(JsonNode root) {
+            super(root, new AggOpBasicStats.Sum());
+        }
+
+    }
+
+    public class AggAvgOp extends AggGeneric<Double> {
+
+        public AggAvgOp(JsonNode root) {
+            super(root, new AggOpBasicStats.Avg());
+        }
+    }
+
 }

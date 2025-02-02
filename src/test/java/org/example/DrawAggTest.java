@@ -1,6 +1,5 @@
 package org.example;
 
-import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
@@ -10,10 +9,8 @@ import org.example.ui.AggregateMenu;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -144,6 +141,34 @@ public class DrawAggTest {
         assertEquals(expected, beginning);
     }
 
+    @Test
+    public void testMinMaxThenSum() throws IOException {
+        // this failed in the past.
 
+        String[] input = new String[]{
+                "[\n" +
+                "    [1,2],\n" +
+                "    [3,4,5]\n" +
+                "]"
+        };
+
+        Main main = Main.fromLinesAndVirtual(input, 30, 7);
+        main.applyAggregation(AggregateMenu.Choice.AGG_MIN_MAX);
+        main.display();
+        main.applyAggregation(AggregateMenu.Choice.AGG_TOTAL);
+        main.display();
+
+        String expected =
+                "[•//•2•entries••••••••••••••••\n" +
+                "••//•sum_length()•5•••••••••••\n" +
+                "••[•//•2•entries••";
+
+        String got = main.getTestViewOfScreen();
+
+        // Check only the start of the string to ignore the status bar
+        // (but do it in a way that'll give us the "click to see diff" button.
+        String beginning = got.substring(0, expected.length());
+        assertEquals(expected, beginning);
+    }
 
 }

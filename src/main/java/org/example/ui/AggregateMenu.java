@@ -9,7 +9,7 @@ public class AggregateMenu {
 
     private int row = 0;
     // the max allowed row value
-    private final int maxRow = 4;
+    private final int maxRow = 5;
 
     public enum Choice {
         // leave the menu visible
@@ -19,6 +19,7 @@ public class AggregateMenu {
         // Aggregation choices:
         UNIQUE_FIELDS,
         AGG_TOTAL,
+        AGG_AVG,
         AGG_MIN_MAX,
         REMOVE_AGGREGATE,
     }
@@ -34,6 +35,7 @@ public class AggregateMenu {
                         "│ u: unique keys                │\n"+
                         "│ t: total                      │\n"+
                         "│ -: min-max                    │\n"+
+                        "│ a: average (mean)             │\n"+
                         "│ x: remove aggregate           │\n"+
                         "├───────────────────────────────┤\n"+
                         "│ esc : cancel                  │\n"+
@@ -77,13 +79,15 @@ public class AggregateMenu {
             if (row==0) return Choice.UNIQUE_FIELDS;
             if (row==1) return Choice.AGG_TOTAL;
             if (row==2) return Choice.AGG_MIN_MAX;
-            if (row==3) return Choice.REMOVE_AGGREGATE;
+            if (row==3) return Choice.AGG_AVG;
+            if (row==4) return Choice.REMOVE_AGGREGATE;
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (key.getCharacter()) {
                 case 'u': return Choice.UNIQUE_FIELDS;
                 case 't': return Choice.AGG_TOTAL;
                 case '-': return Choice.AGG_MIN_MAX;
+                case 'a': return Choice.AGG_AVG;
                 case 'x': return Choice.REMOVE_AGGREGATE;
                 case 'q': return Choice.CANCEL;
             }

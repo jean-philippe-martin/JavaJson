@@ -209,7 +209,7 @@ public class Main {
                 Operation sumOp = new Operation.AggTotalOp(myJson.root);
                 JsonNode newRoot = operationList.run(sumOp);
                 if (null!=newRoot) {
-                    notificationText = AggTotal.OPNAME + "()";
+                    notificationText = "sum()";
                     myJson = newRoot;
                 } else {
                     notificationText = "Nothing to sum; move cursor to a list of numbers";
@@ -227,6 +227,19 @@ public class Main {
                     myJson = newRoot;
                 } else {
                     notificationText = "Nothing to min-max; move cursor to a list of numbers";
+                }
+            }
+            aggregateMenu = null;
+            return true;
+        } else if (choice==AggregateMenu.Choice.AGG_AVG) {
+            if (myJson != null) {
+                Operation op = new Operation.AggAvgOp(myJson.root);
+                JsonNode newRoot = operationList.run(op);
+                if (null != newRoot) {
+                    notificationText = op.toString();
+                    myJson = newRoot;
+                } else {
+                    notificationText = "Nothing to average; move cursor to a list of numbers (or lists)";
                 }
             }
             aggregateMenu = null;
@@ -249,6 +262,17 @@ public class Main {
             ret.append("\n");
         }
         return ret.toString();
+    }
+
+    public void moveCursorDown() {
+        Cursor current = myJson.rootInfo.userCursor;
+        myJson.cursorDown();
+        if (myJson.rootInfo.userCursor == current) {
+            // We are at the end of the document, didn't actually move down.
+            // Let's scroll down a bit, maybe the user wants to see the closing
+            // brackets.
+            scroll++;
+        }
     }
 
     /**
@@ -278,7 +302,6 @@ public class Main {
                             findControl.getIgnoreComments(),
                             findControl.getUseRegexp());
                     myJson.rootInfo.setSecondaryCursors(fc);
-                    // TODO: set primary cursor to first match (or first match after cursor?)
 
                     JsonNode primary = myJson.rootInfo.userCursor.getData();
                     if (!primary.isAtSecondaryCursor()) {
@@ -350,7 +373,7 @@ public class Main {
         }
         else {
             // normal key handling
-            if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) myJson.cursorDown();
+            if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) moveCursorDown();
             if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
             if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) myJson.cursorUp();
             if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
