@@ -280,6 +280,9 @@ public class Main {
      * Returns TRUE if you should continue, FALSE if quitting.
      **/
     public boolean actOnKey(KeyStroke key) throws IOException {
+        char pressed = '\0';
+        if (key.getKeyType()==KeyType.Character) pressed = Character.toLowerCase(key.getCharacter());
+
         if (showFind) {
             // Incremental find mode...
             FindControl.Choice choice = findControl.update(key);
@@ -383,13 +386,13 @@ public class Main {
                 }
             }
             if (key.getKeyType() == KeyType.ArrowRight
-                    || (key.getCharacter() != null && 'f' == key.getCharacter())) {
+                    || (key.getCharacter() != null && 'f' == pressed)) {
                 myJson.setFoldedAtCursors(false);
             }
-            if (key.getCharacter() != null && ('e' == key.getCharacter() || '*' == key.getCharacter())) {
+            if (key.getCharacter() != null && ('e' == pressed || '*' == key.getCharacter())) {
                 myJson.cursorDownToAllChildren();
             }
-            if ((key.getCharacter() != null && 'p' == key.getCharacter())) {
+            if ((key.getCharacter() != null && 'p' == pressed)) {
                 boolean pinned = myJson.getPinnedAtCursor();
                 myJson.setPinnedAtCursors(!pinned);
             }
@@ -401,7 +404,7 @@ public class Main {
                 // prev cursor/match
                 myJson.cursorPrevCursor();
             }
-            if ((key.getCharacter() != null && 'a' == key.getCharacter())) {
+            if ((key.getCharacter() != null && 'a' == pressed)) {
                 // aggregate
                 aggregateMenu = new AggregateMenu();
             }

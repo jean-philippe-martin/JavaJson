@@ -197,16 +197,18 @@ public class SortControl {
             if (key.getKeyType()==KeyType.ArrowUp) {
                 if (row>0 && selectField) { this.row--; }
             }
-            if (key.getKeyType()==KeyType.Character && ((col==0 && key.getCharacter()==' ') || key.getCharacter()=='r')) {
+            char pressed = '\0';
+            if (key.getKeyType()==KeyType.Character) pressed = Character.toLowerCase(key.getCharacter());
+            if (key.getKeyType()==KeyType.Character && ((col==0 && pressed==' ') || pressed=='r')) {
                 this.reverse = !this.reverse;
             }
-            if (key.getKeyType()==KeyType.Character && ((col==1 && key.getCharacter()==' ') || key.getCharacter()=='a' || key.getCharacter()=='c')) {
+            if (key.getKeyType()==KeyType.Character && ((col==1 && pressed==' ') || pressed=='a' || pressed=='c')) {
                 this.ignoreCase = !this.ignoreCase;
             }
-            if (key.getKeyType()==KeyType.Character && ((col==2 && key.getCharacter()==' ') || key.getCharacter()=='n')) {
+            if (key.getKeyType()==KeyType.Character && ((col==2 && pressed==' ') || pressed=='n')) {
                 this.numberify = !this.numberify;
             }
-            if (key.getKeyType()==KeyType.Character && (key.getCharacter()=='?')) {
+            if (key.getKeyType()==KeyType.Character && (pressed=='?')) {
                 this.showHelp = !this.showHelp;
             }
         }

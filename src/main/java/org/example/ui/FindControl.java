@@ -144,17 +144,26 @@ public class FindControl {
         if (row==0) {
             findInput.update(key);
         } else if (row==1) {
+            char pressed = '\0';
+            if (key.getKeyType()==KeyType.Character) {
+                // Yes. But did you know shift-N does not set key.isShiftDown()? Crazy.
+                if (!key.isShiftDown()) {
+                    pressed = Character.toLowerCase(key.getCharacter());
+                } else {
+                    pressed = Character.toUpperCase(key.getCharacter());
+                }
+            }
             if (key.getKeyType()==KeyType.ArrowRight) col += 1;
             if (key.getKeyType()==KeyType.ArrowLeft) col -= 1;
             if (col<0) col=0;
             if (col>3) col=3;
-            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==0)|| key.getCharacter()=='w')) {
+            if (key.getKeyType()== KeyType.Character && ((pressed==' ' && col==0)|| pressed=='w')) {
                 this.allowSubstring = !this.allowSubstring;
             }
-            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==1) || key.getCharacter()=='c' || key.getCharacter()=='a')) {
+            if (key.getKeyType()== KeyType.Character && ((pressed==' ' && col==1) || pressed=='c' || pressed=='a')) {
                 this.careAboutCase = !this.careAboutCase;
             }
-            if (key.getKeyType()== KeyType.Character && (key.getCharacter()==' ' && col==2)) {
+            if (key.getKeyType()== KeyType.Character && (pressed==' ' && col==2)) {
                 if (searchKey)
                     if (searchValue) {
                         searchValue = false;
@@ -167,16 +176,16 @@ public class FindControl {
                     searchValue = true;
                 }
             }
-            if (key.getKeyType()== KeyType.Character &&  key.getCharacter()=='k' && (searchKey || !searchValue)) {
+            if (key.getKeyType()== KeyType.Character &&  pressed=='k' && (searchKey || !searchValue)) {
                 this.searchValue = !this.searchValue;
             }
-            if (key.getKeyType()== KeyType.Character &&  key.getCharacter()=='v' && (!searchKey || searchValue)) {
+            if (key.getKeyType()== KeyType.Character &&  pressed=='v' && (!searchKey || searchValue)) {
                 this.searchKey = !this.searchKey;
             }
-            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==3) || key.getCharacter()=='/')) {
+            if (key.getKeyType()== KeyType.Character && ((pressed==' ' && col==3) || key.getCharacter()=='/')) {
                 this.skipComments = !this.skipComments;
             }
-            if (key.getKeyType()== KeyType.Character && ((key.getCharacter()==' ' && col==4) || key.getCharacter()=='r' || key.getCharacter()=='.')) {
+            if (key.getKeyType()== KeyType.Character && ((pressed==' ' && col==4) || pressed=='r' || key.getCharacter()=='.')) {
                 this.regExp = !this.regExp;
             }
             if (key.getKeyType()== KeyType.Character && key.getCharacter()=='n') {
@@ -185,10 +194,10 @@ public class FindControl {
             if (key.getKeyType()== KeyType.Character && key.getCharacter()=='N') {
                 myJson.cursorPrevCursor();
             }
-            if (key.getKeyType()== KeyType.Character && key.getCharacter()=='?') {
+            if (key.getKeyType()== KeyType.Character && pressed=='?') {
                 showHelp = !showHelp;
             }
-            if (key.getKeyType()== KeyType.Character && key.getCharacter()=='g') {
+            if (key.getKeyType()== KeyType.Character && pressed=='g') {
                 return Choice.GOTO;
             }
         }

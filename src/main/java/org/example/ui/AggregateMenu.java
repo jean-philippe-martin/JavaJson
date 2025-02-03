@@ -83,7 +83,7 @@ public class AggregateMenu {
             if (row==4) return Choice.REMOVE_AGGREGATE;
         }
         if (key.getKeyType()==KeyType.Character) {
-            switch (key.getCharacter()) {
+            switch (Character.toLowerCase(key.getCharacter())) {
                 case 'u': return Choice.UNIQUE_FIELDS;
                 case 't': return Choice.AGG_TOTAL;
                 case '-': return Choice.AGG_MIN_MAX;
