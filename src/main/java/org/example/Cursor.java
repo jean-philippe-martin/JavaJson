@@ -115,6 +115,10 @@ public class Cursor {
         return this.step;
     }
 
+    public Cursor getParent() {
+        return this.parent;
+    }
+
     public List<DescentStep> asListOfSteps() {
         if (null==parent || parent==this) {
             // no parent, empty list

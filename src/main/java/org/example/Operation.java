@@ -14,7 +14,7 @@ public interface Operation {
     /** Run this operation; returns the new root. **/
     public JsonNode run();
 
-    /** Undo this operation (must be most recept op).
+    /** Undo this operation (must be most recent op).
      *
      * @return the new root.
      */
@@ -173,46 +173,6 @@ public interface Operation {
         }
     }
 
-    /*
-    public class AggTotalOp implements Operation {
-
-        private final JsonNode beforeRoot;
-        private AggSaver before;
-
-        public AggTotalOp(JsonNode root) {
-            this.beforeRoot = root.rootInfo.root;
-        }
-
-        @Override
-        public JsonNode run() {
-
-            // Save the past
-            this.before = new AggSaver(beforeRoot);
-
-            // Do the thing
-            boolean happened = false;
-            for (JsonNode node : beforeRoot.atAnyCursor()) {
-                AggTotal agg = new org.example.AggTotal(node);
-                JsonNode foo = agg.write(node);
-                if (null!=foo) happened=true;
-            }
-            if (!happened) return null;
-            return beforeRoot;
-        }
-
-        @Override
-        public @NotNull JsonNode undo() {
-            return before.restore();
-        }
-
-        @Override
-        public String toString() {
-            return AggTotal.OPNAME + "()";
-        }
-
-    }
-*/
-
     public class AggGeneric<T> implements Operation {
 
         private final INodeVisitor<T> visitor;
@@ -255,25 +215,25 @@ public interface Operation {
         }
     }
 
-    public class AggMinMaxOp extends AggGeneric<String> {
+    public class OpAggMinMax extends AggGeneric<String> {
 
-        public AggMinMaxOp(JsonNode root) {
+        public OpAggMinMax(JsonNode root) {
             super(root, new AggOpBasicStats.MinMax());
         }
 
     }
 
-    public class AggTotalOp extends AggGeneric<Object> {
+    public class OpAggTotal extends AggGeneric<Object> {
 
-        public AggTotalOp(JsonNode root) {
+        public OpAggTotal(JsonNode root) {
             super(root, new AggOpBasicStats.Sum());
         }
 
     }
 
-    public class AggAvgOp extends AggGeneric<Double> {
+    public class OpAggAvg extends AggGeneric<Double> {
 
-        public AggAvgOp(JsonNode root) {
+        public OpAggAvg(JsonNode root) {
             super(root, new AggOpBasicStats.Avg());
         }
     }

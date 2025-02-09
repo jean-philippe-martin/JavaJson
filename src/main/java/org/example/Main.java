@@ -18,15 +18,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Locale;
 
 public class Main {
 
@@ -47,6 +42,8 @@ public class Main {
     private String notificationText = "";
 
     private static final String keys_help =
+                "(C) 2025 Jean-Philippe Martin\n"+
+                "\n"+
                 "----------------[ Movement ]----------------\n"+
                 "up/down         : navigate line             \n"+
                 "pg up / pg dn   : navigate page             \n"+
@@ -86,7 +83,7 @@ public class Main {
     public static Main fromLinesAndVirtual(@NotNull String[] lines, int width, int height) throws IOException {
         Terminal term = new DefaultVirtualTerminal(new TerminalSize(width, height));
         JsonNode myJson = JsonNode.parseLines(lines);
-        return new Main(myJson, term);
+        return new Main(myJson, term, Locale.US);
     }
 
     protected static Main fromPathStr(@NotNull String pathStr, @Nullable Terminal terminalOverride) throws IOException {
@@ -97,6 +94,10 @@ public class Main {
     }
 
     private Main(@NotNull JsonNode root, @Nullable Terminal terminalOverride) throws IOException {
+        this(root, terminalOverride, null);
+    }
+
+    private Main(@NotNull JsonNode root, @Nullable Terminal terminalOverride, Locale defaultLocale) throws IOException {
         myJson = root;
         findControl = new FindControl(myJson);
 
@@ -108,7 +109,7 @@ public class Main {
             terminal = terminalOverride;
         }
         screen = new TerminalScreen(terminal);
-        drawer = new Drawer();
+        drawer = new Drawer(defaultLocale);
         // TUI mode
         screen.startScreen();
         // hide cursor
@@ -206,7 +207,7 @@ public class Main {
         } else
         if (choice==AggregateMenu.Choice.AGG_TOTAL) {
             if (myJson!=null) {
-                Operation sumOp = new Operation.AggTotalOp(myJson.root);
+                Operation sumOp = new Operation.OpAggTotal(myJson.root);
                 JsonNode newRoot = operationList.run(sumOp);
                 if (null!=newRoot) {
                     notificationText = "sum()";
@@ -220,7 +221,7 @@ public class Main {
         } else
         if (choice==AggregateMenu.Choice.AGG_MIN_MAX) {
             if (myJson != null) {
-                Operation op = new Operation.AggMinMaxOp(myJson.root);
+                Operation op = new Operation.OpAggMinMax(myJson.root);
                 JsonNode newRoot = operationList.run(op);
                 if (null != newRoot) {
                     notificationText = op.toString();
@@ -233,7 +234,7 @@ public class Main {
             return true;
         } else if (choice==AggregateMenu.Choice.AGG_AVG) {
             if (myJson != null) {
-                Operation op = new Operation.AggAvgOp(myJson.root);
+                Operation op = new Operation.OpAggAvg(myJson.root);
                 JsonNode newRoot = operationList.run(op);
                 if (null != newRoot) {
                     notificationText = op.toString();
@@ -403,6 +404,14 @@ public class Main {
             if ((key.getCharacter() != null && 'N' == key.getCharacter())) {
                 // prev cursor/match
                 myJson.cursorPrevCursor();
+            }
+            if (pressed=='g') {
+                JsonNode result = operationList.run(new OpGroupby(myJson));
+                if (null==result) {
+                    notificationText = "Unable to run groupby here. Try the key in a map in a list.";
+                } else {
+                    myJson = result;
+                }
             }
             if ((key.getCharacter() != null && 'a' == pressed)) {
                 // aggregate

@@ -3,11 +3,34 @@ package org.example;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class JsonNodeList extends JsonNode {
+
+    public static class Builder implements JsonNodeBuilder {
+        private final JsonNodeBuilder[] children;
+        private @Nullable Sorter sortOrder;
+
+        public Builder(JsonNodeBuilder[] children) {
+            this.children = children;
+        }
+
+        // Optionally, set a sort order
+        public Builder sorter(Sorter s) {
+            this.sortOrder = s;
+            return this;
+        }
+
+        @Override
+        public JsonNodeList build(JsonNode parent, Cursor curToMe) {
+            JsonNode root = null;
+            if (null!=parent) root = parent.rootInfo.root;
+            // This also builds all the children, recursively.
+            JsonNodeList ret = new JsonNodeList(children, parent, curToMe, root, true);
+            ret.sort(sortOrder);
+            return ret;
+        }
+    }
 
     /** Iterate through our children, in display order. **/
     protected class JsonNodeListIterator implements JsonNodeIterator<Integer> {
@@ -62,8 +85,8 @@ public class JsonNodeList extends JsonNode {
     // instead maintain a "display order" of who's displayed when.
     // Everything else that talks about an "index" uses the original index.
 
-    final List<Object> values;
-    private final JsonNode[] children;
+    List<Object> values;
+    private JsonNode[] children;
     // display index -> list index
     private int[] displayOrder;
     // list index -> display index
@@ -82,6 +105,27 @@ public class JsonNodeList extends JsonNode {
         this.whereIsDiplayed = displayOrder;
         this.children = new JsonNode[values.size()];
         this.sortOrder = null;
+    }
+
+
+    private JsonNodeList(JsonNodeBuilder[] newKids, JsonNode parent, Cursor curToMe, JsonNode root, boolean _ignored) {
+        super(parent, curToMe, root);
+        // The values are set from the JsonNodes.
+        this.children = new JsonNode[newKids.length];
+        for (int i=0; i < newKids.length; i++) {
+            children[i] = newKids[i].build(this, this.asCursor().enterIndex(i));
+        }
+        this.values = new ArrayList<>();
+        for (int i=0; i < newKids.length; i++) {
+            values.add(children[i].getValue());
+        }
+        this.displayOrder = new int[values.size()];
+        for (int i = 0; i< displayOrder.length; i++) {
+            displayOrder[i] = i;
+        }
+        // when index = display order, these two arrays are the same.
+        this.whereIsDiplayed = displayOrder;
+        sortOrder = null;
     }
 
     public int size() {
@@ -229,6 +273,35 @@ public class JsonNodeList extends JsonNode {
     @Override
     public @Nullable Sorter getSort() {
         return this.sortOrder;
+    }
+
+    /**
+     * change the parent node.
+     */
+    @Override
+    public void reparent(JsonNode newParent, Cursor cursorToMe) {
+        super.reparent(newParent, cursorToMe);
+        for (int i=0; i<children.length; i++) {
+            if (children[i] == null) continue;
+            children[i].reparent(this, cursorToMe.enterIndex(i));
+        }
+    }
+
+    @Override
+    public @NotNull JsonNode replaceChild(Cursor toKid, JsonNodeBuilder kid) {
+        if (toKid.getParent() != whereIAm) {
+            throw new RuntimeException("Cursor must point to a child. Got '" + toKid.toString() + "'");
+        }
+        if (!(toKid.getStep() instanceof Cursor.DescentIndex)) {
+            throw new RuntimeException("Cursor must point to a child, was expecting a numerical index. Got '" + toKid.toString() + "'");
+        }
+        int index = ((Cursor.DescentIndex)toKid.getStep()).get();
+        JsonNode oldKid = get(index);
+        this.pinnedUnderMe -= oldKid.pinnedUnderMe;
+        JsonNode newKid = kid.build(this, whereIAm.enterIndex(index));
+        this.pinnedUnderMe += newKid.pinnedUnderMe;
+        this.children[index] = newKid;
+        return newKid;
     }
 
 }

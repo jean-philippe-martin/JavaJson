@@ -22,6 +22,20 @@ import org.jetbrains.annotations.Nullable;
 public abstract class JsonNode {
     // the actual data is held by a subclass.
 
+    public static class Builder implements JsonNodeBuilder {
+        private final JsonNode node;
+
+        public Builder(JsonNode node) {
+            this.node = node;
+        }
+
+        @Override
+        public JsonNode build(JsonNode parent, Cursor curToMe) {
+            node.reparent(parent, curToMe);
+            return node;
+        }
+    }
+
     // This holds saved cursors so we can stash them.
     public class SavedCursors {
         public Cursor primaryCursor;
@@ -77,12 +91,12 @@ public abstract class JsonNode {
     protected boolean pinned = false;
     protected @NotNull String annotation = "";
     // A Cursor representing our ("this") position in the JSON tree.
-    protected final Cursor whereIAm;
-    protected final @NotNull RootInfo rootInfo;
+    protected Cursor whereIAm;
+    protected @NotNull RootInfo rootInfo;
     // A pointer to the root JSON node.
-    protected final JsonNode root;
+    protected JsonNode root;
     // A pointer to the parent JSON node. Or null if we're the root.
-    protected final JsonNode parent;
+    protected JsonNode parent;
     // The number of pinned entries in my children.
     protected int pinnedUnderMe;
     // This is meant for a list to be able to hold a JSON-like header
@@ -551,6 +565,44 @@ public abstract class JsonNode {
         return rootInfo.root;
     }
 
+    /**
+     * @return true if this node is root.
+     */
+    public boolean isRoot() {
+        if (null==parent) return true;
+        if (parent==this) return true;
+        return false;
+    }
+
+    /**
+     * change the parent node.
+     * To make it root, pass null for the parent and a new cursor.
+     */
+    public void reparent(JsonNode newParent, Cursor cursorToMe) {
+        if (null==newParent) {
+            this.rootInfo = new RootInfo(this);
+            this.root = this.rootInfo.root;
+            this.parent = null;
+        } else {
+            // we have a parent.
+            this.rootInfo = newParent.rootInfo;
+            this.root = this.rootInfo.root;
+            this.parent = newParent;
+        }
+        this.whereIAm = cursorToMe;
+        this.whereIAm.setData(this);
+        if (null!=aggregate) {
+            Cursor.DescentStep lastStep = aggregate.whereIAm.getStep();
+            if (lastStep instanceof Cursor.DescentKey) {
+                String key = ((Cursor.DescentKey) lastStep).get();
+                aggregate.reparent(this, cursorToMe.enterKey(key));
+            } else {
+                int index = ((Cursor.DescentIndex) lastStep).get();
+                aggregate.reparent(this, cursorToMe.enterIndex(index));
+            }
+        }
+    }
+
     /** Sort. But also save the sort order. **/
     public abstract void sort(Sorter sorter);
 
@@ -559,5 +611,13 @@ public abstract class JsonNode {
 
     /** Return the current sort rules. Null = original sort order. */
     public abstract @Nullable Sorter getSort();
+
+
+    /**
+     * Replace this child with another.
+     * The Cursor must point to a direct child of ours.
+     * Returns the constructed child.
+     **/
+    public abstract @NotNull JsonNode replaceChild(Cursor toChild, JsonNodeBuilder newChildBuilder);
 
 }

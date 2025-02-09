@@ -53,13 +53,15 @@ public class DrawAggTest {
 
         String expected =
             "[•//•4•entries••••••\n"+
-            "••//•sum()•34.0•••••\n"+
+            "••//•sum()•34•••••••\n"+
             "••5•••••••••••••••••\n";
 
         String got = main.getTestViewOfScreen();
 
         // Check only the start of the string to ignore the status bar
-        assert(got.startsWith(expected));
+        // (but do it in a way that'll give us the "click to see diff" button.
+        String beginning = got.substring(0, expected.length());
+        assertEquals(expected, beginning);
     }
 
     @Test

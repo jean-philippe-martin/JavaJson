@@ -12,10 +12,15 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.Terminal;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.regex.Matcher;
 
 
 public class DrawTest {
+
+    public static Drawer makeDrawer() {
+        return new Drawer(Locale.US);
+    }
 
     public static String extractAsString(Screen screen) {
         StringBuilder ret = new StringBuilder();
@@ -41,7 +46,7 @@ public class DrawTest {
     @Test
     public void testSimpleObject() throws Exception {
         Screen screen = setupScreen(20,4);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
         String expected =
             "{•••••••••••••••••••\n"+
             "••\"one\":•\"hello\"••••\n"+
@@ -61,7 +66,7 @@ public class DrawTest {
     @Test
     public void testNestedObject() throws Exception {
         Screen screen = setupScreen(25,7);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
             "{••••••••••••••••••••••••\n"+
@@ -88,7 +93,7 @@ public class DrawTest {
     @Test
     public void testTripleNestedObject() throws Exception {
         Screen screen = setupScreen(30,12);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected = 
             "{•••••••••••••••••••••••••••••\n"+
@@ -124,7 +129,7 @@ public class DrawTest {
     @Test
     public void testPreviouslyBrokenObject() throws Exception {
         Screen screen = setupScreen(30,12);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
            "{•••••••••••••••••••••••••••••\n"+
@@ -160,7 +165,7 @@ public class DrawTest {
     @Test
     public void testSimplePin() throws Exception {
         Screen screen = setupScreen(20,4);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected = 
             "{•...•••••••••••••••\n"+
@@ -189,7 +194,7 @@ public class DrawTest {
     @Test
     public void testSimplePin2() throws Exception {
         Screen screen = setupScreen(20,7);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected = 
             "{•...•••••••••••••••\n"+
@@ -235,7 +240,7 @@ public class DrawTest {
     @Test
     public void testNestedPin() throws Exception {
         Screen screen = setupScreen(20,5);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
             "{•...•••••••••••••••\n"+
@@ -268,7 +273,7 @@ public class DrawTest {
     @Test
     public void testSimpleList() throws Exception {
         Screen screen = setupScreen(20,6);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
             "{•••••••••••••••••••\n"+
@@ -293,7 +298,7 @@ public class DrawTest {
     @Test
     public void testSimpleListFolded() throws Exception {
         Screen screen = setupScreen(30,3);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
             "{•••••••••••••••••••••••••••••\n"+
@@ -331,7 +336,7 @@ public class DrawTest {
     @Test
     public void testPinnedListWontFold() throws Exception {
         Screen screen = setupScreen(20,6);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
             "{•...•••••••••••••••\n"+
@@ -374,7 +379,7 @@ public class DrawTest {
     @Test
     public void testPinnedMapWontFold() throws Exception {
         Screen screen = setupScreen(20,6);
-        Drawer d = new Drawer();
+        Drawer d = makeDrawer();
 
         String expected =
             "{•...•••••••••••••••\n"+

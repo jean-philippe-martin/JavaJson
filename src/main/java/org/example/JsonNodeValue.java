@@ -1,11 +1,29 @@
 package org.example;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 
 public class JsonNodeValue<T> extends JsonNode {
     protected T value;
+
+    // Use the builder to build complicated structures from the bottom up,
+    // where you don't know in advance who the parent will be.
+    public static class Builder<T> implements JsonNodeBuilder {
+        protected T value;
+
+        public Builder(T newValue) {
+            this.value = newValue;
+        }
+
+        @Override
+        public JsonNodeValue<T> build(JsonNode parent, Cursor curToMe) {
+            JsonNode root = null;
+            if (null!=parent) root = parent.rootInfo.root;
+            return new JsonNodeValue<>(value, parent, curToMe, root);
+        }
+    }
 
     protected JsonNodeValue(T value, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
@@ -138,6 +156,11 @@ public class JsonNodeValue<T> extends JsonNode {
     @Override
     public @Nullable Sorter getSort() {
         return null;
+    }
+
+    @Override
+    public @NotNull JsonNode replaceChild(Cursor toKid, JsonNodeBuilder kid) {
+        throw new RuntimeException("no can do");
     }
 
 }

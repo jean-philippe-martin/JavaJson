@@ -55,9 +55,6 @@ public class UniqueFieldsTest {
         JsonNodeMap agMap = (JsonNodeMap) ag;
         assertTrue(agMap.getKeysInOrder().contains("x"));
         JsonNodeMap kid = (JsonNodeMap) agMap.getChild("x");
-
-        // ...
-
     }
 
     @Test

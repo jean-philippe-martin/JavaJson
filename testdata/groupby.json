@@ -1,0 +1,26 @@
+[
+  "Put the cursor on \"country\" and press \"g\" to group by country.",
+  [
+    {
+      "city": "Tokyo",
+      "country": "Japan",
+      "population": 37468000
+    },
+    {
+      "city": "Delhi",
+      "country": "India",
+      "population": 28514000
+    },
+    {
+      "city": "Mumbai",
+      "country": "India",
+      "population": 19980000
+    },
+    "random string in the middle",
+    {
+      "city": "Metropolis",
+      "population": 11000000
+    }
+
+  ]
+]

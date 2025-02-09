@@ -8,6 +8,31 @@ import java.util.stream.Collectors;
 
 public class JsonNodeMap extends JsonNode {
 
+    public static class Builder implements JsonNodeBuilder {
+        private final LinkedHashMap<String, JsonNodeBuilder> children;
+        private @Nullable Sorter sortOrder;
+
+        public Builder(LinkedHashMap<String, JsonNodeBuilder> children) {
+            this.children = children;
+        }
+
+        // Optionally, set a sort order
+        public JsonNodeMap.Builder sorter(Sorter s) {
+            this.sortOrder = s;
+            return this;
+        }
+
+        @Override
+        public JsonNodeMap build(JsonNode parent, Cursor curToMe) {
+            JsonNode root = null;
+            if (null!=parent) root = parent.rootInfo.root;
+            // This also builds all the children, recursively.
+            JsonNodeMap ret = new JsonNodeMap(children, parent, curToMe, root, true);
+            ret.sort(sortOrder);
+            return ret;
+        }
+    }
+
     /** Iterate through our children, in display order. **/
     public class JsonNodeMapIterator implements JsonNodeIterator<String> {
         final JsonNodeMap dad;
@@ -66,11 +91,33 @@ public class JsonNodeMap extends JsonNode {
     private @Nullable Sorter sortOrder = null;
 
 
+    /** Normal constructor, from the result of parsing JSON. */
     protected JsonNodeMap(LinkedHashMap<String, Object> kv, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.kv = kv;
         this.children = new HashMap<>();
         this.displayOrder = kv.keySet().toArray(new String[0]);
+        this.whereIsDiplayed = new HashMap<>();
+        for (int i=0; i<displayOrder.length; i++) {
+            whereIsDiplayed.put(displayOrder[i], i);
+        }
+        sortOrder = null;
+    }
+
+    // See the builder
+    private JsonNodeMap(LinkedHashMap<String, JsonNodeBuilder> newKids, JsonNode parent, Cursor curToMe, JsonNode root, boolean _ignored) {
+        super(parent, curToMe, root);
+        // So you better not call getValue now. But childCount() will work.
+        this.kv = new LinkedHashMap<>();
+        for (String key : newKids.keySet()) {
+            kv.put(key, null);
+        }
+        this.children = new HashMap<String, JsonNode>();
+        for (Map.Entry<String, JsonNodeBuilder> e : newKids.entrySet()) {
+            this.children.put(e.getKey(), e.getValue().build(this, this.asCursor().enterKey(e.getKey())));
+        }
+
+        this.displayOrder = this.children.keySet().toArray(new String[0]);
         this.whereIsDiplayed = new HashMap<>();
         for (int i=0; i<displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
@@ -233,4 +280,33 @@ public class JsonNodeMap extends JsonNode {
         return this.sortOrder;
     }
 
+    /**
+     * change the parent node.
+     */
+    @Override
+    public void reparent(JsonNode newParent, Cursor cursorToMe) {
+        super.reparent(newParent, cursorToMe);
+        var it = this.iterateChildren();
+        while (it!=null) {
+            it.get().reparent(this, cursorToMe.enterKey((String)it.key()));
+            it = it.next();
+        }
+    }
+
+    @Override
+    public @NotNull JsonNode replaceChild(Cursor toKid, JsonNodeBuilder kid) {
+        if (toKid.getParent() != whereIAm) {
+            throw new RuntimeException("Cursor must point to a child. Got '" + toKid.toString() + "'");
+        }
+        if (!(toKid.getStep() instanceof Cursor.DescentIndex)) {
+            throw new RuntimeException("Cursor must point to a child, was expecting a numerical index. Got '" + toKid.toString() + "'");
+        }
+        String key = ((Cursor.DescentKey)toKid.getStep()).get();
+        JsonNode oldKid = getChild(key);
+        this.pinnedUnderMe -= oldKid.pinnedUnderMe;
+        JsonNode newKid = kid.build(this, whereIAm.enterKey(key));
+        this.pinnedUnderMe += newKid.pinnedUnderMe;
+        this.children.put(key, newKid);
+        return newKid;
+    }
 }

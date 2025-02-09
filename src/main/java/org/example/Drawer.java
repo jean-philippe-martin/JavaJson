@@ -3,8 +3,13 @@ package org.example;
 import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import org.example.ui.Theme;
+import org.jetbrains.annotations.Nullable;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,6 +18,8 @@ public class Drawer {
     static final int INDENT = 2;
 
     static final Pattern colorPattern = Pattern.compile("#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})");
+
+    static @Nullable DecimalFormat decimalFormat;
 
     // Where on the screen we drew the cursor.
     // If that was too low, maybe you'll want to adjust and try again?
@@ -27,7 +34,24 @@ public class Drawer {
         }
     }
 
-    public Drawer() {}
+    public Drawer() {
+        this(null);
+    }
+
+    public Drawer(@Nullable Locale defaultLocale) {
+        if (null==defaultLocale) defaultLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        NumberFormat numberFormat = NumberFormat.getInstance(defaultLocale);
+        if (!(numberFormat instanceof DecimalFormat)) {
+            decimalFormat = null;
+        } else {
+            // Set the decimal format to what I like.
+            // Ideaally at some point we want settings to override this.
+            decimalFormat = (DecimalFormat) numberFormat;
+            DecimalFormatSymbols symbols = decimalFormat.getDecimalFormatSymbols();
+            symbols.setGroupingSeparator('\'');
+            decimalFormat.setDecimalFormatSymbols(symbols);
+        }
+    }
 
     public int getCursorLineLastTime() {
         return this.cursorScreenLine;
@@ -58,6 +82,12 @@ public class Drawer {
             printMaybeReversed(g, pos.withRelativeColumn(initialOffset),   "{ ...", jsonMap.isAtCursor());
         } else {
             printMaybeReversed(g, pos.withRelativeColumn(initialOffset),  "{", jsonMap.isAtCursor());
+        }
+
+        if (jsonMap.getAnnotation()!=null && !jsonMap.getAnnotation().isEmpty()) {
+            String countAnno = " // " + jsonMap.getAnnotation();
+            TextGraphics green = Theme.withColor(g, Theme.synthetic);
+            green.putString(pos.withRelativeColumn(initialOffset+1), countAnno);
         }
 
         int myIndent = INDENT;
@@ -186,7 +216,7 @@ public class Drawer {
                 }
                 return lines;
             } else {
-                printMaybeReversed(g, start.withRelativeColumn(initialOffset), value.toString(), json.isAtCursor());
+                printMaybeReversed(g, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
             }
         }
@@ -266,6 +296,14 @@ public class Drawer {
         }
 
         throw new RuntimeException("Unrecognized type: " + json.getClass());
+    }
+
+    public static String formatNumber(Object maybeNumber) {
+        String str = maybeNumber.toString();
+        if (decimalFormat!=null && (maybeNumber instanceof Long || maybeNumber instanceof Double || maybeNumber instanceof Integer)) {
+            str = decimalFormat.format(maybeNumber);
+        }
+        return str;
     }
 
 }
