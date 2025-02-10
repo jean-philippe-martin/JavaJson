@@ -298,8 +298,8 @@ public class JsonNodeMap extends JsonNode {
         if (toKid.getParent() != whereIAm) {
             throw new RuntimeException("Cursor must point to a child. Got '" + toKid.toString() + "'");
         }
-        if (!(toKid.getStep() instanceof Cursor.DescentIndex)) {
-            throw new RuntimeException("Cursor must point to a child, was expecting a numerical index. Got '" + toKid.toString() + "'");
+        if (!(toKid.getStep() instanceof Cursor.DescentKey)) {
+            throw new RuntimeException("Cursor must point to a child, was expecting a string index. Got '" + toKid.toString() + "'");
         }
         String key = ((Cursor.DescentKey)toKid.getStep()).get();
         JsonNode oldKid = getChild(key);

@@ -26,7 +26,6 @@ public class OpGroupby implements Operation {
             JsonNodeMap mapToGroup = (JsonNodeMap)(selectedValue.parent);
             String keyToGroupBy = ((Cursor.DescentKey)(selectedValue.asCursor().getStep())).get();
             newRoot = groupby(mapToGroup, keyToGroupBy);
-            //newRoot = oldRoot;
         }
         return newRoot;
     }

@@ -62,7 +62,8 @@ public class Main {
                 "                                            \n"+
                 "----------------[ Transform ]---------------\n"+
                 "+               : union selected arrays     \n"+
-                "a               : aggregate sel. array(s)   \n"+
+                        "a               : aggregate sel. array(s)   \n"+
+                        "g               : groupby sel. key(s)   \n"+
                 "s               : sort selected array(s)    \n"+
                 "shift-Z         : undo last transform       \n"+
                 "                                            \n"+
