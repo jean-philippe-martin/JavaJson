@@ -42,8 +42,6 @@ public class Main {
     private String notificationText = "";
 
     private static final String keys_help =
-                "(C) 2025 Jean-Philippe Martin\n"+
-                "\n"+
                 "----------------[ Movement ]----------------\n"+
                 "up/down         : navigate line             \n"+
                 "pg up / pg dn   : navigate page             \n"+
@@ -407,10 +405,12 @@ public class Main {
                 myJson.cursorPrevCursor();
             }
             if (pressed=='g') {
-                JsonNode result = operationList.run(new OpGroupby(myJson));
+                OpGroupby op = new OpGroupby(myJson);
+                JsonNode result = operationList.run(op);
                 if (null==result) {
                     notificationText = "Unable to run groupby here. Try the key in a map in a list.";
                 } else {
+                    notificationText = op.toString();
                     myJson = result;
                 }
             }
@@ -496,6 +496,8 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         if (args.length==0 || (args.length==1 && args[0].equals("--help")) || args.length!=1) {
+            System.out.println("(C) 2025 Jean-Philippe Martin");
+            System.out.println();
             System.out.println("Usage:");
             System.out.println("java -jar JavaJson*.jar myfile.json");
             System.out.println();

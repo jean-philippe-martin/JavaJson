@@ -142,8 +142,8 @@ public class JsonNodeMap extends JsonNode {
         if (this.children.containsKey(key)) {
             return this.children.get(key);
         } else {
+            if (!kv.containsKey(key)) throw new NoSuchElementException("No '"+key+"' child for " + whereIAm.toString());
             Object childJson = kv.get(key);
-            if (null==childJson) throw new NoSuchElementException("No '"+key+"' child for " + whereIAm.toString());
             JsonNode child = JsonNode.fromObject(childJson, this, whereIAm.enterKey(key), root);
             this.children.put(key, child);
             return child;

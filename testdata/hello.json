@@ -8,7 +8,8 @@
     "operator": "Joe",
     "vol_setting": 10.3,
     "five_oh": 5.0,
-    "nine_thousand": 9000.0
+    "nine_thousand": 9000.0,
+    "null_value": null
   },
   "boolean": true,
   "long": 43875628475648765,

@@ -10,6 +10,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Sibling selection](#sibling-selection)
 - [Annotations](#annotations)
 - [Unique keys](#Unique-keys)
+- [Groupby](#groupby)
 
 ## Basic navigation
 
@@ -510,6 +511,83 @@ If you enable "unique_keys()", you will see something like this:
 This means that all the entries have a "name" key, and 80% of them have "friends".
 Considering only those that have a "friends" list, here all the friends have a "name"
 key and 30% of them have an "eye color" field.
+
+## Groupby
+
+The "group by" feature allows you to organize a list of maps by grouping them based on
+one of their keys. Here is an example, a list of cities and their corresponding country:
+
+```
+[ // 4 entries
+  {
+    "city": "Tokyo",
+    "country": "Japan"
+  },
+  {
+    "city": "Delhi",
+    "country": "India"
+  },
+  {
+    "city": "Mumbai",
+    "country": "India"
+  },
+  {
+    "city": "Metropolis"
+  }
+]
+```
+
+Maybe we're only interested in one country, or maybe we'd like to know how many
+cities are in this list for each country. The `groupby` transformation can help.
+
+In this case we'd like to group by country, so bring the cursor down to
+one of the lines that says "country". You should see the `>>` symbol in the margin
+on that line and the line should be highlighted.
+
+Press `g` to call the `groupby` transformation.
+
+The list of cities will now be replaced by a map with multiple lists: one per country.
+It will look like this:
+
+```
+{ // grouped by country
+  "Japan": [ // 1 entry
+    {
+      "city": "Tokyo"
+>>    "country": "Japan"
+    }
+  ]
+  "India": [ // 2 entries
+    {
+      "city": "Delhi"
+      "country": "India"
+    }
+    {
+      "city": "Mumbai"
+      "country": "India"
+    }
+  ]
+  "(null)": [ // 1 entry
+    {
+      "city": "Metropolis"
+      "population": 11'000'000
+    }
+  ]
+}
+```
+
+As you can see, there is a comment at the top indicating what we have done (group by
+country), and then for each country there is a list of the cities from the original
+list that belong to that country.
+
+Everything that was in the original list will be kept, even if it doesn't have
+a "country" key. Those will be shown in the `(null)` list, named this way
+to indicate those don't have a value for the grouping key.
+
+Grouping can be undone with the `shift-Z` key, like any other transformation.
+
+If you have multiple cursors when you press `g`, then a groupby will be attempted
+at each of the cursors.
 
 # Related
 

@@ -70,10 +70,23 @@ public class Conversions {
     // parse a date if it's just the right way
     public static @Nullable Date stringToDate(@Nullable String maybeDate) {
         if (null==maybeDate) return null;
-        // try to interpret as a date
-        SimpleDateFormat guess = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.ENGLISH);
-        guess.setTimeZone(TimeZone.getTimeZone("UTC"));
-        Date date = guess.parse(maybeDate, new ParsePosition(0));
+        String[] patterns = new String[] {
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+                "yyyy-MM-dd'T'HH:mm:ssX",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+                "yyyy-MM-dd' 'HH:mm:ss Z",
+                "yyyy-MM-dd' 'HH:mm:ss.SSS Z",
+                "EEE, d MMM yyyy HH:mm:ss z"
+        };
+        Date date = null;
+        for (String pattern : patterns) {
+            // try to interpret as a date
+            SimpleDateFormat guess = new SimpleDateFormat(pattern, java.util.Locale.ENGLISH);
+            guess.setTimeZone(TimeZone.getTimeZone("UTC"));
+            date = guess.parse(maybeDate, new ParsePosition(0));
+            if (null != date) break;
+        }
         return date;
     }
 

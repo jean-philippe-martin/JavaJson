@@ -6,12 +6,36 @@ import java.util.*;
 
 public class OpGroupby implements Operation {
 
+    /** Holds information needed to undo a groupby */
+    public static class GroupbyUndo {
+        private JsonNodeList holderList;
+        private JsonNode listParent;
+        private Cursor toList;
+        public GroupbyUndo(JsonNodeMap mapToGroup) {
+            JsonNodeList holder = (JsonNodeList) mapToGroup.getParent();
+            this.holderList = holder;
+            this.listParent = holder.getParent();
+            this.toList = holder.whereIAm;
+        }
+        public void undo() {
+            JsonNode.Builder builder = new JsonNode.Builder(holderList);
+            listParent.replaceChild(toList, builder);
+        }
+    }
+
     private JsonNode oldRoot;
     private JsonNode innerMap;
     private String keyToGroupBy;
+    private ArrayList<GroupbyUndo> undoers;
 
     public OpGroupby(JsonNode root) {
         this.oldRoot = root;
+        this.undoers = new ArrayList<>();
+    }
+
+    @Override
+    public String toString() {
+        return "groupby(."+keyToGroupBy+")";
     }
 
     @Override
@@ -24,7 +48,8 @@ public class OpGroupby implements Operation {
             if (null==selectedValue.getParent().getParent()) continue;
             if (!(selectedValue.getParent().getParent() instanceof JsonNodeList)) continue;
             JsonNodeMap mapToGroup = (JsonNodeMap)(selectedValue.parent);
-            String keyToGroupBy = ((Cursor.DescentKey)(selectedValue.asCursor().getStep())).get();
+            keyToGroupBy = ((Cursor.DescentKey)(selectedValue.asCursor().getStep())).get();
+            undoers.add(new GroupbyUndo(mapToGroup));
             newRoot = groupby(mapToGroup, keyToGroupBy);
         }
         return newRoot;
@@ -32,7 +57,11 @@ public class OpGroupby implements Operation {
 
     @Override
     public @NotNull JsonNode undo() {
-        return null;
+        int l = undoers.size();
+        for (var i=0; i<l; i++) {
+            undoers.get(l-i-1).undo();
+        }
+        return oldRoot;
     }
 
     // returns the new root (for now at least).

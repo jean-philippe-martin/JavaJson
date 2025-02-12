@@ -15,6 +15,7 @@ Available features:
 - scrolling
 - [text search](doc/features.md#search)
 - [sorting](doc/features.md#sorting)
+- [groupby](doc/features.md#groupby)
 - help screen showing the supported keys (press 'h' or '?')
 - shift-Z to undo union, sort, or aggregation
 

@@ -109,7 +109,9 @@ public class Drawer {
             }
 
             TextGraphics g2 = g;
-            printMaybeReversed(g, pos, aggComment + "\"" + key + "\"", jsonMap.isAtCursor(key));
+            TextGraphics g_key = Theme.withColor(g, Theme.key);
+            printMaybeReversed(g, pos, aggComment, jsonMap.isAtCursor(key));
+            printMaybeReversed(g_key, pos.withRelativeColumn(aggComment.length()), "\"" + key + "\"", jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos.withRelativeColumn(aggComment.length() + 2 + key.length());
             // normal case, user data.
             if (child instanceof JsonNodeValue) {
@@ -198,9 +200,14 @@ public class Drawer {
             }
 
             Object value = jsonValue.getValue();
-            if (value instanceof String) {
+            if (null==value) {
+                var g_num = Theme.withColor(g, Theme.value_null);
+                printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
+                return lines+1;
+            } else if (value instanceof String) {
                 String str = (String)value;
-                printMaybeReversed(g, start.withRelativeColumn(initialOffset), "\"" + str + "\"", json.isAtCursor());
+                TextGraphics g_str = Theme.withColor(g, Theme.value_str);
+                printMaybeReversed(g_str, start.withRelativeColumn(initialOffset), "\"" + str + "\"", json.isAtCursor());
                 lines += 1;
                 Matcher colorMatcher = colorPattern.matcher(str);
                 boolean found = colorMatcher.find();
@@ -216,7 +223,8 @@ public class Drawer {
                 }
                 return lines;
             } else {
-                printMaybeReversed(g, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
+                var g_num = Theme.withColor(g, Theme.value_num);
+                printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
             }
         }
@@ -299,6 +307,7 @@ public class Drawer {
     }
 
     public static String formatNumber(Object maybeNumber) {
+        if (null==maybeNumber) return "null";
         String str = maybeNumber.toString();
         if (decimalFormat!=null && (maybeNumber instanceof Long || maybeNumber instanceof Double || maybeNumber instanceof Integer)) {
             str = decimalFormat.format(maybeNumber);

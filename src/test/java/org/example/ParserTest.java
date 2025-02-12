@@ -112,5 +112,20 @@ public class ParserTest {
         assertTrue(json instanceof JsonNodeValue);
     }
 
+    @Test
+    public void testParseNull() throws Exception {
+        JsonNode json = JsonNode.parseLines(new String[] {
+                "{",
+                "  \"null_value\": null",
+                "}"
+        });
+        // Even though a single line that is valid JSON can be construed as JSONL,
+        // we should really keep this as JSON.
+        // Even if the file has multiple lines, but only one has data.
+        assertTrue(json instanceof JsonNodeMap);
+        JsonNodeMap map = (JsonNodeMap) json;
+        map.getChild("null_value");
+    }
+
 
 }

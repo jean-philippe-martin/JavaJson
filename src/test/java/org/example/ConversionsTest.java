@@ -2,6 +2,11 @@ package org.example;
 
 import org.junit.Test;
 
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalField;
+import java.util.Date;
+
 import static org.junit.Assert.*;
 
 public class ConversionsTest {
@@ -50,6 +55,26 @@ public class ConversionsTest {
             String s = Conversions.toString(12.5, u);
             assertNotEquals("", s);
         }
+    }
+
+    @Test
+    public void testParseDate() {
+        String candidate = "Tue, 3 Feb 2025 23:22:21 GMT";
+        Date converted = Conversions.stringToDate(candidate);
+        assertNotNull(converted);
+        assertEquals(23, converted.toInstant().atOffset(ZoneOffset.UTC).get(ChronoField.HOUR_OF_DAY));
+        assertEquals(22, converted.toInstant().atOffset(ZoneOffset.UTC).get(ChronoField.MINUTE_OF_HOUR));
+        assertEquals(21, converted.toInstant().atOffset(ZoneOffset.UTC).get(ChronoField.SECOND_OF_MINUTE));
+    }
+
+    @Test
+    public void testParseDate2() {
+        String candidate = "2022-11-08T23:29:25Z";
+        Date converted = Conversions.stringToDate(candidate);
+        assertNotNull(converted);
+        assertEquals(23, converted.toInstant().atOffset(ZoneOffset.UTC).get(ChronoField.HOUR_OF_DAY));
+        assertEquals(29, converted.toInstant().atOffset(ZoneOffset.UTC).get(ChronoField.MINUTE_OF_HOUR));
+        assertEquals(25, converted.toInstant().atOffset(ZoneOffset.UTC).get(ChronoField.SECOND_OF_MINUTE));
     }
 
 }
