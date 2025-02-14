@@ -376,9 +376,17 @@ public class Main {
         }
         else {
             // normal key handling
-            if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) moveCursorDown();
+            if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
+                if (!drawer.tryCursorDown(myJson.rootInfo.userCursor)) {
+                    myJson.cursorDown();
+                }
+            }
             if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
-            if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) myJson.cursorUp();
+            if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) {
+                if (!drawer.tryCursorUp(myJson.rootInfo.userCursor)) {
+                    myJson.cursorUp();
+                }
+            }
             if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
             if (key.getKeyType() == KeyType.ArrowLeft) {
                 if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {

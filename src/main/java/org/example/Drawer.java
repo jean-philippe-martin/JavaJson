@@ -25,6 +25,13 @@ public class Drawer {
     // If that was too low, maybe you'll want to adjust and try again?
     private int cursorScreenLine = 0;
     private boolean drewCursor = false;
+    // number of "sub-cursor" steps available. This is to allow you to scroll through
+    // a string that takes up multiple lines on the screen.
+    public int substepsAvailable;
+    public int substep;
+    public Cursor substepCursor  = null;
+    // 0=dunno, 1=down, -1=up
+    public int directionOfTravel = 0;
 
     public static void printMaybeReversed(TextGraphics g, TerminalPosition pos, String s, boolean bolded) {
         if (bolded) {
@@ -155,10 +162,31 @@ public class Drawer {
         return line;
     }
 
+    public boolean tryCursorUp(Cursor userCursor) {
+        directionOfTravel=-1;
+        if (userCursor!=substepCursor) return false;
+        if (substep==0) return false;
+        substep--;
+        return true;
+    }
+
+    public boolean tryCursorDown(Cursor userCursor) {
+        directionOfTravel=1;
+        if (userCursor!=substepCursor) return false;
+        if (substep>=substepsAvailable-1) return false;
+        substep++;
+        return true;
+    }
+
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
     public int printJsonTree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
         this.drewCursor = false;
+        if (json.rootInfo.userCursor != substepCursor) {
+            substep=0;
+            substepsAvailable=0;
+            substepCursor = json.rootInfo.userCursor;
+        }
         return printJsonSubtree(g, start, initialOffset, json, false, false);
     }
 
@@ -166,8 +194,12 @@ public class Drawer {
         if (json.isAtPrimaryCursor()) {
             this.cursorScreenLine = start.getRow();
             this.drewCursor = true;
+            int offset = 0;
+            if (json.whereIAm == substepCursor) {
+                offset = substep;
+            }
             if (json.parent!=null) {
-                g.putString(start.withColumn(0), ">>");
+                g.putString(start.withColumn(0).withRelativeRow(offset), ">>");
             }
         }
         if (json.getPinned()) {
@@ -205,10 +237,35 @@ public class Drawer {
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
             } else if (value instanceof String) {
-                String str = (String)value;
+                String str = "\"" + (String)value + "\"";
                 TextGraphics g_str = Theme.withColor(g, Theme.value_str);
-                printMaybeReversed(g_str, start.withRelativeColumn(initialOffset), "\"" + str + "\"", json.isAtCursor());
-                lines += 1;
+                // todo: use actual screen width
+                int w = g.getSize().getColumns() - start.getColumn() - initialOffset;
+                int down = 0;
+                if (jsonValue.getFolded()) {
+                    // show only one line, regardless of length
+                    if (str.length()>w) {
+                        str = str.substring(0, w-3) + "...";
+                    }
+                    printMaybeReversed(g_str, start.withRelativeColumn(initialOffset), str, json.isAtCursor());
+                    down = 1;
+                } else {
+                    int index = 0;
+                    while (index < str.length()) {
+                        String oneLine = str.substring(index, Math.min(str.length(), index + w));
+                        printMaybeReversed(g_str, start.withRelative(initialOffset, down), oneLine, json.isAtCursor());
+                        index += w;
+                        down++;
+                    }
+                }
+                if (json.isAtCursor()) {
+                    substepCursor = json.whereIAm;
+                    substepsAvailable = down;
+                }
+                lines += down;
+
+                //printMaybeReversed(g_str, start.withRelativeColumn(initialOffset), str, json.isAtCursor());
+                // Is this a color? Add a sample.
                 Matcher colorMatcher = colorPattern.matcher(str);
                 boolean found = colorMatcher.find();
                 if (found && colorMatcher.groupCount()==3) {
