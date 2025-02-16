@@ -159,7 +159,9 @@ public abstract class JsonNode {
             return new JsonNodeList((List)json, parent, toMe, root);
         }
         if (json instanceof String) {
-            return new JsonNodeValue<String>((String)json, parent, toMe, root);
+            JsonNodeValue ret = new JsonNodeValue<String>((String)json, parent, toMe, root);
+            ret.folded = true;
+            return ret;
         }
         return new JsonNodeValue(json, parent, toMe, root);
     }
@@ -261,7 +263,10 @@ public abstract class JsonNode {
         JsonNode place = where.getData();
         boolean changed = false;
         if (null!=place) {
-            if (place.folded != folded && !(place instanceof JsonNodeValue)) {
+            if (place.folded != folded &&
+            // cannot unfold ints, but we *can* unfold strings.
+                    ((!(place instanceof JsonNodeValue))
+                            || (place instanceof JsonNodeValue) && (place.getValue() instanceof String))) {
                 changed=true;
             }
             place.folded = folded;

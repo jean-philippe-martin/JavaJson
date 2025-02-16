@@ -153,7 +153,7 @@ public class Main {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(bottomText);
-        while (sb.length() < g.getSize().getColumns()-1) {
+        while (sb.length() < g.getSize().getColumns()) {
             sb.append(" ");
         }
         g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
@@ -264,16 +264,26 @@ public class Main {
         return ret.toString();
     }
 
-    public void moveCursorDown() {
+    public void moveCursorUp() {
         Cursor current = myJson.rootInfo.userCursor;
-        myJson.cursorDown();
-        if (myJson.rootInfo.userCursor == current) {
-            // We are at the end of the document, didn't actually move down.
-            // Let's scroll down a bit, maybe the user wants to see the closing
-            // brackets.
-            scroll++;
+        if (!drawer.tryCursorUp(myJson.rootInfo.userCursor)) {
+            myJson.cursorUp();
         }
     }
+
+    public void moveCursorDown(boolean doScroll) {
+        Cursor current = myJson.rootInfo.userCursor;
+        if (!drawer.tryCursorDown(myJson.rootInfo.userCursor)) {
+            myJson.cursorDown();
+            if (doScroll && myJson.rootInfo.userCursor == current) {
+                // We are at the end of the document, didn't actually move down.
+                // Let's scroll down a bit, maybe the user wants to see the closing
+                // brackets.
+                scroll++;
+            }
+        }
+    }
+
 
     /**
      * Updates the state based on the key pressed.
@@ -377,15 +387,11 @@ public class Main {
         else {
             // normal key handling
             if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
-                if (!drawer.tryCursorDown(myJson.rootInfo.userCursor)) {
-                    myJson.cursorDown();
-                }
+                moveCursorDown(true);
             }
             if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
             if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) {
-                if (!drawer.tryCursorUp(myJson.rootInfo.userCursor)) {
-                    myJson.cursorUp();
-                }
+                moveCursorUp();
             }
             if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
             if (key.getKeyType() == KeyType.ArrowLeft) {
@@ -431,13 +437,14 @@ public class Main {
 //                        myJson = JsonNode.parse(path);
 //                    }
             if (key.getKeyType() == KeyType.PageDown) {
-                for (int i = 0; i < rowLimit; i++) {
-                    myJson.cursorDown();
+                for (int i = 0; i < rowLimit-1; i++) {
+                    moveCursorDown(false);
                 }
+                moveCursorDown(true);
             }
             if (key.getKeyType() == KeyType.PageUp) {
                 for (int i = 0; i < rowLimit; i++) {
-                    myJson.cursorUp();
+                    moveCursorUp();
                 }
             }
             if (key.getKeyType() == KeyType.Home) {

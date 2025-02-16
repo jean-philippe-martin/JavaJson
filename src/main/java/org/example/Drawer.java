@@ -124,7 +124,7 @@ public class Drawer {
             if (child instanceof JsonNodeValue) {
                 int height;
                 if (inSyntheticContext) {
-                    printGutterIndicator(g, pos, child);
+                    printGutterIndicator(g, pos, child, 1);
                     height = 1;
                 } else {
                     JsonNodeValue v = (JsonNodeValue) child;
@@ -182,25 +182,45 @@ public class Drawer {
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
     public int printJsonTree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
         this.drewCursor = false;
-        if (json.rootInfo.userCursor != substepCursor) {
-            substep=0;
-            substepsAvailable=0;
-            substepCursor = json.rootInfo.userCursor;
-        }
         return printJsonSubtree(g, start, initialOffset, json, false, false);
     }
 
-    public void printGutterIndicator(TextGraphics g, TerminalPosition start, JsonNode json) {
+    public void printGutterIndicator(TextGraphics g, TerminalPosition start, JsonNode json, int lines) {
+        // Make sure the text is on top of the indicators.
+        g = g.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER, new TerminalSize(start.getColumn(), g.getSize().getRows()));
         if (json.isAtPrimaryCursor()) {
-            this.cursorScreenLine = start.getRow();
-            this.drewCursor = true;
             int offset = 0;
             if (json.whereIAm == substepCursor) {
+                // only strings have substeps. That's just the way it is.
+                if ((json instanceof JsonNodeValue) && (json.getValue() instanceof String)) {
+                    substepsAvailable = lines;
+                } else {
+                    substepsAvailable = 1;
+                }
+                if (substep >= substepsAvailable) substep = substepsAvailable-1;
                 offset = substep;
+            } else {
+                // only go inside values, containers we just go to the next value inside of them.
+                if ((json instanceof JsonNodeValue) && (json.getValue() instanceof String)) {
+                    substepsAvailable = lines;
+                } else {
+                    substepsAvailable = 1;
+                }
+                substepCursor = json.whereIAm;
+                if (directionOfTravel == -1) {
+                    // going up, start at bottom
+                    substep = substepsAvailable-1;
+                    offset = substep;
+                } else {
+                    substep = 0;
+                    offset = substep;
+                }
             }
             if (json.parent!=null) {
                 g.putString(start.withColumn(0).withRelativeRow(offset), ">>");
             }
+            this.cursorScreenLine = start.getRow() + offset;
+            this.drewCursor = true;
         }
         if (json.getPinned()) {
             // draw the pin
@@ -214,8 +234,13 @@ public class Drawer {
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
     public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
+        int lines = innerPrintJsonSubtree(g, start, initialOffset, json, inFoldedContext, inSyntheticContext);
+        printGutterIndicator(g, start, json, lines);
+        return lines;
+    }
+
+    public int innerPrintJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
         int line = 0;
-        printGutterIndicator(g, start, json);
         if (json instanceof JsonNodeValue) {
             JsonNodeValue jsonValue = (JsonNodeValue) json;
             int lines = 0;
@@ -258,8 +283,7 @@ public class Drawer {
                         down++;
                     }
                 }
-                if (json.isAtCursor()) {
-                    substepCursor = json.whereIAm;
+                if (json.isAtPrimaryCursor()) {
                     substepsAvailable = down;
                 }
                 lines += down;

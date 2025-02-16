@@ -28,8 +28,8 @@ public class GroupbyTest {
         };
         Main main = Main.fromLinesAndVirtual(lines, 40, 20);
 
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         // we should now be at the "c"
 
         // Do the groupby
@@ -89,8 +89,8 @@ public class GroupbyTest {
         };
         Main main = Main.fromLinesAndVirtual(lines, 40, 20);
 
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         // we should now be at the "c"
 
         // Do the groupby
@@ -147,21 +147,21 @@ public class GroupbyTest {
         };
         Main main = Main.fromLinesAndVirtual(lines, 40, 20);
 
-        main.moveCursorDown();
-        main.moveCursorDown();
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         // we should now be at the "c"
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
 
         main.actOnKey(KeyStroke.fromString("<Home>"));
-        main.moveCursorDown();
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         main.actOnKey(KeyStroke.fromString("<Left>"));
-        main.moveCursorDown();
+        main.moveCursorDown(true);
         main.actOnKey(KeyStroke.fromString("<Left>"));
         main.display();
         String got = main.getTestViewOfScreen();
@@ -200,9 +200,9 @@ public class GroupbyTest {
         };
         Main main = Main.fromLinesAndVirtual(lines, 40, 40);
 
-        main.moveCursorDown();
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         // we should now be at the "c"
 
         // Do the groupby
@@ -210,8 +210,8 @@ public class GroupbyTest {
 
         // Fold one section
         main.actOnKey(KeyStroke.fromString("<Home>"));
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         main.actOnKey(KeyStroke.fromString("<Left>"));
 
         main.display();
@@ -270,19 +270,19 @@ public class GroupbyTest {
         Main main = Main.fromLinesAndVirtual(lines, 40, 80);
 
         main.actOnKey(KeyStroke.fromString("*"));
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         // we should now be at the "c" of *both* lists
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
 
         main.actOnKey(KeyStroke.fromString("<Home>"));
-        main.moveCursorDown();
-        main.moveCursorDown();
-        main.moveCursorDown();
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
         main.actOnKey(KeyStroke.fromString("<Left>"));
-        main.moveCursorDown();
+        main.moveCursorDown(true);
         main.actOnKey(KeyStroke.fromString("<Left>"));
         main.display();
         String got = main.getTestViewOfScreen();
