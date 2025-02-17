@@ -592,7 +592,8 @@ at each of the cursors.
 ## Parse JSON
 
 When the cursor is on a line of text that happens to be JSON, you can press the
-`ENTER` key to parse it and make it part of the document.
+`ENTER` key to open the action menu; then select the "parse" option to
+parse the line as JSON and make it part of the document.
 
 Parsing can be undone with the `shift-Z` key.
 

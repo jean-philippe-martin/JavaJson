@@ -11,6 +11,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import org.example.cursor.FindCursor;
 import org.example.cursor.NoMultiCursor;
+import org.example.ui.ActionMenu;
 import org.example.ui.AggregateMenu;
 import org.example.ui.FindControl;
 import org.example.ui.SortControl;
@@ -18,6 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,6 +34,7 @@ public class Main {
     private FindControl findControl;
     private SortControl sortControl;
     private AggregateMenu aggregateMenu;
+    private ActionMenu actionMenu;
     private JsonNode.SavedCursors cursorsBeforeFind = null;
     private JsonNode myJson;
     private Terminal terminal;
@@ -145,6 +150,8 @@ public class Main {
             findControl.draw(screen.newTextGraphics());
         } else if (aggregateMenu!=null) {
             aggregateMenu.draw(screen.newTextGraphics());
+        } else if (actionMenu!=null) {
+            actionMenu.draw(screen.newTextGraphics());
         }
 
         // Bar at the bottom: notification if there's one, or path.
@@ -168,6 +175,11 @@ public class Main {
         return terminal.readInput();
     }
 
+    public void copyToClipboard(String theString) {
+        StringSelection selection = new StringSelection(theString);
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(selection, selection);
+    }
 
     /**
      * Behave as if the user had selected that aggregation via menu or key.
@@ -248,6 +260,37 @@ public class Main {
         } else if (choice== AggregateMenu.Choice.NONE) {
             return false;
         }
+        return false;
+    }
+
+    /**
+     * Behave as if the user had selected that action via menu or key.
+     * @return true if we did something.
+     **/
+    public boolean applyAction(ActionMenu.Choice choice) {
+        if (choice== ActionMenu.Choice.CANCEL) {
+            actionMenu = null;
+            return true;
+        } else if (choice== ActionMenu.Choice.PARSE) {
+
+            Operation.OpParse op = new Operation.OpParse(myJson);
+            JsonNode foo = operationList.run(op);
+            if (null == foo) {
+                notificationText = "Could not parse as JSON";
+            } else {
+                notificationText = "Parsed as JSON";
+            }
+            actionMenu = null;
+            return true;
+        } else if (choice==ActionMenu.Choice.COPY) {
+            Object val = myJson.atCursor().getValue();
+            copyToClipboard((null == val ? "null" : val.toString()));
+            actionMenu = null;
+            return true;
+        } else if (choice==ActionMenu.Choice.NONE) {
+            return false;
+        }
+        notificationText = "Unknown action: " + choice.toString();
         return false;
     }
 
@@ -387,6 +430,10 @@ public class Main {
             AggregateMenu.Choice choice = aggregateMenu.update(key);
             applyAggregation(choice);
         }
+        else if (null!=actionMenu) {
+            ActionMenu.Choice choice = actionMenu.update(key);
+            applyAction(choice);
+        }
         else {
             // normal key handling
             if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
@@ -407,14 +454,7 @@ public class Main {
                 myJson.setFoldedAtCursors(false);
             }
             if (key.getKeyType() == KeyType.Enter) {
-                Operation.OpParse op = new Operation.OpParse(myJson);
-                JsonNode foo = operationList.run(op);
-                if (null==foo) {
-                    notificationText = "Could not parse as JSON";
-                } else {
-                    notificationText = "Parsed as JSON";
-                }
-
+                actionMenu = new ActionMenu();
             }
             if (key.getCharacter() != null && ('e' == pressed || '*' == key.getCharacter())) {
                 myJson.cursorDownToAllChildren();
