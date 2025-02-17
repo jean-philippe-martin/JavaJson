@@ -238,4 +238,63 @@ public interface Operation {
         }
     }
 
+    // Parse the string under the main cursor as JSON.
+    // Todo: handle the other cursors, too.
+    public class OpParse implements Operation {
+
+        // The root, before we mess with it.
+        private final JsonNode beforeRoot;
+        // The old value
+        private JsonNodeValue oldValue = null;
+
+        public OpParse(JsonNode beforeRoot) {
+            this.beforeRoot = beforeRoot;
+        }
+
+        @Override
+        public JsonNode run() {
+
+            JsonNode atCursor = beforeRoot.atCursor();
+            if ((atCursor instanceof JsonNodeValue) && (atCursor.getValue() instanceof String)) {
+                String s = (String) atCursor.getValue();
+                if (s.contains("{") || s.contains("[")) {
+                    // ok, let's parse this.
+                    JsonNode parsedNoBuilder = null;
+                    try {
+                        parsedNoBuilder = JsonNode.parseJson(s);
+                    } catch (Exception x) {
+                        // nope
+                    }
+                    if (parsedNoBuilder == null) {
+                        //notificationText = "Could not parse as JSON";
+                        return null;
+                    } else {
+                        oldValue = (JsonNodeValue) atCursor;
+                        JsonNode.Builder parsed = new JsonNode.Builder(parsedNoBuilder);
+                        JsonNode parent = atCursor.getParent();
+                        JsonNode newSubtree = parent.replaceChild(atCursor.whereIAm, parsed);
+                        newSubtree.annotation = "Parsed from a string";
+                        // jump the cursor to the new thing.
+                        beforeRoot.rootInfo.userCursor = newSubtree.whereIAm;
+                        //notificationText = "Parsed as JSON";
+                        return beforeRoot;
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public @NotNull JsonNode undo() {
+            if (oldValue==null) return beforeRoot;
+            JsonNode.Builder builder = new JsonNode.Builder(oldValue);
+            JsonNode newValue = oldValue.getParent().replaceChild(oldValue.whereIAm, builder);
+            beforeRoot.rootInfo.userCursor = newValue.whereIAm;
+            return beforeRoot;
+        }
+
+        public String toString() {
+            return "parse_json()";
+        }
+    }
 }

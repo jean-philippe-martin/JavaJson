@@ -589,6 +589,13 @@ Grouping can be undone with the `shift-Z` key, like any other transformation.
 If you have multiple cursors when you press `g`, then a groupby will be attempted
 at each of the cursors.
 
+## Parse JSON
+
+When the cursor is on a line of text that happens to be JSON, you can press the
+`ENTER` key to parse it and make it part of the document.
+
+Parsing can be undone with the `shift-Z` key.
+
 # Related
 
 Return to [README](../README.md).

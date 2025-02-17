@@ -60,9 +60,10 @@ public class Main {
                 "                                            \n"+
                 "----------------[ Transform ]---------------\n"+
                 "+               : union selected arrays     \n"+
-                        "a               : aggregate sel. array(s)   \n"+
-                        "g               : groupby sel. key(s)   \n"+
+                "a               : aggregate sel. array(s)   \n"+
+                "g               : groupby sel. key(s)       \n"+
                 "s               : sort selected array(s)    \n"+
+                "ENTER           : parse as JSON             \n"+
                 "shift-Z         : undo last transform       \n"+
                 "                                            \n"+
                 "----------------[ Program ]-----------------\n"+
@@ -264,6 +265,7 @@ public class Main {
         return ret.toString();
     }
 
+    // do this when we press the "up" arrow
     public void moveCursorUp() {
         Cursor current = myJson.rootInfo.userCursor;
         if (!drawer.tryCursorUp(myJson.rootInfo.userCursor)) {
@@ -271,6 +273,7 @@ public class Main {
         }
     }
 
+    // do this when we press the "down" arrow
     public void moveCursorDown(boolean doScroll) {
         Cursor current = myJson.rootInfo.userCursor;
         if (!drawer.tryCursorDown(myJson.rootInfo.userCursor)) {
@@ -402,6 +405,16 @@ public class Main {
             if (key.getKeyType() == KeyType.ArrowRight
                     || (key.getCharacter() != null && 'f' == pressed)) {
                 myJson.setFoldedAtCursors(false);
+            }
+            if (key.getKeyType() == KeyType.Enter) {
+                Operation.OpParse op = new Operation.OpParse(myJson);
+                JsonNode foo = operationList.run(op);
+                if (null==foo) {
+                    notificationText = "Could not parse as JSON";
+                } else {
+                    notificationText = "Parsed as JSON";
+                }
+
             }
             if (key.getCharacter() != null && ('e' == pressed || '*' == key.getCharacter())) {
                 myJson.cursorDownToAllChildren();

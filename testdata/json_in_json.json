@@ -1,0 +1,6 @@
+[
+  "Hello I am a string",
+  "The next line is a string too, but you can turn it into JSON!",
+  "{\"question\": \"is this JSON?\",\"answer\": \"maybe\"}",
+  "{\"This looks like JSON but it's not"
+]

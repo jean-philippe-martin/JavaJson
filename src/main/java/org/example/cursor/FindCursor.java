@@ -72,7 +72,8 @@ public class FindCursor implements MultiCursor {
         // check the value in this guy
         if (inValue && node instanceof JsonNodeValue<?>) {
             JsonNodeValue jns = (JsonNodeValue)node;
-            if (stringMatches(jns.getValue().toString())) return true;
+            Object obj = (Object)jns.getValue();
+            if (stringMatches((null==obj?"":obj.toString()))) return true;
         }
         return false;
     }
