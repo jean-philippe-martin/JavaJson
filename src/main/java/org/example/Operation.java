@@ -117,7 +117,6 @@ public interface Operation {
             for (JsonNode node : beforeRoot.atAnyCursor()) {
                 if (!addAgg) {
                     // we can press "remove aggregate" from within the aggregate itself.
-                    // (sadly this doesn't work)
                     while (node.getParent()!=null && node.isAggregate) {
                         node = node.getParent();
                         // the first cursor is main; so if we're removing the thing the cursor is in,
@@ -146,6 +145,13 @@ public interface Operation {
                             node.aggregateComment = null;
                         }
                     }
+                } else if (!addAgg) {
+                    // remove aggregate there
+                    if (node.aggregate != null) {
+                        didSomething++;
+                        node.aggregate = null;
+                        node.aggregateComment = null;
+                    }
                 }
             }
             // move the cursor out of the thing we removed.
@@ -173,6 +179,8 @@ public interface Operation {
         }
     }
 
+    // For transformation that want to add aggregation info
+    // to the nodes at the cursor(s).
     public class AggGeneric<T> implements Operation {
 
         private final INodeVisitor<T> visitor;
@@ -238,63 +246,111 @@ public interface Operation {
         }
     }
 
-    // Parse the string under the main cursor as JSON.
-    // Todo: handle the other cursors, too.
-    public class OpParse implements Operation {
+    // For transforms that want to replace the node(s) at the cursor
+    // with new ones.
+    public abstract class TransformGeneric implements Operation {
 
         // The root, before we mess with it.
-        private final JsonNode beforeRoot;
-        // The old value
-        private JsonNodeValue oldValue = null;
+        private final @NotNull JsonNode beforeRoot;
+        private final @NotNull ArrayList<JsonNode> oldNodes;
 
-        public OpParse(JsonNode beforeRoot) {
-            this.beforeRoot = beforeRoot;
+        public TransformGeneric(@NotNull JsonNode oldRoot) {
+            this.beforeRoot = oldRoot;
+            oldNodes = new ArrayList<>();
+            oldNodes.addAll(oldRoot.atAnyCursor());
         }
+
+        // Given a node, return a Builder for the transformed version
+        public abstract JsonNodeBuilder transform(JsonNode oldNode);
+
+        // Called on the result of builder.build()
+        public abstract void onTransform(JsonNode newNode);
 
         @Override
         public JsonNode run() {
-
-            JsonNode atCursor = beforeRoot.atCursor();
-            if ((atCursor instanceof JsonNodeValue) && (atCursor.getValue() instanceof String)) {
-                String s = (String) atCursor.getValue();
-                if (s.contains("{") || s.contains("[")) {
-                    // ok, let's parse this.
-                    JsonNode parsedNoBuilder = null;
-                    try {
-                        parsedNoBuilder = JsonNode.parseJson(s);
-                    } catch (Exception x) {
-                        // nope
-                    }
-                    if (parsedNoBuilder == null) {
-                        //notificationText = "Could not parse as JSON";
-                        return null;
-                    } else {
-                        oldValue = (JsonNodeValue) atCursor;
-                        JsonNode.Builder parsed = new JsonNode.Builder(parsedNoBuilder);
-                        JsonNode parent = atCursor.getParent();
-                        JsonNode newSubtree = parent.replaceChild(atCursor.whereIAm, parsed);
-                        newSubtree.annotation = "Parsed from a string";
-                        // jump the cursor to the new thing.
-                        beforeRoot.rootInfo.userCursor = newSubtree.whereIAm;
-                        //notificationText = "Parsed as JSON";
-                        return beforeRoot;
-                    }
+            boolean oneWorked = false;
+            JsonNode newRoot = beforeRoot;
+            for (JsonNode node : oldNodes) {
+                JsonNode dad = node.getParent();
+                Cursor toChild = node.whereIAm;
+                JsonNodeBuilder builder = transform(node);
+                if (null==builder) continue;
+                if (null==dad) {
+                    newRoot = builder.build(null, new Cursor());
+                    onTransform(newRoot);
+                } else {
+                    JsonNode newGuy = dad.replaceChild(toChild, builder);
+                    onTransform(newGuy);
                 }
+                oneWorked = true;
             }
-            return null;
+            // return null to indicate (complete) failure
+            if (!oneWorked) return null;
+            // otherwise return the root node
+            return newRoot;
         }
 
         @Override
         public @NotNull JsonNode undo() {
-            if (oldValue==null) return beforeRoot;
-            JsonNode.Builder builder = new JsonNode.Builder(oldValue);
-            JsonNode newValue = oldValue.getParent().replaceChild(oldValue.whereIAm, builder);
-            beforeRoot.rootInfo.userCursor = newValue.whereIAm;
+            JsonNode newRoot = beforeRoot;
+            int i=0;
+            for (i=oldNodes.size()-1; i>=0; i--) {
+                JsonNode node = oldNodes.get(i);
+                JsonNode dad = node.getParent();
+                Cursor toChild = node.whereIAm;
+                JsonNode.Builder builder = new JsonNode.Builder(node);
+                if (null==dad) {
+                    // case that we're root
+                    newRoot = node;
+                } else {
+                    // we're not root
+                    dad.replaceChild(toChild, builder);
+                }
+            }
             return beforeRoot;
+        }
+    }
+
+    // Parse string to JSON
+    public class OpParse extends TransformGeneric {
+
+        public OpParse(JsonNode beforeRoot) {
+            super(beforeRoot);
+        }
+
+        @Override
+        public JsonNodeBuilder transform(JsonNode oldNode) {
+            if (!((oldNode instanceof JsonNodeValue) && (oldNode.getValue() instanceof String))) {
+                return null;
+            }
+            String s = (String) oldNode.getValue();
+            if (!s.contains("{") && !s.contains("[")) {
+                return null;
+            }
+
+            // ok, let's parse this.
+            JsonNode parsedNoBuilder = null;
+            try {
+                parsedNoBuilder = JsonNode.parseJson(s);
+            } catch (Exception x) {
+                // nope
+            }
+            if (parsedNoBuilder == null) {
+                //notificationText = "Could not parse as JSON";
+                return null;
+            }
+
+            return new JsonNode.Builder(parsedNoBuilder);
+        }
+
+        @Override
+        public void onTransform(JsonNode newNode) {
+            newNode.annotation = "Parsed from a string";
         }
 
         public String toString() {
             return "parse_json()";
         }
     }
+
 }

@@ -173,4 +173,64 @@ public class DrawAggTest {
         assertEquals(expected, beginning);
     }
 
+
+    @Test
+    public void testInMap() throws Exception {
+        String[] input = new String[]{
+                "{\n" +
+                "    \"Alice\": 12,\n" +
+                "    \"Bob\": 30\n" +
+                "}"
+        };
+
+        Main main = Main.fromLinesAndVirtual(input, 30, 7);
+        main.applyAggregation(AggregateMenu.Choice.AGG_TOTAL);
+        main.display();
+
+        String expected =
+                "{•••••••••••••••••••••••••••••\n" +
+                "••//•sum()•42•••••••••••••••••\n" +
+                "••\"Alice\":•12•••••••••••••••••\n" +
+                "••\"Bob\":•30•••••••••••••••••••\n" +
+                "}•••••••••••••••••";
+
+        String got = main.getTestViewOfScreen();
+
+        // Check only the start of the string to ignore the status bar
+        // (but do it in a way that'll give us the "click to see diff" button.
+        String beginning = got.substring(0, expected.length());
+        assertEquals(expected, beginning);
+
+    }
+
+    @Test
+    public void testCanRemoveInMap() throws Exception {
+        String[] input = new String[]{
+                "{\n" +
+                "    \"Alice\": 12,\n" +
+                "    \"Bob\": 30\n" +
+                "}"
+        };
+
+        Main main = Main.fromLinesAndVirtual(input, 30, 7);
+        main.applyAggregation(AggregateMenu.Choice.AGG_TOTAL);
+        main.display();
+        main.applyAggregation(AggregateMenu.Choice.REMOVE_AGGREGATE);
+        main.display();
+
+        String expected =
+                "{•••••••••••••••••••••••••••••\n" +
+                "••\"Alice\":•12•••••••••••••••••\n" +
+                "••\"Bob\":•30•••••••••••••••••••\n" +
+                "}•••••••••••••••••";
+
+        String got = main.getTestViewOfScreen();
+
+        // Check only the start of the string to ignore the status bar
+        // (but do it in a way that'll give us the "click to see diff" button.
+        String beginning = got.substring(0, expected.length());
+        assertEquals(expected, beginning);
+
+    }
+
 }

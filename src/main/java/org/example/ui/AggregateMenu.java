@@ -29,6 +29,8 @@ public class AggregateMenu {
     }
 
     public void draw(TextGraphics g) {
+        var s = g.getSize();
+        g = g.newTextGraphics(new TerminalPosition(s.getColumns()-40,3), new TerminalSize(34,s.getRows()));
 
         String menu =
                         "╭─────────[ AGGREGATE ]─────────╮\n"+
@@ -42,7 +44,7 @@ public class AggregateMenu {
                         "╰───────────────────────────────╯\n";
 
         String[] lines = menu.split("\n");
-        TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
+        TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER;
         TerminalPosition pos = top;
         int i=0;
         int highlight = row+1;

@@ -2,6 +2,7 @@ package org.example.ui;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TerminalPosition;
+import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
@@ -28,6 +29,9 @@ public class ActionMenu {
 
     public void draw(TextGraphics g) {
 
+        var s = g.getSize();
+        g = g.newTextGraphics(new TerminalPosition(s.getColumns()-40,3), new TerminalSize(32,s.getRows()));
+
         String menu =
                         "╭─────────[ ACTION ]─────────╮\n"+
                         "│ p: parse JSON              │\n"+
@@ -37,7 +41,7 @@ public class ActionMenu {
                         "╰────────────────────────────╯\n";
 
         String[] lines = menu.split("\n");
-        TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER.withRelativeColumn(4).withRelativeRow(1);
+        TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER;
         TerminalPosition pos = top;
         int i=0;
         int highlight = row+1;

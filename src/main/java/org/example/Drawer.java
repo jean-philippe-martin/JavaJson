@@ -118,8 +118,12 @@ public class Drawer {
             TextGraphics g2 = g;
             TextGraphics g_key = Theme.withColor(g, Theme.key);
             printMaybeReversed(g, pos, aggComment, jsonMap.isAtCursor(key));
-            printMaybeReversed(g_key, pos.withRelativeColumn(aggComment.length()), "\"" + key + "\"", jsonMap.isAtCursor(key));
-            TerminalPosition pos2 = pos.withRelativeColumn(aggComment.length() + 2 + key.length());
+            TerminalPosition pos2 = pos;
+            if (!it.isAggregate()) {
+                // skip key for aggregate.
+                printMaybeReversed(g_key, pos.withRelativeColumn(aggComment.length()), "\"" + key + "\"", jsonMap.isAtCursor(key));
+                pos2 = pos.withRelativeColumn(aggComment.length() + 2 + key.length());
+            }
             // normal case, user data.
             if (child instanceof JsonNodeValue) {
                 int height;
@@ -133,14 +137,18 @@ public class Drawer {
                     if (it.isAggregate()) {
                         g2 = Theme.withColor(g, Theme.synthetic);
                         g2.putString(pos4.withColumn(2), "//");
-                        String intro = jsonMap.aggregateComment + "() ";
+                        //String intro = jsonMap.aggregateComment + "() ";
+                        String intro = key + "() ";
                         if (pos4.getColumn()<=5) {
                             // move to the right to make room for the comment symbols
                             pos4 = pos4.withColumn(5);
                         }
                         g2.putString(pos4, intro);
+                        //pos4 = pos.withColumn(pos4.getColumn() + intro.length());
+                        pos4 = pos.withRelativeColumn(intro.length()+1);
+                    } else {
+                        g2.putString(pos4, ": ");
                     }
-                    g2.putString(pos4, ": ");
                     height = printJsonSubtree(g2, pos, pos4.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext || v.isSynthetic());
                 }
                 line += height;

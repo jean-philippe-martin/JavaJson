@@ -1,0 +1,14 @@
+{
+  "twelve": 12,
+  "twenty": 20,
+  "one_hundred": 100,
+  "even_numbers": [
+    2,4,6,8,10
+  ],
+  "nested": {
+    "three": {
+      "deep": {
+        "score": 12,
+        "twoscore": 24
+  }}}
+}
