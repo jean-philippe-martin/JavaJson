@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /** Instructions for how to sort. Conceptually immutable.
  */
@@ -12,16 +13,16 @@ public class Sorter implements Comparator<Object> {
     private final boolean reverse;
     private final boolean ignoreCase;
     private final boolean parseNumbers;
-    // the field we're comparing (in objects aka maps), or null if we're not comparing maps.
-    private final @Nullable String field;
+    // the field we're comparing (in objects aka maps), or empty if we're not comparing maps.
+    private final @NotNull ArrayList<String> fields;
     private final boolean sortKeys;
     private @Nullable Map<String, ArrayList<Object>> numberified;
 
-    public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers, @Nullable String field, boolean sortKeys) {
+    public Sorter(boolean reverse, boolean ignoreCase, boolean parseNumbers, @NotNull List<String> field, boolean sortKeys) {
         this.reverse = reverse;
         this.ignoreCase = ignoreCase;
         this.parseNumbers = parseNumbers;
-        this.field = field;
+        this.fields = new ArrayList<>(field);
         if (parseNumbers) numberified = new HashMap<>();
         this.sortKeys = sortKeys;
     }
@@ -31,9 +32,9 @@ public class Sorter implements Comparator<Object> {
         StringBuilder sb = new StringBuilder();
         sb.append("sort(");
         boolean first=true;
-        if (null!=field && !field.isEmpty()) {
+        if (!fields.isEmpty()) {
             sb.append("\"");
-            sb.append(field);
+            sb.append(fields.stream().collect(Collectors.joining(".")));
             sb.append("\"");
             first = false;
         }
@@ -72,7 +73,7 @@ public class Sorter implements Comparator<Object> {
 
     @Override
     public int compare(Object o1, Object o2) {
-        if (null != field) return compareMaps(o1, o2);
+        if (!fields.isEmpty()) return compareMaps(o1, o2);
         return innerCompare(o1, o2);
     }
 
@@ -131,14 +132,23 @@ public class Sorter implements Comparator<Object> {
         if (o1 instanceof Map && o2 instanceof Map) {
             Map m1 = (Map)o1;
             Map m2 = (Map)o2;
-            Object got1 = null;
-            if (m1.containsKey(field)) got1 = m1.get(field);
-            Object got2 = null;
-            if (m2.containsKey(field)) got2 = m2.get(field);
+            Object got1 = getFinalField(m1);
+            Object got2 = getFinalField(m2);
             return innerCompare(got1, got2);
         }
         // we should get there.
         return 0;
+    }
+
+    private Object getFinalField(Map m) {
+        Object sofar = m;
+        for (String f : fields) {
+            if (!(sofar instanceof Map)) return null;
+            if (null==sofar) return null;
+            Map map = (Map)sofar;
+            sofar = map.get(f);
+        }
+        return sofar;
     }
 
     // not parsing numbers into stuff

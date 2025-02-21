@@ -7,17 +7,56 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
-import org.example.JsonNode;
-import org.example.JsonNodeList;
-import org.example.JsonNodeMap;
-import org.example.Sorter;
+import org.example.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SortControl {
+
+    public static class SortEntry {
+        public final ArrayList<String> fields;
+
+        public SortEntry(List<String> strings) {
+            fields = new ArrayList<>(strings);
+        }
+
+        public static SortEntry fromString(String s) {
+            ArrayList<String> list = new ArrayList<>();
+            list.add(s);
+            return new SortEntry(list);
+        }
+
+        public static SortEntry empty() {
+            return new SortEntry(new ArrayList<>());
+        }
+
+        public SortEntry withAlso(String s) {
+            ArrayList<String> extended = new ArrayList<>(this.fields);
+            extended.add(s);
+            return new SortEntry(extended);
+        }
+
+        public String toString() {
+            return String.join(".", fields);
+        }
+
+        @Override
+        public boolean equals(Object rhs) {
+            if (rhs instanceof SortEntry) {
+                return toString().equals(((SortEntry)rhs).toString());
+            }
+            return rhs.equals(this);
+        }
+
+        @Override
+        public int hashCode() {
+            return toString().hashCode();
+        }
+    }
 
     List<JsonNode> selectedNodes;
     // Whether we need to select a key to sort by,
@@ -31,7 +70,7 @@ public class SortControl {
     // so we can choose between sorting by keys or values.
     boolean sortingAMap = false;
     int col, row;
-    HashSet<String> fieldChoices = null;
+    HashSet<SortEntry> fieldChoices = null;
     ChoiceInputField input;
 
     public final static String KEYS_CHOICE="(keys)";
@@ -61,7 +100,7 @@ public class SortControl {
                 for (String key : jnm.getKeysInOrder()) {
                     if (jnm.getChild(key) instanceof JsonNodeMap) {
                         JsonNodeMap kid = (JsonNodeMap)(jnm.getChild(key));
-                        fieldChoices.addAll(kid.getKeysInOrder());
+                        addAll(SortEntry.empty(), kid);
                     }
                 }
             }
@@ -70,7 +109,7 @@ public class SortControl {
                 for (int i=0; i<jnl.childCount(); i++) {
                     if (jnl.get(i) instanceof JsonNodeMap) {
                         JsonNodeMap jnm = (JsonNodeMap)jnl.get(i);
-                        fieldChoices.addAll(jnm.getKeysInOrder());
+                        addAll(SortEntry.empty(), jnm);
                     }
                 }
             }
@@ -78,38 +117,50 @@ public class SortControl {
         if (sortingAMap) {
             if (fieldChoices.isEmpty()) {
                 // Only values: we can choose to sort by key or value
-                fieldChoices.add(KEYS_CHOICE);
-                fieldChoices.add(VALUES_CHOICE);
+                fieldChoices.add(SortEntry.fromString(KEYS_CHOICE));
+                fieldChoices.add(SortEntry.fromString(VALUES_CHOICE));
             } else {
                 // maps in there: we can choose a field from the map.
-                fieldChoices.add(KEYS_CHOICE);
+                fieldChoices.add(SortEntry.fromString(KEYS_CHOICE));
             }
         }
         this.selectField = !fieldChoices.isEmpty();
         input = null;
         if (!this.selectField) row=1;
-        if (this.selectField) input = new ChoiceInputField(fieldChoices.toArray(new String[0]));
+        if (this.selectField) input = new ChoiceInputField(fieldChoices.stream().map(SortEntry::toString).toArray(String[]::new));
+    }
+
+    private void addAll(SortEntry prefix, JsonNode node) {
+        JsonNodeIterator it = node.iterateChildren();
+        while (it!=null) {
+            JsonNode kid = it.get();
+            fieldChoices.add(prefix.withAlso(it.key().toString()));
+            if (kid instanceof JsonNodeMap) {
+                addAll(prefix.withAlso(it.key().toString()), kid);
+            }
+            it = it.next();
+        }
     }
 
     public void draw(TextGraphics g) {
         boolean skippedField = false;
-    String menu =
-            "╭────────────[ SORT ]───────────────╮\n"+
-            "│                                   │\n"+
-            "├───┬────┬─────┬────────────────────┤\n"+
-            "│ R │ Aa │ num │                    │\n";
-    if (showHelp) menu +=
-            "├───┴────┴─────┴────────────────────┤\n"+
-            "│ r : reverse order                 │\n"+
-            "│ a : separate upper/lowercase      │\n"+
-            "│ n : sort strings as numbers       │\n"+
-            "├───────────────────────────────────┤\n"+
-            "│ TAB: show/hide choices            │\n"+
-            "│ enter: sort                       │\n"+
-            "│ esc : cancel                      │\n"+
-            "│ x: return to original order       │\n"+
-            "│ ? : toggle help text              │\n"+
-            "╰───────────────────────────────────╯\n";
+        String menu =
+                "╭────────────[ SORT ]───────────────╮\n"+
+                "│                                   │\n"+
+                "├───┬────┬─────┬────────────────────┤\n"+
+                "│ R │ Aa │ num │                    │\n";
+        if (showHelp) menu +=
+                "├───┴────┴─────┴────────────────────┤\n"+
+                "│ r : reverse order                 │\n"+
+                "│ a : separate upper/lowercase      │\n"+
+                "│ n : sort strings as numbers       │\n"+
+                "├───────────────────────────────────┤\n"+
+                "│ TAB: show/hide choices            │\n"+
+                "│ enter: sort                       │\n"+
+                "│ esc : cancel                      │\n"+
+                "│ x: return to original order       │\n"+
+                "│ ? : toggle help text              │\n"+
+                "╰───────────────────────────────────╯\n";
         else menu += "╰───┴────┴─────┴────────────────[?]─╯\n";
         TerminalSize s = g.getSize();
         g = g.newTextGraphics(new TerminalPosition(s.getColumns()-40,3), new TerminalSize(39,s.getRows()));
@@ -182,7 +233,18 @@ public class SortControl {
             } else {
                 field = null;
             }
-            return new Sorter(this.reverse, ignoreCase, numberify, field, KEYS_CHOICE.equals(field));
+            ArrayList<String> fields = new ArrayList<>();
+            fields.add(field);
+            // We figure out which keys were meant from the string.
+            // This is imperfect: if some keys have a dot in them
+            // then this may be ambiguous.
+            for (SortEntry e : fieldChoices) {
+                if (e.toString().equals(field)) {
+                    // found our choice!
+                    fields = e.fields;
+                }
+            }
+            return new Sorter(this.reverse, ignoreCase, numberify, fields, KEYS_CHOICE.equals(field));
         }
         if (key.getKeyType()==KeyType.ArrowDown) {
             if (row<1) { this.row++; }

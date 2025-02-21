@@ -2,6 +2,7 @@ package org.example;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -19,7 +20,7 @@ public class CursorSortedTest {
         assertTrue(state.isAtCursor());
         JsonNodeList jnl = (JsonNodeList)state;
         // Case-sensitive sort
-        jnl.sort(new Sorter(false, false, false, null, false));
+        jnl.sort(new Sorter(false, false, false, new ArrayList<String>(), false));
 
         state.cursorDown();
         assertEquals("A", state.rootInfo.userCursor.getData().getValue());
@@ -55,14 +56,18 @@ public class CursorSortedTest {
                " ] \n");
         assertTrue(state.isAtCursor());
         JsonNodeList jnl = (JsonNodeList) state;
-        jnl.sort(new Sorter(false, false, false, "name", false));
+        var fields = new ArrayList<String>();
+        fields.add("name");
+        jnl.sort(new Sorter(false, false, false, fields, false));
 
         state.cursorDown();
         Map<String, Object> firstObject = (Map<String, Object>) state.rootInfo.userCursor.getData().getValue();
         assertEquals("Aaron", firstObject.get("name"));
 
         state.cursorUp();
-        jnl.sort(new Sorter(false, false, false, "score", false));
+        fields = new ArrayList<String>();
+        fields.add("score");
+        jnl.sort(new Sorter(false, false, false, fields, false));
 
         state.cursorDown();
         firstObject = (Map<String, Object>) state.rootInfo.userCursor.getData().getValue();
@@ -87,7 +92,10 @@ public class CursorSortedTest {
                 
         assertTrue(state.isAtCursor());
         state.cursorDown();
-        state.sort(new Sorter(false, true, true, "description", false));
+        var fields = new ArrayList<String>();
+        fields.add("description");
+
+        state.sort(new Sorter(false, true, true, fields, false));
     }
 
     @Test
@@ -100,13 +108,13 @@ public class CursorSortedTest {
                "} \n");
 
         JsonNodeMap jnm = (JsonNodeMap) state;
-        jnm.sort(new Sorter(false, false, false, null, true));
+        jnm.sort(new Sorter(false, false, false, new ArrayList<String>(), true));
 
         state.cursorDown();
         assertEquals(".Aaron", state.rootInfo.userCursor.toString());
 
         state.cursorUp();
-        jnm.sort(new Sorter(true, false, false, null, false));
+        jnm.sort(new Sorter(true, false, false, new ArrayList<String>(), false));
         state.cursorDown();
         assertEquals(".Charlize", state.rootInfo.userCursor.toString());
     }
@@ -123,7 +131,9 @@ public class CursorSortedTest {
 
         // Sort in the same way that the main program does it
         OperationList undoLog = new OperationList();
-        Sorter s = new Sorter(false, false, true, "name", false);
+        var fields = new ArrayList<String>();
+        fields.add("name");
+        Sorter s = new Sorter(false, false, true, fields, false);
         Operation sort = new Operation.Sort(state, s);
         state = undoLog.run(sort);
 

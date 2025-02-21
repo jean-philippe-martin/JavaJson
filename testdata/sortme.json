@@ -23,10 +23,10 @@
     "homework 10"
   ],
   "records": [
-    { "name": "Bob", "score":  10, "level": 5, "league": "small", "streak": 5, "difficulty": "hard", "ssn": "123-456-789" },
-    { "name": "Alice",   "score":   3, "level": 3, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-678" },
-    { "name": "Fazam", "score": 100, "level": 1, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-567" },
-    { "name": "Grace", "score":  22, "level": 2, "league":  "small", "streak":  5, "difficulty":  "hard", "ssn":  "123-456-456" }
+    { "person": { "name": "Bob",  "ssn": "123-456-789" }, "score":  10, "level": 5, "league": "small", "streak": 5, "difficulty": "hard" },
+    { "person": { "name": "Alice", "ssn":  "123-456-678"  }, "score":   3, "level": 3, "league":  "small", "streak":  4, "difficulty":  "hard" },
+    { "person": { "name": "Fazam", "ssn":  "123-456-567"  }, "score": 100, "level": 1, "league":  "mid", "streak":  4, "difficulty":  "crazy" },
+    { "person": { "name": "Grace",  "ssn":  "123-456-456" }, "score":  22, "level": 2, "league":  "mid", "streak":  5, "difficulty":  "crazy" }
   ],
   "high scores": {
     "Zanzibar": 20,
