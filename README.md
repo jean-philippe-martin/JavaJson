@@ -38,7 +38,7 @@ mvn package -DskipTests
 ## Running
 
 ```
-java -jar target/JavaJson-1.4-jar-with-dependencies.jar testdata/list.json
+java -jar target/JavaJson-1.5-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
 ```
 
 (If you're using a release JAR instead of building your own then adjust the jar's file name
