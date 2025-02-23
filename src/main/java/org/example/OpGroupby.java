@@ -18,8 +18,10 @@ public class OpGroupby implements Operation {
             this.toList = holder.whereIAm;
         }
         public void undo() {
-            JsonNode.Builder builder = new JsonNode.Builder(holderList);
-            listParent.replaceChild(toList, builder);
+            JsonNode.Builder builder = JsonNode.Builder.fromNode(holderList);
+            if (null!=listParent) {
+                listParent.replaceChild(toList, builder);
+            }
         }
     }
 
@@ -64,7 +66,7 @@ public class OpGroupby implements Operation {
         return oldRoot;
     }
 
-    // returns the new root (for now at least).
+    // returns the new root
     private JsonNode groupby(JsonNodeMap mapToGroup, String keyToGroupBy) {
         JsonNodeList list = (JsonNodeList)(mapToGroup.parent);
         JsonNode newRoot = mapToGroup.getRoot();

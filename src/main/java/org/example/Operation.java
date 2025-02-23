@@ -298,7 +298,7 @@ public interface Operation {
                 JsonNode node = oldNodes.get(i);
                 JsonNode dad = node.getParent();
                 Cursor toChild = node.whereIAm;
-                JsonNode.Builder builder = new JsonNode.Builder(node);
+                JsonNode.Builder builder = JsonNode.Builder.fromNode(node);
                 if (null==dad) {
                     // case that we're root
                     newRoot = node;
@@ -340,7 +340,7 @@ public interface Operation {
                 return null;
             }
 
-            return new JsonNode.Builder(parsedNoBuilder);
+            return JsonNode.Builder.fromNode(parsedNoBuilder);
         }
 
         @Override

@@ -25,15 +25,37 @@ public abstract class JsonNode {
 
     public static class Builder implements JsonNodeBuilder {
         private final JsonNode node;
+        private final Object value;
 
-        public Builder(JsonNode node) {
+        public Builder(@NotNull JsonNode node) {
             this.node = node;
+            this.value = null;
+        }
+
+        private Builder(@NotNull Object obj, boolean _ignored) {
+            this.node = null;
+            this.value = obj;
+        }
+
+        public static Builder fromNode(@NotNull JsonNode node) {
+            return new Builder(node);
+        }
+
+        public static Builder fromObject(Object value) {
+            return new Builder(value, true);
         }
 
         @Override
         public JsonNode build(JsonNode parent, Cursor curToMe) {
-            node.reparent(parent, curToMe);
-            return node;
+            if (null!=node) {
+                node.reparent(parent, curToMe);
+                return node;
+            }
+            JsonNode root = null;
+            if (parent != null) {
+                root = parent.getRoot();
+            }
+            return JsonNode.fromObject(value, parent, curToMe, root);
         }
     }
 

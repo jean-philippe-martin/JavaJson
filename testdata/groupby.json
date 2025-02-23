@@ -21,6 +21,13 @@
       "city": "Metropolis",
       "population": 11000000
     }
-
+  ],
+  "You can 'groupby' in a list, in that case it'll count duplicates",
+  [
+    "hello",
+    "hello",
+    "world",
+    "world",
+    "hello"
   ]
 ]

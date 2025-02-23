@@ -472,13 +472,31 @@ public class Main {
                 myJson.cursorPrevCursor();
             }
             if (pressed=='g') {
-                OpGroupby op = new OpGroupby(myJson);
-                JsonNode result = operationList.run(op);
-                if (null==result) {
-                    notificationText = "Unable to run groupby here. Try the key in a map in a list.";
+                // Should we do groupby or countdups?
+                int parentIsList = 0;
+                for (JsonNode cur : myJson.atAnyCursor()) {
+                    if (cur.getParent() instanceof JsonNodeList) parentIsList++;
+                }
+                if (parentIsList > myJson.atAnyCursor().size()/2) {
+                    // most parents are lists, do a countdups
+                    OpCountEachDistinct op = new OpCountEachDistinct(myJson);
+                    JsonNode result = operationList.run(op);
+                    if (null == result) {
+                        notificationText = "Unable to run countdups here. Try on a value in a list.";
+                    } else {
+                        notificationText = op.toString();
+                        myJson = result;
+                    }
                 } else {
-                    notificationText = op.toString();
-                    myJson = result;
+                    // most parents are maps, do a groupby
+                    OpGroupby op = new OpGroupby(myJson);
+                    JsonNode result = operationList.run(op);
+                    if (null == result) {
+                        notificationText = "Unable to run groupby here. Try the key in a map in a list.";
+                    } else {
+                        notificationText = op.toString();
+                        myJson = result;
+                    }
                 }
             }
             if ((key.getCharacter() != null && 'a' == pressed)) {

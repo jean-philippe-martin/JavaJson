@@ -514,6 +514,8 @@ key and 30% of them have an "eye color" field.
 
 ## Groupby
 
+### Lists of maps
+
 The "group by" feature allows you to organize a list of maps by grouping them based on
 one of their keys. Here is an example, a list of cities and their corresponding country:
 
@@ -588,6 +590,35 @@ Grouping can be undone with the `shift-Z` key, like any other transformation.
 
 If you have multiple cursors when you press `g`, then a groupby will be attempted
 at each of the cursors.
+
+### Lists of strings
+
+If you press `g` on a string in a list, it will do a kind of groupby as well: it will group
+the identical strings together, and show you a count. So for example if you start with:
+
+```
+[
+  "hello"
+  "hello"
+  "world"
+  "world"
+  "hello"
+]
+```
+
+It will find that you have two unique words ("hello" and "world"), and show you their counts:
+
+```
+{ // duplicate counts
+  "hello": 3
+  "world": 2
+}
+```
+
+This can also be undone via `shift-Z`. 
+
+If you have multiple cursors it will do either the standard groupby or the "count duplicate" on all, depending
+on which type is most common.
 
 ## Parse JSON
 
