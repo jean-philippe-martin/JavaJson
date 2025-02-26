@@ -300,6 +300,24 @@ public abstract class JsonNode {
         return changed;
     }
 
+    /**
+     * 1 = I'm unfolded, my children are folded.
+     * 2 = Me and my children are unfolded. Their children are folded.
+     **/
+    public void setFoldedLevels(int levelCount) {
+        if (levelCount<1) {
+            this.folded = true;
+            return;
+        }
+        this.folded = false;
+        var it = iterateChildren();
+        while (it!=null) {
+            JsonNode kid = it.get();
+            kid.setFoldedLevels(levelCount-1);
+            it = it.next();
+        }
+    }
+
     public boolean getPinned() {
         return this.pinned;
     }

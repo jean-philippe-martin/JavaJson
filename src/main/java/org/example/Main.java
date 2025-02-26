@@ -556,10 +556,19 @@ public class Main {
                     sortControl = new SortControl(myJson.atAnyCursor());
                 }
             }
+            if (pressed=='1') {
+                myJson.atCursor().setFoldedLevels(1);
+            }
+            if (pressed=='2') {
+                myJson.atCursor().setFoldedLevels(2);
+            }
+            if (pressed=='3') {
+                myJson.atCursor().setFoldedLevels(3);
+            }
             if (key.getKeyType() == KeyType.Escape) {
                 myJson.rootInfo.secondaryCursors = new NoMultiCursor();
             }
-            if (key.getCharacter() != null && 'q' == key.getCharacter())
+            if (pressed=='q')
                 return false;
         }
         return true;
