@@ -7,11 +7,11 @@ import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 
-public class ActionMenu {
+public class MainMenu {
 
     private int row = 0;
     // the max allowed row value
-    private final int maxRow = 3;
+    private final int maxRow = 7;
 
     public enum Choice {
         // leave the menu visible
@@ -19,9 +19,15 @@ public class ActionMenu {
         // close the menu, do nothing
         CANCEL,
         // Action choices:
-        PARSE,
-        COPY,
-        ADD_TO_COPY,
+        ACTION,
+        FIND,
+        SORT,
+        AGGREGATE,
+        UNION,
+        GROUPBY,
+        TRANSFORM,
+        HELP,
+        QUIT
     }
 
     public void init() {
@@ -34,13 +40,18 @@ public class ActionMenu {
         g = g.newTextGraphics(new TerminalPosition(s.getColumns()-40,3), new TerminalSize(32,s.getRows()));
 
         String menu =
-                        "╭─────────[ ACTION ]─────────╮\n"+
-                        "│ p: parse JSON              │\n"+
-                        "│ c: copy                    │\n"+
-                        "│ shift-C: add to copy       │\n"+
-                        "├────────────────────────────┤\n"+
-                        "│ esc : cancel               │\n"+
-                        "╰────────────────────────────╯\n";
+                    "╭───────────[ MENU ]──────────╮\n"+
+                    "│ (ENTER): change value       │\n"+
+                    "│ f: find                     │\n"+
+                    "│ s: sort                     │\n"+
+                    "│ a: aggregate                │\n"+
+                    "│ +: union selected arrays    │\n"+
+                    "│ g: group by selected key(s) │\n"+
+                    "│ h: help                     │\n"+
+                    "│ q: quit                     │\n"+
+                    "├─────────────────────────────┤\n"+
+                    "│ esc : cancel                │\n"+
+                    "╰─────────────────────────────╯\n";
 
         String[] lines = menu.split("\n");
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER;
@@ -77,17 +88,19 @@ public class ActionMenu {
         }
         if (key.getKeyType()==KeyType.Enter) {
             if (row==maxRow) return Choice.CANCEL;
-            if (row==0) return Choice.PARSE;
-            if (row==1) return Choice.COPY;
+            // +2 to skip NONE and CANCEL
+            return Choice.values()[row+2];
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (Character.toLowerCase(key.getCharacter())) {
-                case 'p': return Choice.PARSE;
-                case 'q': return Choice.CANCEL;
-            }
-            switch (key.getCharacter()) {
-                case 'c': return Choice.COPY;
-                case 'C': return Choice.ADD_TO_COPY;
+                case 'p': return Choice.ACTION;
+                case 'f': return Choice.FIND;
+                case 's': return Choice.SORT;
+                case 'a': return Choice.AGGREGATE;
+                case '+': return Choice.UNION;
+                case 'g': return Choice.GROUPBY;
+                case 'h': return Choice.HELP;
+                case 'q': return Choice.QUIT;
             }
         }
         return Choice.NONE;

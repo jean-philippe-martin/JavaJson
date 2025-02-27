@@ -11,10 +11,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import org.example.cursor.FindCursor;
 import org.example.cursor.NoMultiCursor;
-import org.example.ui.ActionMenu;
-import org.example.ui.AggregateMenu;
-import org.example.ui.FindControl;
-import org.example.ui.SortControl;
+import org.example.ui.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -35,6 +32,7 @@ public class Main {
     private SortControl sortControl;
     private AggregateMenu aggregateMenu;
     private ActionMenu actionMenu;
+    private MainMenu mainMenu;
     private JsonNode.SavedCursors cursorsBeforeFind = null;
     private JsonNode myJson;
     private Terminal terminal;
@@ -45,6 +43,7 @@ public class Main {
 
     private OperationList operationList = new OperationList();
     private String notificationText = "";
+    private String copied = "";
 
     private static final String keys_help =
                 "----------------[ Movement ]----------------\n"+
@@ -152,18 +151,24 @@ public class Main {
             aggregateMenu.draw(screen.newTextGraphics());
         } else if (actionMenu!=null) {
             actionMenu.draw(screen.newTextGraphics());
+        } else if (mainMenu!=null) {
+            mainMenu.draw(screen.newTextGraphics());
         }
 
         // Bar at the bottom: notification if there's one, or path.
         String bottomText = notificationText;
         if (bottomText.isEmpty()) {
-            bottomText = myJson.rootInfo.userCursor.toString();
+            int numCursors = myJson.atAnyCursor().size();
+            bottomText = myJson.rootInfo.userCursor.toString() + " ♦ " + numCursors + " cursor";
+            if (numCursors!=1) bottomText += "s";
         }
         StringBuilder sb = new StringBuilder();
         sb.append(bottomText);
-        while (sb.length() < g.getSize().getColumns()) {
+        String info = "m: menu ";
+        while (sb.length() < g.getSize().getColumns()-info.length()) {
             sb.append(" ");
         }
+        sb.append(info);
         g.putString(TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(g.getSize().getRows()-1), sb.toString(), SGR.REVERSE);
         // Notifications last only one frame.
         notificationText = "";
@@ -175,8 +180,14 @@ public class Main {
         return terminal.readInput();
     }
 
-    public void copyToClipboard(String theString) {
-        StringSelection selection = new StringSelection(theString);
+    public void copyToClipboard(String theString, boolean add) {
+        if (add) {
+            if (copied.length()>0) copied += "\n";
+            copied += theString;
+        } else {
+            copied = theString;
+        }
+        StringSelection selection = new StringSelection(copied);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(selection, selection);
     }
@@ -284,7 +295,12 @@ public class Main {
             return true;
         } else if (choice==ActionMenu.Choice.COPY) {
             Object val = myJson.atCursor().getValue();
-            copyToClipboard((null == val ? "null" : val.toString()));
+            copyToClipboard((null == val ? "null" : val.toString()), false);
+            actionMenu = null;
+            return true;
+        } else if (choice==ActionMenu.Choice.ADD_TO_COPY) {
+            Object val = myJson.atCursor().getValue();
+            copyToClipboard((null == val ? "null" : val.toString()), true);
             actionMenu = null;
             return true;
         } else if (choice==ActionMenu.Choice.NONE) {
@@ -330,6 +346,35 @@ public class Main {
         }
     }
 
+    public void groupby() {
+        // Should we do groupby or countdups?
+        int parentIsList = 0;
+        for (JsonNode cur : myJson.atAnyCursor()) {
+            if (cur.getParent() instanceof JsonNodeList) parentIsList++;
+        }
+        if (parentIsList > myJson.atAnyCursor().size()/2) {
+            // most parents are lists, do a countdups
+            OpCountEachDistinct op = new OpCountEachDistinct(myJson);
+            JsonNode result = operationList.run(op);
+            if (null == result) {
+                notificationText = "Unable to run countdups here. Try on a value in a list.";
+            } else {
+                notificationText = op.toString();
+                myJson = result;
+            }
+        } else {
+            // most parents are maps, do a groupby
+            OpGroupby op = new OpGroupby(myJson);
+            JsonNode result = operationList.run(op);
+            if (null == result) {
+                notificationText = "Unable to run groupby here. Try the key in a map in a list.";
+            } else {
+                notificationText = op.toString();
+                myJson = result;
+            }
+        }
+    }
+
 
     /**
      * Updates the state based on the key pressed.
@@ -338,6 +383,8 @@ public class Main {
     public boolean actOnKey(KeyStroke key) throws IOException {
         char pressed = '\0';
         if (key.getKeyType()==KeyType.Character) pressed = Character.toLowerCase(key.getCharacter());
+
+
 
         if (showFind) {
             // Incremental find mode...
@@ -434,7 +481,48 @@ public class Main {
             ActionMenu.Choice choice = actionMenu.update(key);
             applyAction(choice);
         }
-        else {
+        else if (mainMenu!=null) {
+            // The "main menu" is a bit special, because it doesn't block the normal keys.
+            MainMenu.Choice choice = mainMenu.update(key);
+            if (choice==MainMenu.Choice.CANCEL) {
+                mainMenu = null;
+            }
+            if (choice==MainMenu.Choice.ACTION) {
+                mainMenu = null;
+                actionMenu = new ActionMenu();
+            }
+            if (choice==MainMenu.Choice.AGGREGATE) {
+                mainMenu = null;
+                aggregateMenu = new AggregateMenu();
+            }
+            if (choice== MainMenu.Choice.FIND) {
+                mainMenu = null;
+                showFind = true;
+                findControl.init();
+                cursorsBeforeFind = myJson.rootInfo.save();
+            }
+            if (choice== MainMenu.Choice.SORT) {
+                mainMenu = null;
+                sortControl = new SortControl(myJson.atAnyCursor());
+            }
+            if (choice==MainMenu.Choice.UNION) {
+                mainMenu = null;
+                Operation union = new Operation.UnionCursors(myJson);
+                notificationText = union.toString();
+                myJson = operationList.run(union);
+            }
+            if (choice==MainMenu.Choice.GROUPBY) {
+                mainMenu = null;
+                groupby();
+            }
+            if (choice==MainMenu.Choice.HELP) {
+                mainMenu = null;
+                helpScreen(terminal, screen);
+            }
+            if (choice== MainMenu.Choice.QUIT) {
+                return false;
+            }
+        } else {
             // normal key handling
             if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
                 moveCursorDown(true);
@@ -472,32 +560,7 @@ public class Main {
                 myJson.cursorPrevCursor();
             }
             if (pressed=='g') {
-                // Should we do groupby or countdups?
-                int parentIsList = 0;
-                for (JsonNode cur : myJson.atAnyCursor()) {
-                    if (cur.getParent() instanceof JsonNodeList) parentIsList++;
-                }
-                if (parentIsList > myJson.atAnyCursor().size()/2) {
-                    // most parents are lists, do a countdups
-                    OpCountEachDistinct op = new OpCountEachDistinct(myJson);
-                    JsonNode result = operationList.run(op);
-                    if (null == result) {
-                        notificationText = "Unable to run countdups here. Try on a value in a list.";
-                    } else {
-                        notificationText = op.toString();
-                        myJson = result;
-                    }
-                } else {
-                    // most parents are maps, do a groupby
-                    OpGroupby op = new OpGroupby(myJson);
-                    JsonNode result = operationList.run(op);
-                    if (null == result) {
-                        notificationText = "Unable to run groupby here. Try the key in a map in a list.";
-                    } else {
-                        notificationText = op.toString();
-                        myJson = result;
-                    }
-                }
+                groupby();
             }
             if ((key.getCharacter() != null && 'a' == pressed)) {
                 // aggregate
@@ -564,6 +627,10 @@ public class Main {
             }
             if (pressed=='3') {
                 myJson.atCursor().setFoldedLevels(3);
+            }
+            if (pressed=='m') {
+                mainMenu = new MainMenu();
+                notificationText = "Hint: the shortcut keys here work even if the menu is not open";
             }
             if (key.getKeyType() == KeyType.Escape) {
                 myJson.rootInfo.secondaryCursors = new NoMultiCursor();
