@@ -22,6 +22,7 @@ import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Locale;
 
 public class Main {
@@ -55,6 +56,7 @@ public class Main {
                 "----------------[ View ]--------------------\n"+
                 "left / right    : fold / unfold             \n"+
                 "p               : pin (show despite folds)  \n"+
+                "1/2/3           : fold after this many levels\n" +
                 "                                            \n"+
                 "----------------[ Multicursor ]-------------\n"+
                 "f               : find                      \n"+
@@ -655,23 +657,76 @@ public class Main {
         }
     }
 
+    public void go_to(String cursorLike) {
+        myJson.setCursors(cursorLike);
+    }
+
     public static void main(String[] args) throws Exception {
 
-        if (args.length==0 || (args.length==1 && args[0].equals("--help")) || args.length!=1) {
+        if (args.length==0 || (args.length==1 && args[0].equals("--help"))) {
             System.out.println("(C) 2025 Jean-Philippe Martin");
             System.out.println();
             System.out.println("Usage:");
-            System.out.println("java -jar JavaJson*.jar myfile.json");
+            System.out.println("java -jar JavaJson*.jar myfile.json [--goto <path>]");
             System.out.println();
             System.out.println("Example:");
-            System.out.println("java -jar target/JavaJson-1.0-jar-with-dependencies.jar testdata/hello.json");
+            System.out.println("java -jar target/JavaJson-1.5-jar-with-dependencies.jar testdata/hello.json");
+            System.out.println("java -jar target/JavaJson-1.5-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
             System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);
             return;
         }
 
-        Main main = Main.fromPathStr(args[0]);
+
+        String fileName = null;
+        HashMap<String, String> options = new HashMap<>();
+        boolean ignoreOpts = false;
+        options.put("--goto", null);
+
+
+        int i=-1;
+        while (++i<args.length) {
+            String s = args[i];
+            if (!ignoreOpts && s.startsWith("--")) {
+                if ("--".equals(s)) {
+                    ignoreOpts = true;
+                    continue;
+                }
+                if (!options.containsKey(s)) {
+                    System.err.println("Unrecognized option: " + s);
+                    return;
+                }
+                if (options.get(s)!=null) {
+                    System.err.println("Cannot set " + s + " more than once.");
+                    return;
+                }
+                if (i+1==args.length) {
+                    System.err.println("Missing value for " + s);
+                    return;
+                }
+                options.put(s, args[++i]);
+                continue;
+            }
+            if (null!=fileName) {
+                System.err.println("Sorry, can only open one file.");
+                return;
+            }
+            fileName = s;
+        }
+
+        if (null==fileName) {
+            System.out.println("Missing: a file name to open");
+        }
+        Main main = Main.fromPathStr(fileName);
+        String g = options.get("--goto");
+        if (null!=g) try {
+            main.go_to(g);
+            main.notificationText = "Gone to: " + g;
+        } catch (RuntimeException oops) {
+            main.notificationText = oops.getMessage();
+        }
+
         try {
             while(true) {
                 main.display();

@@ -666,4 +666,40 @@ public abstract class JsonNode {
      **/
     public abstract @NotNull JsonNode replaceChild(Cursor toChild, JsonNodeBuilder newChildBuilder);
 
+    /**
+     *  examples: ".foo[1].bar", ".baz[*].bar", "[1][2].city"
+     * Will throw if it can't find what you're asking for.
+     *
+     * Multi-cursor not yet supported.
+     * */
+    public void setCursors(@NotNull String whereToGo) {
+        JsonNode node = rootInfo.root;
+        while (!whereToGo.isEmpty()) {
+            if (whereToGo.startsWith(".")) {
+                int dot = whereToGo.indexOf('.', 1);
+                int bracket = whereToGo.indexOf('[');
+                int end = whereToGo.length();
+                int choice = dot;
+                if (choice < 0 || (bracket >= 0 && bracket < choice)) choice = bracket;
+                if (choice < 0 || (end >= 0 && end < choice)) choice = end;
+                String token = whereToGo.substring(1, choice);
+                node = ((JsonNodeMap)node).getChild(token);
+                whereToGo = whereToGo.substring(choice);
+            } else if (whereToGo.startsWith("[")) {
+                int end = whereToGo.length();
+                int bracket = whereToGo.indexOf(']');
+                int choice = end;
+                if (bracket>=0 && bracket<end) {
+                    choice = bracket;
+                }
+                String token = whereToGo.substring(1, choice);
+                Integer index = Integer.parseInt(token);
+                node = ((JsonNodeList)node).get(index);
+                whereToGo = whereToGo.substring(choice+1);
+            } else {
+                throw new RuntimeException("Don't know how to go to " + whereToGo);
+            }
+        }
+        rootInfo.setPrimaryCursor(node.whereIAm);
+    }
 }
