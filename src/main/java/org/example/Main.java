@@ -670,8 +670,8 @@ public class Main {
             System.out.println("java -jar JavaJson*.jar myfile.json [--goto <path>]");
             System.out.println();
             System.out.println("Examples:");
-            System.out.println("java -jar target/JavaJson-1.5-jar-with-dependencies.jar testdata/hello.json");
-            System.out.println("java -jar target/JavaJson-1.5-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
+            System.out.println("java -jar target/JavaJson-1.6-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json");
+            System.out.println("java -jar target/JavaJson-1.6-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
             System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);
