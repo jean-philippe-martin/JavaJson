@@ -669,7 +669,7 @@ public class Main {
             System.out.println("Usage:");
             System.out.println("java -jar JavaJson*.jar myfile.json [--goto <path>]");
             System.out.println();
-            System.out.println("Example:");
+            System.out.println("Examples:");
             System.out.println("java -jar target/JavaJson-1.5-jar-with-dependencies.jar testdata/hello.json");
             System.out.println("java -jar target/JavaJson-1.5-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
             System.out.println();
