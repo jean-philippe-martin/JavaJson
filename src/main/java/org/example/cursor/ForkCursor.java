@@ -25,8 +25,8 @@ public class ForkCursor implements MultiCursor {
     public void addAllNodes(Cursor primaryCur, @NotNull List<JsonNode> list) {
         JsonNode primary = primaryCur.getData();
         // there may be secondary cursors
-        List<Cursor.DescentStep> atFork = fork.asListOfSteps();
-        List<Cursor.DescentStep> atCursor = primaryCur.asListOfSteps();
+        List<DescentStep> atFork = fork.asListOfSteps();
+        List<DescentStep> atCursor = primaryCur.asListOfSteps();
         if (atCursor.size()<=atFork.size()) {
             // We're at or above the fork, nothing to add.
             return;
@@ -60,8 +60,8 @@ public class ForkCursor implements MultiCursor {
         // Run a variant of "addAllNodes" that tries to speedrun to the primary.
         JsonNode primary = primaryCur.getData();
         // there may be secondary cursors
-        List<Cursor.DescentStep> atFork = fork.asListOfSteps();
-        List<Cursor.DescentStep> atCursor = primaryCur.asListOfSteps();
+        List<DescentStep> atFork = fork.asListOfSteps();
+        List<DescentStep> atCursor = primaryCur.asListOfSteps();
         // ex: fork = ."foo" [1]
         //     cursor = ."foo" [1] [2] ."blah"
         //     so we visit all the children .foo[1][*].blah
@@ -98,8 +98,8 @@ public class ForkCursor implements MultiCursor {
         // Run a variant of "addAllNodes" that tries to speedrun to the primary.
         JsonNode primary = primaryCur.getData();
         // there may be secondary cursors
-        List<Cursor.DescentStep> atFork = fork.asListOfSteps();
-        List<Cursor.DescentStep> atCursor = primaryCur.asListOfSteps();
+        List<DescentStep> atFork = fork.asListOfSteps();
+        List<DescentStep> atCursor = primaryCur.asListOfSteps();
         // ex: fork = ."foo" [1]
         //     cursor = ."foo" [1] [2] ."blah"
         //     so we visit all the children .foo[1][*].blah

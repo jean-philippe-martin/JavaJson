@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.cursor.DescentKey;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -50,7 +51,7 @@ public class OpGroupby implements Operation {
             if (null==selectedValue.getParent().getParent()) continue;
             if (!(selectedValue.getParent().getParent() instanceof JsonNodeList)) continue;
             JsonNodeMap mapToGroup = (JsonNodeMap)(selectedValue.parent);
-            keyToGroupBy = ((Cursor.DescentKey)(selectedValue.asCursor().getStep())).get();
+            keyToGroupBy = ((DescentKey)(selectedValue.asCursor().getStep())).get();
             undoers.add(new GroupbyUndo(mapToGroup));
             newRoot = groupby(mapToGroup, keyToGroupBy);
         }

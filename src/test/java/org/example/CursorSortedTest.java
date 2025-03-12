@@ -1,5 +1,6 @@
 package org.example;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -149,6 +150,89 @@ public class CursorSortedTest {
         assertEquals("[1].category", state.rootInfo.userCursor.toString());
 
 
+    }
+
+    @Test
+    public void testGroupbyThenSortByKey() throws Exception {
+        String[] lines = new String[]{
+                "[",
+                "  \"nice\",",
+                "  \"world\",",
+                "  \"hello\",",
+                "  \"world\",",
+                "  \"world\",",
+                "  \"hello\",",
+                "  \"nice\",",
+                "  \"nice\",",
+                "  \"nice\"",
+                "] ",
+        };
+        Main main = Main.fromLinesAndVirtual(lines, 40, 20);
+
+        // "groupby" will give counts for every disctinct value
+        main.moveCursorDown(true);
+        main.groupby();
+        main.moveCursorUp();
+        main.moveCursorUp();
+        main.moveCursorUp();
+
+        // sort by keys
+        Sorter s = new Sorter(false, false, true, new ArrayList<String>(), true);
+        main.sort(s);
+
+        // Key order should remain unchanged
+        main.moveCursorDown(true);
+        assertEquals(".hello", main.getRoot().rootInfo.userCursor.toString());
+        main.moveCursorDown(true);
+        assertEquals(".nice", main.getRoot().rootInfo.userCursor.toString());
+        main.moveCursorDown(true);
+        assertEquals(".world", main.getRoot().rootInfo.userCursor.toString());
+    }
+
+    @Test
+    public void testGroupbyThenSortByValue() throws Exception {
+        String[] lines = new String[]{
+                "[",
+                "  \"nice\",",
+                "  \"world\",",
+                "  \"hello\",",
+                "  \"world\",",
+                "  \"world\",",
+                "  \"hello\",",
+                "  \"nice\",",
+                "  \"nice\",",
+                "  \"nice\",",
+                "  \"one\"",
+                "] ",
+        };
+        Main main = Main.fromLinesAndVirtual(lines, 40, 20);
+
+        // "groupby" will give counts for every distinct value
+        main.moveCursorDown(true);
+        main.groupby();
+        main.moveCursorUp();
+        main.moveCursorUp();
+        main.moveCursorUp();
+
+        main.display();
+        String debugView = main.getTestViewOfScreen();
+
+        // sort by value
+        Sorter s = new Sorter(false, false, true, new ArrayList<String>(), false);
+        main.sort(s);
+        main.display();
+        debugView = main.getTestViewOfScreen();
+
+        // Key order should remain unchanged
+        main.moveCursorDown(true);
+        assertEquals(".one", main.getRoot().rootInfo.userCursor.toString());
+        main.moveCursorDown(true);
+        debugView = main.getTestViewOfScreen();
+        assertEquals(".hello", main.getRoot().rootInfo.userCursor.toString());
+        main.moveCursorDown(true);
+        assertEquals(".world", main.getRoot().rootInfo.userCursor.toString());
+        main.moveCursorDown(true);
+        assertEquals(".nice", main.getRoot().rootInfo.userCursor.toString());
     }
 
 }

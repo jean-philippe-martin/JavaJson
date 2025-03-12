@@ -11,7 +11,7 @@ public class MainMenu {
 
     private int row = 0;
     // the max allowed row value
-    private final int maxRow = 7;
+    private final int maxRow = 8;
 
     public enum Choice {
         // leave the menu visible
@@ -25,7 +25,6 @@ public class MainMenu {
         AGGREGATE,
         UNION,
         GROUPBY,
-        TRANSFORM,
         HELP,
         QUIT
     }

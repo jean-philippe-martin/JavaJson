@@ -5,12 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.cursor.ForkCursor;
-import org.example.cursor.MultiCursor;
-import org.example.cursor.NoMultiCursor;
+import org.example.cursor.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -638,12 +635,12 @@ public abstract class JsonNode {
         this.whereIAm = cursorToMe;
         this.whereIAm.setData(this);
         if (null!=aggregate) {
-            Cursor.DescentStep lastStep = aggregate.whereIAm.getStep();
-            if (lastStep instanceof Cursor.DescentKey) {
-                String key = ((Cursor.DescentKey) lastStep).get();
+            DescentStep lastStep = aggregate.whereIAm.getStep();
+            if (lastStep instanceof DescentKey) {
+                String key = ((DescentKey) lastStep).get();
                 aggregate.reparent(this, cursorToMe.enterKey(key));
             } else {
-                int index = ((Cursor.DescentIndex) lastStep).get();
+                int index = ((DescentIndex) lastStep).get();
                 aggregate.reparent(this, cursorToMe.enterIndex(index));
             }
         }

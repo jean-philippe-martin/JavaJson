@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.cursor.DescentKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,8 +33,8 @@ public class JsonNodeValue<T> extends JsonNode {
     }
 
     private void autoAnnotate() {
-        if (this.whereIAm==null || !(this.whereIAm.getStep() instanceof Cursor.DescentKey)) return;
-        String key = ((Cursor.DescentKey)this.whereIAm.getStep()).get();
+        if (this.whereIAm==null || !(this.whereIAm.getStep() instanceof DescentKey)) return;
+        String key = ((DescentKey)this.whereIAm.getStep()).get();
         if (key.endsWith("_seconds") || key.endsWith("_sec")
                 || key.endsWith("Seconds") || key.endsWith("Sec")) {
             try {

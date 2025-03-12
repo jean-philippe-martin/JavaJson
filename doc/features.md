@@ -11,6 +11,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Annotations](#annotations)
 - [Unique keys](#Unique-keys)
 - [Groupby](#groupby)
+- [Print select values](#Print-select-values)
 
 ## Basic navigation
 
@@ -627,6 +628,45 @@ When the cursor is on a line of text that happens to be JSON, you can press the
 parse the line as JSON and make it part of the document.
 
 Parsing can be undone with the `shift-Z` key.
+
+# Print select values
+
+This is a completely different, non-interactive way to use the program. Say, you need in a script to just extract a
+specific value from a json file, and you have a path (say ".foo.bar", meaning key "foo" and then key "bar" inside of
+that). Then you could use this command:
+
+```
+jj mycomplexfile.json --print '.foo.bar'
+```
+
+And it would print just that value (this assumes you set up the `jj` alias; if you haven't then you
+can use the full Java command line instead of course).
+
+This also works with wildcards:
+
+- `[*]` to get all the elements in an array,
+- `.*` to get all the keys in a map.
+
+So for example if your file is:
+
+```
+[ 
+  {
+    "city": "Tokyo",
+    "country": "Japan"
+  },
+  {
+    "city": "Delhi",
+    "country": "India"
+  }
+]
+```
+
+Then to get all the cities you could call:
+
+```
+jj cities.json --print '[*].city'
+```
 
 # Related
 

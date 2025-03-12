@@ -95,8 +95,8 @@ public class OpCountEachDistinct implements Operation {
         // Don't group if there's nothing there.
         if (groups.isEmpty()) return null;
 
-        // for each of the groups, create a JsonNodeMap.
-        // it will contain a new JsonValue<Integer> with the count.
+        // for each of the groups (= distinct values), create a JsonNode.
+        // It will contain the count.
         LinkedHashMap<String, JsonNodeBuilder> groupsAsNodes = new LinkedHashMap<>();
         for (String key : groups.keySet()) {
             groupsAsNodes.put(key, JsonNode.Builder.fromObject(groups.get(key)));

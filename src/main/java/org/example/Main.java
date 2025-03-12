@@ -11,6 +11,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.virtual.DefaultVirtualTerminal;
 import org.example.cursor.FindCursor;
 import org.example.cursor.NoMultiCursor;
+import org.example.cursor.PathCursor;
 import org.example.ui.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +23,7 @@ import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -163,11 +165,19 @@ public class Main {
             int numCursors = myJson.atAnyCursor().size();
             bottomText = myJson.rootInfo.userCursor.toString() + " ♦ " + numCursors + " cursor";
             if (numCursors!=1) bottomText += "s";
+
+            if (numCursors>1 || !(myJson.rootInfo.secondaryCursors instanceof NoMultiCursor)) {
+                bottomText += " ♦ ESC for one";
+            }
         }
         StringBuilder sb = new StringBuilder();
         sb.append(bottomText);
         String info = "m: menu ";
-        while (sb.length() < g.getSize().getColumns()-info.length()) {
+        int targetLength = screen.getTerminalSize().getColumns()-info.length();
+        if (sb.length() >= targetLength) {
+            sb = new StringBuilder(sb.substring(0, targetLength-1));
+        }
+        while (sb.length() < targetLength) {
             sb.append(" ");
         }
         sb.append(info);
@@ -182,6 +192,20 @@ public class Main {
         return terminal.readInput();
     }
 
+    public String stringifyAllCursors() {
+        String ret = "";
+        for (JsonNode node : myJson.atAnyCursor()) {
+            Object value = node.getValue();
+            String foo = (null==value?"null":value.toString());
+            if (ret.isEmpty()) {
+                ret = foo;
+            } else {
+                ret = ret + "\n" + foo;
+            }
+        }
+        return ret;
+    }
+
     public void copyToClipboard(String theString, boolean add) {
         if (add) {
             if (copied.length()>0) copied += "\n";
@@ -192,6 +216,11 @@ public class Main {
         StringSelection selection = new StringSelection(copied);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(selection, selection);
+        if (add) {
+            notificationText = "Added to copy";
+        } else {
+            notificationText = "Copied";
+        }
     }
 
     /**
@@ -296,13 +325,11 @@ public class Main {
             actionMenu = null;
             return true;
         } else if (choice==ActionMenu.Choice.COPY) {
-            Object val = myJson.atCursor().getValue();
-            copyToClipboard((null == val ? "null" : val.toString()), false);
+            copyToClipboard(stringifyAllCursors(), false);
             actionMenu = null;
             return true;
         } else if (choice==ActionMenu.Choice.ADD_TO_COPY) {
-            Object val = myJson.atCursor().getValue();
-            copyToClipboard((null == val ? "null" : val.toString()), true);
+            copyToClipboard(stringifyAllCursors(), true);
             actionMenu = null;
             return true;
         } else if (choice==ActionMenu.Choice.NONE) {
@@ -332,6 +359,11 @@ public class Main {
         if (!drawer.tryCursorUp(myJson.rootInfo.userCursor)) {
             myJson.cursorUp();
         }
+    }
+
+    // For testing
+    public JsonNode getRoot() {
+        return myJson;
     }
 
     // do this when we press the "down" arrow
@@ -377,6 +409,13 @@ public class Main {
         }
     }
 
+    // Sort at the cursor in the specified way.
+    public void sort(Sorter sorter) {
+        Operation sort = new Operation.Sort(myJson, sorter);
+        notificationText = sort.toString();
+        myJson = operationList.run(sort);
+        sortControl = null;
+    }
 
     /**
      * Updates the state based on the key pressed.
@@ -384,7 +423,7 @@ public class Main {
      **/
     public boolean actOnKey(KeyStroke key) throws IOException {
         char pressed = '\0';
-        if (key.getKeyType()==KeyType.Character) pressed = Character.toLowerCase(key.getCharacter());
+        if (key.getKeyType()==KeyType.Character) pressed = key.getCharacter();
 
 
 
@@ -459,10 +498,7 @@ public class Main {
             // manage the sort dialog
             Sorter s = sortControl.update(key);
             if (s!=null) {
-                Operation sort = new Operation.Sort(myJson, s);
-                notificationText = sort.toString();
-                myJson = operationList.run(sort);
-                sortControl = null;
+                sort(s);
             }
             if (key.getKeyType()==KeyType.Escape) {
                 sortControl = null;
@@ -630,9 +666,31 @@ public class Main {
             if (pressed=='3') {
                 myJson.atCursor().setFoldedLevels(3);
             }
+            if (pressed=='4') {
+                myJson.atCursor().setFoldedLevels(4);
+            }
+            if (pressed=='5') {
+                myJson.atCursor().setFoldedLevels(5);
+            }
+            if (pressed=='6') {
+                myJson.atCursor().setFoldedLevels(6);
+            }
+            if (pressed=='7') {
+                myJson.atCursor().setFoldedLevels(7);
+            }
+            if (pressed=='9') {
+                // unfold everything
+                myJson.atCursor().setFoldedLevels(999);
+            }
             if (pressed=='m') {
                 mainMenu = new MainMenu();
                 notificationText = "Hint: the shortcut keys here work even if the menu is not open";
+            }
+            if (pressed=='c') {
+                copyToClipboard(stringifyAllCursors(), false);
+            } else if (pressed=='C') {
+                Object val = myJson.atCursor().getValue();
+                copyToClipboard(stringifyAllCursors(), true);
             }
             if (key.getKeyType() == KeyType.Escape) {
                 myJson.rootInfo.secondaryCursors = new NoMultiCursor();
@@ -668,10 +726,13 @@ public class Main {
             System.out.println();
             System.out.println("Usage:");
             System.out.println("java -jar JavaJson*.jar myfile.json [--goto <path>]");
+            System.out.println("OR");
+            System.out.println("java -jar JavaJson*.jar myfile.json --print <path>");
             System.out.println();
             System.out.println("Examples:");
             System.out.println("java -jar target/JavaJson-1.6-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json");
             System.out.println("java -jar target/JavaJson-1.6-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
+            System.out.println("java -jar target/JavaJson-1.6-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json --print '.players[*].name'");
             System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);
@@ -683,6 +744,7 @@ public class Main {
         HashMap<String, String> options = new HashMap<>();
         boolean ignoreOpts = false;
         options.put("--goto", null);
+        options.put("--print", null);
 
 
         int i=-1;
@@ -719,6 +781,20 @@ public class Main {
             System.out.println("Missing: a file name to open");
         }
         Main main = Main.fromPathStr(fileName);
+        String p = options.get("--print");
+        if (null!=p) {
+            JsonNode myJson = main.myJson;
+            main.closeScreen();
+            // print those values, then quit
+            PathCursor selected = new PathCursor(p);
+            java.util.List<JsonNode> nodes = new ArrayList<>();
+            selected.addAllNodes(myJson.asCursor(), nodes);
+            for (JsonNode n : nodes) {
+                Object value = n.getValue();
+                System.out.println((null==value?"null":value.toString()));
+            }
+            return;
+        }
         String g = options.get("--goto");
         if (null!=g) try {
             main.go_to(g);

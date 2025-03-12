@@ -65,15 +65,20 @@ public class FindCursor implements MultiCursor {
         if (null==node) return false;
         if (ignoreComments && node.isSynthetic()) return false;
         // check the key that holds this guy
-        if (inKey && node.asCursor().getStep() instanceof Cursor.DescentKey) {
-            Cursor.DescentKey dk = (Cursor.DescentKey)(node.asCursor().getStep());
+        if (inKey && node.asCursor().getStep() instanceof DescentKey) {
+            DescentKey dk = (DescentKey)(node.asCursor().getStep());
             if (dk!=null && stringMatches(dk.get())) return true;
         }
         // check the value in this guy
         if (inValue && node instanceof JsonNodeValue<?>) {
             JsonNodeValue jns = (JsonNodeValue)node;
             Object obj = (Object)jns.getValue();
-            if (stringMatches((null==obj?"":obj.toString()))) return true;
+            if (stringMatches((null==obj?"null":obj.toString()))) return true;
+        }
+        // check the annotation
+        if (!ignoreComments) {
+            String an = node.getAnnotation();
+            if (stringMatches(an)) return true;
         }
         return false;
     }
@@ -126,8 +131,8 @@ public class FindCursor implements MultiCursor {
 
     @Override
     public @Nullable Cursor nextCursor(Cursor primaryCur) {
-        List<Cursor.DescentStep> atCursorList = primaryCur.asListOfSteps();
-        Cursor.DescentStep[] atCursor = atCursorList.toArray(new Cursor.DescentStep[0]);
+        List<DescentStep> atCursorList = primaryCur.asListOfSteps();
+        DescentStep[] atCursor = atCursorList.toArray(new DescentStep[0]);
         JsonNode root = primaryCur.getData().getRoot();
         JsonNode nextGuy = findFirstAfter(root, atCursor, 0);
         if (null==nextGuy) return null;
@@ -136,8 +141,8 @@ public class FindCursor implements MultiCursor {
 
     @Override
     public @Nullable Cursor prevCursor(Cursor primaryCur) {
-        List<Cursor.DescentStep> atCursorList = primaryCur.asListOfSteps();
-        Cursor.DescentStep[] atCursor = atCursorList.toArray(new Cursor.DescentStep[0]);
+        List<DescentStep> atCursorList = primaryCur.asListOfSteps();
+        DescentStep[] atCursor = atCursorList.toArray(new DescentStep[0]);
         JsonNode root = primaryCur.getData().getRoot();
         JsonNode prevGuy = findLastBefore(root, atCursor, 0);
         if (null==prevGuy) return null;
@@ -145,27 +150,27 @@ public class FindCursor implements MultiCursor {
 
     }
 
-    private @Nullable JsonNode findFirstAfter(JsonNode node, Cursor.DescentStep[] atCursor, int index) {
+    private @Nullable JsonNode findFirstAfter(JsonNode node, DescentStep[] atCursor, int index) {
         if (index == atCursor.length) {
             // leaf case: that's where the cursor already is, don't accept this. Children are OK though.
             if (node instanceof JsonNodeValue) return null;
             return findFirstUnder(node, true);
         } else {
-            Cursor.DescentStep nextStep = atCursor[index];
+            DescentStep nextStep = atCursor[index];
             JsonNode nextNode = nextStep.apply(node);
             JsonNode result = findFirstAfter(nextNode, atCursor, index + 1);
             if (null != result) return result;
             // now try all children past that one.
-            if (nextStep instanceof Cursor.DescentIndex) {
-                Cursor.DescentIndex di = (Cursor.DescentIndex) nextStep;
+            if (nextStep instanceof DescentIndex) {
+                DescentIndex di = (DescentIndex) nextStep;
                 JsonNodeList nodeList = (JsonNodeList) node;
                 for (int i = di.get() + 1; i < nodeList.childCount(); i++) {
                     nextNode = nodeList.get(i);
                     result = findFirstUnder(nextNode, false);
                     if (null != result) return result;
                 }
-            } else if (nextStep instanceof Cursor.DescentKey) {
-                Cursor.DescentKey dk = (Cursor.DescentKey) nextStep;
+            } else if (nextStep instanceof DescentKey) {
+                DescentKey dk = (DescentKey) nextStep;
                 JsonNodeMap nm = (JsonNodeMap) node;
                 boolean searching = true;
                 for (String key : nm.getKeysInOrder()) {
@@ -185,27 +190,27 @@ public class FindCursor implements MultiCursor {
         return null;
     }
 
-    private @Nullable JsonNode findLastBefore(JsonNode node, Cursor.DescentStep[] atCursor, int index) {
+    private @Nullable JsonNode findLastBefore(JsonNode node, DescentStep[] atCursor, int index) {
         if (index == atCursor.length) {
             // leaf case: that's where the cursor already is, don't accept this. Children are OK though.
             if (node instanceof JsonNodeValue<?>) return null;
             return findLastUnder(node, true);
         } else {
-            Cursor.DescentStep nextStep = atCursor[index];
+            DescentStep nextStep = atCursor[index];
             JsonNode nextNode = nextStep.apply(node);
             JsonNode result = findLastBefore(nextNode, atCursor, index+1);
             if (null!=result) return result;
             // now try all children past that one.
-            if (nextStep instanceof Cursor.DescentIndex) {
-                Cursor.DescentIndex di = (Cursor.DescentIndex) nextStep;
+            if (nextStep instanceof DescentIndex) {
+                DescentIndex di = (DescentIndex) nextStep;
                 JsonNodeList nodeList = (JsonNodeList) node;
                 for (int i=di.get()-1; i>=0; i--) {
                     nextNode = nodeList.get(i);
                     result = findLastUnder(nextNode, false);
                     if (null!=result) return result;
                 }
-            } else if (nextStep instanceof Cursor.DescentKey) {
-                Cursor.DescentKey dk = (Cursor.DescentKey) nextStep;
+            } else if (nextStep instanceof DescentKey) {
+                DescentKey dk = (DescentKey) nextStep;
                 JsonNodeMap nm = (JsonNodeMap) node;
                 boolean searching = true;
                 List<String> keys = new ArrayList<>(nm.getKeysInOrder());

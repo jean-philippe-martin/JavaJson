@@ -1,5 +1,8 @@
 package org.example;
 
+import org.example.cursor.DescentIndex;
+import org.example.cursor.DescentKey;
+import org.example.cursor.DescentStep;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -186,9 +189,9 @@ public class JsonNodeList extends JsonNode {
         if (childCursor.getData().parent!=this) {
             throw new RuntimeException("invalid cursor: should be a child of this JSON node");
         }
-        Cursor.DescentStep step = childCursor.getStep();
-        if (step instanceof Cursor.DescentIndex) {
-            Cursor.DescentIndex di = (Cursor.DescentIndex)step;
+        DescentStep step = childCursor.getStep();
+        if (step instanceof DescentIndex) {
+            DescentIndex di = (DescentIndex)step;
             int index = di.get();
             if (index<0) {
                 // special case: aggregate data. For those we don't change the order.
@@ -202,7 +205,7 @@ public class JsonNodeList extends JsonNode {
                 return null;
             }
             return get(displayOrder[displayed+1]);
-        } else if (step instanceof Cursor.DescentKey) {
+        } else if (step instanceof DescentKey) {
             // ok that was the aggregate, moving on to index 0.
             return get(displayOrder[0]);
         }
@@ -215,9 +218,9 @@ public class JsonNodeList extends JsonNode {
         if (childCursor.getData().parent!=this) {
             throw new RuntimeException("invalid cursor: should be a child of this JSON node");
         }
-        Cursor.DescentStep step = childCursor.getStep();
-        if (step instanceof Cursor.DescentIndex) {
-            Cursor.DescentIndex di = (Cursor.DescentIndex)step;
+        DescentStep step = childCursor.getStep();
+        if (step instanceof DescentIndex) {
+            DescentIndex di = (DescentIndex)step;
             int index = di.get();
             if (index<0) {
                 // that was aggregate, we're now out of bounds
@@ -234,7 +237,7 @@ public class JsonNodeList extends JsonNode {
                 return null;
             }
             return get(displayOrder[displayed-1]);
-        } else if (step instanceof Cursor.DescentKey) {
+        } else if (step instanceof DescentKey) {
             // ok that was the aggregate, we're done then.
             return null;
         }
@@ -292,10 +295,10 @@ public class JsonNodeList extends JsonNode {
         if (toKid.getParent() != whereIAm) {
             throw new RuntimeException("Cursor must point to a child. Got '" + toKid.toString() + "'");
         }
-        if (!(toKid.getStep() instanceof Cursor.DescentIndex)) {
+        if (!(toKid.getStep() instanceof DescentIndex)) {
             throw new RuntimeException("Cursor must point to a child, was expecting a numerical index. Got '" + toKid.toString() + "'");
         }
-        int index = ((Cursor.DescentIndex)toKid.getStep()).get();
+        int index = ((DescentIndex)toKid.getStep()).get();
         JsonNode oldKid = get(index);
         this.pinnedUnderMe -= oldKid.pinnedUnderMe;
         JsonNode newKid = kid.build(this, whereIAm.enterIndex(index));

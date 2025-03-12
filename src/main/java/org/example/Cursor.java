@@ -1,83 +1,23 @@
 package org.example;
 
+import org.example.cursor.DescentIndex;
+import org.example.cursor.DescentKey;
+import org.example.cursor.DescentStep;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Cursor {
 
-    public abstract class DescentStep {
-        // Apply this step to the given node (must have the correct type).
-        public abstract JsonNode apply(JsonNode node);
-    };
-
-    public class DescentKey extends DescentStep {
-        private final String key;
-
-        public DescentKey(String key) {
-            this.key = key;
-        }
-
-        @Override
-        public boolean equals(Object rhs) {
-            if (!(rhs instanceof DescentKey)) return false;
-            if (key==null) return ((DescentKey)rhs).key==null;
-            return key.equals(((DescentKey)rhs).key);
-        }
-
-        @Override
-        public int hashCode() {
-            if (null==key) return 0;
-            return key.hashCode();
-        }
-
-        public String get() {
-            return this.key;
-        }
-
-        public JsonNode apply(JsonNode node) {
-            return ((JsonNodeMap) node).getChild(key);
-        }
-
-        @Override
-        public String toString() {
-            return "." + this.key;
-        }
+    public enum DescentStyle {
+        ALL_INDICES,
+        ALL_KEYS,
+        AN_INDEX,
+        A_KEY
     }
 
-    public class DescentIndex extends DescentStep {
-        private final int index;
-
-        public DescentIndex(int index) {
-            this.index = index;
-        }
-
-        @Override
-        public boolean equals(Object rhs) {
-            if (!(rhs instanceof DescentIndex)) return false;
-            return index  == (((DescentIndex)rhs).index);
-        }
-
-        @Override
-        public int hashCode() {
-            return index;
-        }
-
-        public int get() {
-            return this.index;
-        }
-
-        public JsonNode apply(JsonNode node) {
-            return ((JsonNodeList) node).get(index);
-        }
-
-
-        @Override
-        public String toString() {
-            return "[" + this.index + "]";
-        }
-    }
 
     private final DescentStep step;
     private final Cursor parent;
