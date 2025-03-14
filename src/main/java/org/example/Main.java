@@ -36,6 +36,7 @@ public class Main {
     private AggregateMenu aggregateMenu;
     private ActionMenu actionMenu;
     private MainMenu mainMenu;
+    private PasteScreen pasteMenu=null;
     private JsonNode.SavedCursors cursorsBeforeFind = null;
     private JsonNode myJson;
     private Terminal terminal;
@@ -71,7 +72,8 @@ public class Main {
                 "a               : aggregate sel. array(s)   \n"+
                 "g               : groupby sel. key(s)       \n"+
                 "s               : sort selected array(s)    \n"+
-                "ENTER           : parse as JSON             \n"+
+                        "ENTER           : parse as JSON             \n"+
+                        "v               : paste a new document      \n"+
                 "shift-Z         : undo last transform       \n"+
                 "                                            \n"+
                 "----------------[ Program ]-----------------\n"+
@@ -148,8 +150,7 @@ public class Main {
         }
         if (null!=sortControl) {
             sortControl.draw(screen.newTextGraphics());
-        }
-        else if (showFind) {
+        } else if (showFind) {
             findControl.draw(screen.newTextGraphics());
         } else if (aggregateMenu!=null) {
             aggregateMenu.draw(screen.newTextGraphics());
@@ -157,6 +158,8 @@ public class Main {
             actionMenu.draw(screen.newTextGraphics());
         } else if (mainMenu!=null) {
             mainMenu.draw(screen.newTextGraphics());
+        } else if (pasteMenu!=null) {
+            pasteMenu.draw(screen.newTextGraphics());
         }
 
         // Bar at the bottom: notification if there's one, or path.
@@ -418,14 +421,27 @@ public class Main {
     }
 
     /**
+     * Wait for at least one key press.
+     * Call actOnKey(key) as long as there's a key in the buffer.
+     * Return TRUE if you should continue, FALSE if quitting.
+     */
+    private boolean actOnAllKeys() throws IOException {
+        KeyStroke key = waitForKey();
+        if (!actOnKey(key)) return false;
+        while (true) {
+            key = terminal.pollInput();
+            if (null == key) return true;
+            if (!actOnKey(key)) return false;
+        }
+    }
+
+    /**
      * Updates the state based on the key pressed.
      * Returns TRUE if you should continue, FALSE if quitting.
      **/
     public boolean actOnKey(KeyStroke key) throws IOException {
         char pressed = '\0';
         if (key.getKeyType()==KeyType.Character) pressed = key.getCharacter();
-
-
 
         if (showFind) {
             // Incremental find mode...
@@ -522,43 +538,65 @@ public class Main {
         else if (mainMenu!=null) {
             // The "main menu" is a bit special, because it doesn't block the normal keys.
             MainMenu.Choice choice = mainMenu.update(key);
-            if (choice==MainMenu.Choice.CANCEL) {
+            if (choice == MainMenu.Choice.CANCEL) {
                 mainMenu = null;
             }
-            if (choice==MainMenu.Choice.ACTION) {
+            if (choice == MainMenu.Choice.ACTION) {
                 mainMenu = null;
                 actionMenu = new ActionMenu();
             }
-            if (choice==MainMenu.Choice.AGGREGATE) {
+            if (choice == MainMenu.Choice.AGGREGATE) {
                 mainMenu = null;
                 aggregateMenu = new AggregateMenu();
             }
-            if (choice== MainMenu.Choice.FIND) {
+            if (choice == MainMenu.Choice.FIND) {
                 mainMenu = null;
                 showFind = true;
                 findControl.init();
                 cursorsBeforeFind = myJson.rootInfo.save();
             }
-            if (choice== MainMenu.Choice.SORT) {
+            if (choice == MainMenu.Choice.SORT) {
                 mainMenu = null;
                 sortControl = new SortControl(myJson.atAnyCursor());
             }
-            if (choice==MainMenu.Choice.UNION) {
+            if (choice == MainMenu.Choice.UNION) {
                 mainMenu = null;
                 Operation union = new Operation.UnionCursors(myJson);
                 notificationText = union.toString();
                 myJson = operationList.run(union);
             }
-            if (choice==MainMenu.Choice.GROUPBY) {
+            if (choice == MainMenu.Choice.GROUPBY) {
                 mainMenu = null;
                 groupby();
             }
-            if (choice==MainMenu.Choice.HELP) {
+            if (choice == MainMenu.Choice.HELP) {
                 mainMenu = null;
                 helpScreen(terminal, screen);
             }
-            if (choice== MainMenu.Choice.QUIT) {
+            if (choice == MainMenu.Choice.PASTE) {
+                mainMenu = null;
+                pasteMenu = new PasteScreen();
+                notificationText = "Paste text, then press right arrow.";
+            }
+            if (choice == MainMenu.Choice.QUIT) {
                 return false;
+            }
+        } else if (null!=pasteMenu) {
+            var choice = pasteMenu.update(key);
+            if (choice == PasteScreen.Choice.CANCEL) {
+                pasteMenu = null;
+            } else if (choice== PasteScreen.Choice.NONE) {
+                // nothing to do
+            } else if (choice==PasteScreen.Choice.PARSE) {
+                try {
+                    JsonNode newJson = JsonNode.parseLines(pasteMenu.getLines());
+                    Operation op = new OpReplaceRoot(myJson, newJson);
+                    notificationText = "Replaced with pasted text";
+                    myJson = operationList.run(op);
+                } catch (Exception x) {
+                    notificationText = "Pasted text was not valid JSON nor JSONL";
+                }
+                pasteMenu = null;
             }
         } else {
             // normal key handling
@@ -692,6 +730,10 @@ public class Main {
                 Object val = myJson.atCursor().getValue();
                 copyToClipboard(stringifyAllCursors(), true);
             }
+            if (pressed=='v') {
+                pasteMenu = new PasteScreen();
+                notificationText = "Paste text, then press right arrow.";
+            }
             if (key.getKeyType() == KeyType.Escape) {
                 myJson.rootInfo.secondaryCursors = new NoMultiCursor();
             }
@@ -806,8 +848,9 @@ public class Main {
         try {
             while(true) {
                 main.display();
-                KeyStroke key = main.waitForKey();
-                if (!(main.actOnKey(key))) break;
+                //KeyStroke key = main.waitForKey();
+                //if (!(main.actOnKey(key))) break;
+                if (!main.actOnAllKeys()) break;
             }
         } catch (IOException e) {
             e.printStackTrace();

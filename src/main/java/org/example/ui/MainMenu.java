@@ -11,7 +11,7 @@ public class MainMenu {
 
     private int row = 0;
     // the max allowed row value
-    private final int maxRow = 8;
+    private final int maxRow = Choice.values().length-2;
 
     public enum Choice {
         // leave the menu visible
@@ -20,6 +20,7 @@ public class MainMenu {
         CANCEL,
         // Action choices:
         ACTION,
+        PASTE,
         FIND,
         SORT,
         AGGREGATE,
@@ -41,6 +42,7 @@ public class MainMenu {
         String menu =
                     "╭───────────[ MENU ]──────────╮\n"+
                     "│ (ENTER): change value       │\n"+
+                    "│ v: paste new document       │\n"+
                     "│ f: find                     │\n"+
                     "│ s: sort                     │\n"+
                     "│ a: aggregate                │\n"+
@@ -93,6 +95,7 @@ public class MainMenu {
         if (key.getKeyType()==KeyType.Character) {
             switch (Character.toLowerCase(key.getCharacter())) {
                 case 'p': return Choice.ACTION;
+                case 'v': return Choice.PASTE;
                 case 'f': return Choice.FIND;
                 case 's': return Choice.SORT;
                 case 'a': return Choice.AGGREGATE;

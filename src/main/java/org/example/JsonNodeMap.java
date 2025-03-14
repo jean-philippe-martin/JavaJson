@@ -109,7 +109,7 @@ public class JsonNodeMap extends JsonNode {
     // See the builder
     private JsonNodeMap(LinkedHashMap<String, JsonNodeBuilder> newKids, JsonNode parent, Cursor curToMe, JsonNode root, boolean _ignored) {
         super(parent, curToMe, root);
-        // So you better not call getValue now. But childCount() will work.
+
         this.kv = new LinkedHashMap<>();
         for (String key : newKids.keySet()) {
             kv.put(key, null);
