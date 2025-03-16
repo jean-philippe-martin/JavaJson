@@ -1,11 +1,12 @@
 package org.example;
 
 import org.example.cursor.FindCursor;
-import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class CursorTest {
 
     @Test

@@ -1,11 +1,10 @@
 package org.example;
 
-import org.junit.Test;
-
 import java.util.*;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.Assert.*;
 
 // Tests for the Sorter class directly.
 public class SorterTest {

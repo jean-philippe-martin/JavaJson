@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.example.Cursor;
 import org.example.JsonNode;
 import org.example.JsonNodeMap;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +11,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PathCursorTest {
 
@@ -177,7 +177,7 @@ public class PathCursorTest {
     }
 
     // This code doesn't work yet, but it's also not used yet.
-    @Ignore
+    @Disabled
     @Test
     public void testNext2() throws JsonProcessingException {
         JsonNode state = JsonNode.parseJson(TWO_PLAYERS);

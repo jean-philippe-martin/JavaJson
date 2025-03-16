@@ -1,13 +1,13 @@
 package org.example;
 
-import org.junit.Test;
+
 
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalField;
 import java.util.Date;
-
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ConversionsTest {
 

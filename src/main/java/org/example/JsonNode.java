@@ -128,12 +128,19 @@ public abstract class JsonNode {
             checkAllCursors(root, null, root, 0);
         }
 
-        private void addAndAllChildren(@NotNull JsonNode me, @NotNull Set<JsonNode> addHere) {
+        private void addAndAllChildren(@NotNull JsonNode me, @NotNull Set<JsonNode> addHere) throws InvariantException {
             addHere.add(me);
+            int pinnedCount = 0;
             var it = me.iterateChildren();
             while (it!=null) {
-                addAndAllChildren(it.get(), addHere);
+                JsonNode kid = it.get();
+                addAndAllChildren(kid, addHere);
+                pinnedCount += kid.pinnedUnderMe;
                 it = it.next();
+            }
+            if (me.pinned) pinnedCount += 1;
+            if (me.pinnedUnderMe != pinnedCount) {
+                throw new InvariantException("Pin count mismatch for " + me.asCursor().toString() + ": " + pinnedUnderMe + " but sum of kids is " + pinnedCount);
             }
         }
 

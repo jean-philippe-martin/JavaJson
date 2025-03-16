@@ -1,8 +1,11 @@
 package org.example;
 
 import com.googlecode.lanterna.input.KeyStroke;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Random;
 
@@ -19,11 +22,11 @@ public class FuzzTest {
             "} } }"
     };
 
-    @Ignore
-    @Test
-    public void testNavigation() throws Exception {
-        int steps = 1000;
-        int seed = 42;
+    @Disabled
+    @ParameterizedTest
+    @ValueSource(ints = {42, 99, 1234, 4321})
+    public void testNavigation(int seed) throws Exception {
+        int steps = 500;
 
         Main main = Main.fromLinesAndVirtual(MIX_OF_TYPES, 80, 40);
         main.display();
@@ -41,7 +44,7 @@ public class FuzzTest {
             KeyStroke key = choices[rnd.nextInt(choices.length)];
             main.actOnKey(key);
             main.display();
-            if (steps%10==0) main.checkInvariants();
+            if (i%10==0) main.checkInvariants();
         }
         main.checkInvariants();
         String state = main.getTestViewOfScreen();

@@ -1,10 +1,9 @@
 package org.example;
 
 import com.googlecode.lanterna.input.KeyStroke;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.Assert.*;
 
 public class GroupbyTest {
 

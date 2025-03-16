@@ -1,9 +1,9 @@
 package org.example;
 
 import com.googlecode.lanterna.input.KeyStroke;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.Assert.assertEquals;
 
 /**
  * Test the main class, feeding it keystrokes.
