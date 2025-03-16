@@ -775,9 +775,9 @@ public class Main {
             System.out.println("java -jar JavaJson*.jar myfile.json --print <path>");
             System.out.println();
             System.out.println("Examples:");
-            System.out.println("java -jar target/JavaJson-1.7-jar-with-dependencies.jar testdata/hello.json");
-            System.out.println("java -jar target/JavaJson-1.7-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
-            System.out.println("java -jar target/JavaJson-1.7-jar-with-dependencies.jar testdata/hello.json --print '.players[*].name'");
+            System.out.println("java -jar target/JavaJson-1.8-jar-with-dependencies.jar testdata/hello.json");
+            System.out.println("java -jar target/JavaJson-1.8-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
+            System.out.println("java -jar target/JavaJson-1.8-jar-with-dependencies.jar testdata/hello.json --print '.players[*].name'");
             System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);

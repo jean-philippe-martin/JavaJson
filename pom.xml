@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>JavaJson</artifactId>
-    <version>1.7</version>
+    <version>1.8-SNAPSHOT</version>
 
 
     <packaging>jar</packaging>
