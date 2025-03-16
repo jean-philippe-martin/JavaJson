@@ -172,6 +172,7 @@ public class CursorSortedTest {
         // "groupby" will give counts for every disctinct value
         main.moveCursorDown(true);
         main.groupby();
+        main.checkInvariants();
         main.moveCursorUp();
         main.moveCursorUp();
         main.moveCursorUp();
@@ -179,6 +180,7 @@ public class CursorSortedTest {
         // sort by keys
         Sorter s = new Sorter(false, false, true, new ArrayList<String>(), true);
         main.sort(s);
+        main.checkInvariants();
 
         // Key order should remain unchanged
         main.moveCursorDown(true);
@@ -210,6 +212,7 @@ public class CursorSortedTest {
         // "groupby" will give counts for every distinct value
         main.moveCursorDown(true);
         main.groupby();
+        main.checkInvariants();
         main.moveCursorUp();
         main.moveCursorUp();
         main.moveCursorUp();
@@ -220,6 +223,7 @@ public class CursorSortedTest {
         // sort by value
         Sorter s = new Sorter(false, false, true, new ArrayList<String>(), false);
         main.sort(s);
+        main.checkInvariants();
         main.display();
         debugView = main.getTestViewOfScreen();
 

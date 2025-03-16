@@ -689,6 +689,7 @@ public class Main {
                 if (null!=op) {
                     notificationText = "undo " + op.toString();
                     myJson = operationList.undo();
+                    myJson.rootInfo.fixCursors();
                 }
             }
             if (key.getCharacter() != null && ('s' == key.getCharacter())) {
@@ -774,9 +775,9 @@ public class Main {
             System.out.println("java -jar JavaJson*.jar myfile.json --print <path>");
             System.out.println();
             System.out.println("Examples:");
-            System.out.println("java -jar target/JavaJson-1.6-jar-with-dependencies.jar testdata/hello.json");
-            System.out.println("java -jar target/JavaJson-1.6-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
-            System.out.println("java -jar target/JavaJson-1.6-jar-with-dependencies.jar testdata/hello.json --print '.players[*].name'");
+            System.out.println("java -jar target/JavaJson-1.7-jar-with-dependencies.jar testdata/hello.json");
+            System.out.println("java -jar target/JavaJson-1.7-jar-with-dependencies.jar testdata/hello.json --goto '.players[0].score'");
+            System.out.println("java -jar target/JavaJson-1.7-jar-with-dependencies.jar testdata/hello.json --print '.players[*].name'");
             System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);
@@ -860,6 +861,16 @@ public class Main {
             main.closeScreen();
         }
 
+    }
+
+    public void checkInvariants() throws InvariantException {
+        myJson.rootInfo.checkInvariants(myJson);
+        int openMenus = 0;
+        if (mainMenu!=null) openMenus++;
+        if (sortControl!=null) openMenus++;
+        if (findControl!=null) openMenus++;
+        if (actionMenu!=null) openMenus++;
+        if (openMenus>1) throw new InvariantException("Should have at most 1 open menu, have " + openMenus);
     }
 
     private static void helpScreen(Terminal terminal, Screen screen) throws IOException {

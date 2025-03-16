@@ -1,6 +1,7 @@
 package org.example;
 
 import com.googlecode.lanterna.input.KeyStroke;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -34,6 +35,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
 
         main.display();
         String got = main.getTestViewOfScreen();
@@ -95,6 +97,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
 
         // fold the two we know are good.
         main.actOnKey(KeyStroke.fromString("<Home>"));
@@ -155,6 +158,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
 
         main.actOnKey(KeyStroke.fromString("<Home>"));
         main.moveCursorDown(true);
@@ -207,6 +211,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
 
         // Fold one section
         main.actOnKey(KeyStroke.fromString("<Home>"));
@@ -276,6 +281,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
 
         main.actOnKey(KeyStroke.fromString("<Home>"));
         main.moveCursorDown(true);
@@ -323,6 +329,112 @@ public class GroupbyTest {
 
         String gotBeginning = got.substring(0, expected.length());
         assertEquals(expected, gotBeginning);
+    }
+
+    @Test
+    public void testListGroupbyThenUndo() throws Exception {
+        String[] lines = new String[]{
+                "[",
+                "  { ",
+                "    \"c\": \"London\", ",
+                "    \"s\": 12 ",
+                "  }, ",
+                "  { ",
+                "    \"c\": \"Paris\", ",
+                "    \"s\": 4 ",
+                "  }, ",
+                "  { ",
+                "    \"c\": \"London\", ",
+                "    \"s\": 24 ",
+                "  }",
+                "]"
+        };
+        Main main = Main.fromLinesAndVirtual(lines, 40, 40);
+
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        // we should now be at the "c"
+
+        // Do the groupby
+        main.checkInvariants();
+        main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
+
+        // Undo the groupby
+        main.checkInvariants();
+        main.actOnKey(KeyStroke.fromString("Z"));
+        main.checkInvariants();
+
+        // Move three below home
+        main.actOnKey(KeyStroke.fromString("<Home>"));
+        main.actOnKey(KeyStroke.fromString("<Down>"));
+        main.actOnKey(KeyStroke.fromString("<Down>"));
+        main.actOnKey(KeyStroke.fromString("<Down>"));
+
+        main.display();
+        String got = main.getTestViewOfScreen();
+
+        String expected = "[•//•3•entries••••••••••••••••••••••••••\n" +
+                "••{•••••••••••••••••••••••••••••••••••••\n" +
+                "••••\"c\":•\"London\"•••••••••••••••••••••••\n" +
+                ">>••\"s\":•12•••••••••••••••••••••••••••••\n" +
+                "••}•••••••••••••••••••••••••••••••••••••\n" +
+                "••{•••••••••••••••••••••••••••••••••••••\n" +
+                "••••\"c\":•\"Paris\"••••••••••••••••••••••••\n" +
+                "••••\"s\":•4••••••••••••••••••••••••••••••\n" +
+                "••}•••••••••••••••••••••••••••••••••••••\n" +
+                "••{•••••••••••••••••••••••••••••••••••••\n" +
+                "••••\"c\":•\"London\"•••••••••••••••••••••••\n" +
+                "••••\"s\":•24•••••••••••••••••••••••••••••\n" +
+                "••}•••••••••••••••••••••••••••••••••••••";
+
+        String gotBeginning = got.substring(0, expected.length());
+        assertEquals(expected, gotBeginning);
+    }
+
+    @Test
+    public void testGroupby2ThenUndo() throws Exception {
+        String[] lines = new String[]{
+                "[",
+                "  [",
+                "    { ",
+                "      \"c\": \"London\", ",
+                "      \"s\": 12 ",
+                "    }, ",
+                "    { ",
+                "      \"c\": \"Paris\", ",
+                "      \"s\": 4 ",
+                "    }, ",
+                "    { ",
+                "      \"c\": \"London\", ",
+                "      \"s\": 24 ",
+                "    }",
+                "  ]",
+                "]"
+        };
+        Main main = Main.fromLinesAndVirtual(lines, 40, 40);
+
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        // we should now be at the "c"
+
+        // Do the groupby
+        main.checkInvariants();
+        main.actOnKey(KeyStroke.fromString("g"));
+        main.checkInvariants();
+
+        // Fold one section
+        main.actOnKey(KeyStroke.fromString("<Home>"));
+        main.moveCursorDown(true);
+        main.moveCursorDown(true);
+        main.actOnKey(KeyStroke.fromString("<Left>"));
+
+        // Undo the groupby
+        main.checkInvariants();
+        main.actOnKey(KeyStroke.fromString("Z"));
+        main.checkInvariants();
+
     }
 
 

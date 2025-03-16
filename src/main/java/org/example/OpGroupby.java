@@ -9,8 +9,11 @@ public class OpGroupby implements Operation {
 
     /** Holds information needed to undo a groupby */
     public static class GroupbyUndo {
+        // The list that contains the objects we're going to group
         private JsonNodeList holderList;
+        // Parent of the list
         private JsonNode listParent;
+        // cursor to the list
         private Cursor toList;
         public GroupbyUndo(JsonNodeMap mapToGroup) {
             JsonNodeList holder = (JsonNodeList) mapToGroup.getParent();
@@ -22,6 +25,21 @@ public class OpGroupby implements Operation {
             JsonNode.Builder builder = JsonNode.Builder.fromNode(holderList);
             if (null!=listParent) {
                 listParent.replaceChild(toList, builder);
+            } else if (null!=holderList) {
+                // we're root, but we still need to fix all the maps to have the correct parent.
+                List<JsonNode> children = new ArrayList<>();
+                var it = holderList.iterateChildren();
+                while (it!=null) {
+                    children.add(it.get());
+                    it = it.next();
+                }
+                int index=0;
+                for (var kid: children) {
+
+                    kid.reparent(holderList, holderList.asCursor().enterIndex(index));
+                    //holderList.replaceChild(kid.asCursor(), JsonNode.Builder.fromNode(kid));
+                    index++;
+                }
             }
         }
     }
@@ -115,14 +133,14 @@ public class OpGroupby implements Operation {
 
         JsonNodeMap.Builder rootMap = new JsonNodeMap.Builder(groupsAsNodes);
 
-        JsonNode newChild;
+        JsonNode newNode;
         if (list.isRoot()) {
             newRoot = rootMap.build(null, new Cursor());
-            newChild = newRoot;
+            newNode = newRoot;
         } else {
-            newChild = oldParent.replaceChild(cursorToOld, rootMap);
+            newNode = oldParent.replaceChild(cursorToOld, rootMap);
         }
-        newChild.setAnnotation("grouped by " + keyToGroupBy);
+        newNode.setAnnotation("grouped by " + keyToGroupBy);
         return newRoot;
     }
 }

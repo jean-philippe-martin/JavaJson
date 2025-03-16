@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -118,6 +119,60 @@ public abstract class JsonNode {
             } catch (Exception x) {
             }
             userCursor = node.asCursor();
+        }
+
+        public void checkInvariants(JsonNode expectedRoot) throws InvariantException {
+            if (root!=expectedRoot) throw new InvariantException("root.rootInfo.root != root.");
+            HashSet<JsonNode> nodesInTree = new HashSet<>();
+            addAndAllChildren(root, nodesInTree);
+            checkAllCursors(root, null, root, 0);
+        }
+
+        private void addAndAllChildren(@NotNull JsonNode me, @NotNull Set<JsonNode> addHere) {
+            addHere.add(me);
+            var it = me.iterateChildren();
+            while (it!=null) {
+                addAndAllChildren(it.get(), addHere);
+                it = it.next();
+            }
+        }
+
+        private void checkAllCursors(@NotNull JsonNode root, @Nullable JsonNode parent, @NotNull JsonNode me, int depth) throws InvariantException {
+            // Everyone agrees on root & rootInfo
+            List<String> brokenInvariants = new ArrayList<>();
+            if (me.asCursor().asListOfSteps().size() != depth) {
+                brokenInvariants.add("Cursor depth is " + me.asCursor().asListOfSteps().size() + ", should be " + depth);
+            }
+            if (me.root != root) {
+                brokenInvariants.add("Root is incorrect for node " + me.asCursor().toString());
+            }
+            if (root.rootInfo != me.rootInfo) {
+                brokenInvariants.add("Two distinct rootInfos: " + me.asCursor().toString() + "'s ("
+                        + me.rootInfo.root.getClass()
+                        + ") does not match root's (" + root.getClass()+")");
+            }
+            // Cursor data and parent are correct.
+            try {
+                Cursor cur = me.asCursor();
+                if (parent!=null && parent!=me.parent) {
+                    brokenInvariants.add("Node " + cur.toString() + " has wrong parent.");
+                }
+                me.checkInvariants();
+            } catch (InvariantException ie) {
+                if (!brokenInvariants.isEmpty()) {
+                    throw new InvariantException(brokenInvariants.stream().collect(Collectors.joining("\nAND ")), ie);
+                }
+                throw ie;
+            }
+            if (!brokenInvariants.isEmpty()) {
+                throw new InvariantException(brokenInvariants.stream().collect(Collectors.joining("\nAND ")));
+            }
+            // Recurse.
+            var it = me.iterateChildren();
+            while (it!=null) {
+                checkAllCursors(root, me, it.get(), depth+1);
+                it = it.next();
+            }
         }
     }
 
@@ -712,5 +767,13 @@ public abstract class JsonNode {
             }
         }
         rootInfo.setPrimaryCursor(node.whereIAm);
+    }
+
+    public void checkInvariants() throws InvariantException {
+        Cursor cur = this.asCursor();
+        if (cur.getData() != this) throw new InvariantException("Cursor doesn't point back to node");
+        Cursor curParent = cur.getParent();
+        if (curParent != null && curParent.getData() != this.parent)
+            throw new InvariantException("Cursor parent is wrong.");
     }
 }

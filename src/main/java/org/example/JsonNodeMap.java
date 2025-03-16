@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.cursor.DescentIndex;
 import org.example.cursor.DescentKey;
 import org.example.cursor.DescentStep;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,7 @@ public class JsonNodeMap extends JsonNode {
         @Override
         public JsonNodeMap build(JsonNode parent, Cursor curToMe) {
             JsonNode root = null;
-            if (null!=parent) root = parent.rootInfo.root;
+            if (null != parent) root = parent.rootInfo.root;
             // This also builds all the children, recursively.
             JsonNodeMap ret = new JsonNodeMap(children, parent, curToMe, root, true);
             ret.sort(sortOrder);
@@ -35,7 +36,9 @@ public class JsonNodeMap extends JsonNode {
         }
     }
 
-    /** Iterate through our children, in display order. **/
+    /**
+     * Iterate through our children, in display order.
+     **/
     public class JsonNodeMapIterator implements JsonNodeIterator<String> {
         final JsonNodeMap dad;
         final int displayIndex;
@@ -56,7 +59,7 @@ public class JsonNodeMap extends JsonNode {
 
         @Override
         public @NotNull JsonNode get() {
-            if (displayIndex==-1) {
+            if (displayIndex == -1) {
                 return dad.aggregate;
             }
             return dad.getChild(dad.displayOrder[displayIndex]);
@@ -64,7 +67,7 @@ public class JsonNodeMap extends JsonNode {
 
         @Override
         public @NotNull String key() {
-            if (displayIndex==-1) {
+            if (displayIndex == -1) {
                 return dad.aggregateComment;
             }
             return dad.displayOrder[displayIndex];
@@ -72,7 +75,7 @@ public class JsonNodeMap extends JsonNode {
 
         @Override
         public boolean isAggregate() {
-            return displayIndex<0;
+            return displayIndex < 0;
         }
 
         @Override
@@ -93,14 +96,16 @@ public class JsonNodeMap extends JsonNode {
     private @Nullable Sorter sortOrder = null;
 
 
-    /** Normal constructor, from the result of parsing JSON. */
+    /**
+     * Normal constructor, from the result of parsing JSON.
+     */
     protected JsonNodeMap(LinkedHashMap<String, Object> kv, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.kv = kv;
         this.children = new HashMap<>();
         this.displayOrder = kv.keySet().toArray(new String[0]);
         this.whereIsDiplayed = new HashMap<>();
-        for (int i=0; i<displayOrder.length; i++) {
+        for (int i = 0; i < displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
         }
         sortOrder = null;
@@ -123,7 +128,7 @@ public class JsonNodeMap extends JsonNode {
 
         this.displayOrder = this.children.keySet().toArray(new String[0]);
         this.whereIsDiplayed = new HashMap<>();
-        for (int i=0; i<displayOrder.length; i++) {
+        for (int i = 0; i < displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
         }
         sortOrder = null;
@@ -146,7 +151,8 @@ public class JsonNodeMap extends JsonNode {
         if (this.children.containsKey(key)) {
             return this.children.get(key);
         } else {
-            if (!kv.containsKey(key)) throw new NoSuchElementException("No '"+key+"' child for " + whereIAm.toString());
+            if (!kv.containsKey(key))
+                throw new NoSuchElementException("No '" + key + "' child for " + whereIAm.toString());
             Object childJson = kv.get(key);
             JsonNode child = JsonNode.fromObject(childJson, this, whereIAm.enterKey(key), root);
             this.children.put(key, child);
@@ -162,7 +168,9 @@ public class JsonNodeMap extends JsonNode {
         getChild(key).aggregateComment = comment;
     }
 
-    /** True if the userCursor is pointing to this key of ours. **/
+    /**
+     * True if the userCursor is pointing to this key of ours.
+     **/
     @Override
     public boolean isAtCursor(String key) {
         try {
@@ -174,7 +182,9 @@ public class JsonNodeMap extends JsonNode {
         }
     }
 
-    /** Whether this child is folded **/
+    /**
+     * Whether this child is folded
+     **/
     public boolean getChildFolded(String key) {
         if (!this.children.containsKey(key)) return false;
         return getChild(key).getFolded();
@@ -182,19 +192,19 @@ public class JsonNodeMap extends JsonNode {
 
     @Override
     public JsonNode firstChild() {
-        if (displayOrder.length==0) return null;
+        if (displayOrder.length == 0) return null;
         return getChild(displayOrder[0]);
     }
 
     @Override
     public JsonNode lastChild() {
-        if (displayOrder.length==0) return null;
-        return getChild(displayOrder[displayOrder.length-1]);
+        if (displayOrder.length == 0) return null;
+        return getChild(displayOrder[displayOrder.length - 1]);
     }
 
     @Override
     public @Nullable JsonNodeIterator iterateChildren() {
-        if (childCount()==0) return null;
+        if (childCount() == 0) return null;
         return new JsonNodeMapIterator(this);
     }
 
@@ -204,18 +214,18 @@ public class JsonNodeMap extends JsonNode {
         DescentStep step = childCursor.getStep();
         // if we found ourselves, then this must be a descentKey
         if (!(step instanceof DescentKey)) return null;
-        String key = ((DescentKey)step).get();
+        String key = ((DescentKey) step).get();
         if (!whereIsDiplayed.containsKey(key)) {
             return null;
         }
         int displayIndex = whereIsDiplayed.get(key);
-        if (displayIndex+1 >= displayOrder.length) {
+        if (displayIndex + 1 >= displayOrder.length) {
             // we're at the end
             JsonNode parent = childCursor.getData().getParent();
-            if (parent==this) return null;
+            if (parent == this) return null;
             return parent.nextChild(childCursor);
         }
-        return getChild(displayOrder[displayIndex+1]);
+        return getChild(displayOrder[displayIndex + 1]);
     }
 
     @Override
@@ -224,7 +234,7 @@ public class JsonNodeMap extends JsonNode {
         DescentStep step = childCursor.getStep();
         // if we found ourselves, then this must be a descentKey
         if (!(step instanceof DescentKey)) return null;
-        String key = ((DescentKey)step).get();
+        String key = ((DescentKey) step).get();
         if (!whereIsDiplayed.containsKey(key)) {
             return null;
         }
@@ -233,12 +243,12 @@ public class JsonNodeMap extends JsonNode {
             // we're at the beginning already
             return null;
         }
-        return getChild(displayOrder[displayIndex-1]);
+        return getChild(displayOrder[displayIndex - 1]);
     }
 
     @Override
     public void sort(Sorter sorter) {
-        if (null==sorter) {
+        if (null == sorter) {
             unsort();
             return;
         }
@@ -251,11 +261,11 @@ public class JsonNodeMap extends JsonNode {
             List<Object> values = kv.values().stream().collect(Collectors.toList());
             List<String> keys = kv.keySet().stream().collect(Collectors.toList());
             List<Integer> indices = new ArrayList<>();
-            for (int i=0; i<values.size(); i++) {
+            for (int i = 0; i < values.size(); i++) {
                 indices.add(i);
             }
             SorterList<Object> sl = new SorterList<>(sorter, values);
-            int[] sortedIndices = indices.stream().sorted(sl).mapToInt(i->i).toArray();
+            int[] sortedIndices = indices.stream().sorted(sl).mapToInt(i -> i).toArray();
             this.displayOrder = new String[indices.size()];
             for (int i : indices) {
                 displayOrder[i] = keys.get(sortedIndices[i]);
@@ -273,7 +283,7 @@ public class JsonNodeMap extends JsonNode {
     public void unsort() {
         this.displayOrder = kv.keySet().toArray(new String[0]);
         this.whereIsDiplayed = new HashMap<>();
-        for (int i=0; i<displayOrder.length; i++) {
+        for (int i = 0; i < displayOrder.length; i++) {
             whereIsDiplayed.put(displayOrder[i], i);
         }
         sortOrder = null;
@@ -291,8 +301,8 @@ public class JsonNodeMap extends JsonNode {
     public void reparent(JsonNode newParent, Cursor cursorToMe) {
         super.reparent(newParent, cursorToMe);
         var it = this.iterateChildren();
-        while (it!=null) {
-            it.get().reparent(this, cursorToMe.enterKey((String)it.key()));
+        while (it != null) {
+            it.get().reparent(this, cursorToMe.enterKey((String) it.key()));
             it = it.next();
         }
     }
@@ -305,12 +315,38 @@ public class JsonNodeMap extends JsonNode {
         if (!(toKid.getStep() instanceof DescentKey)) {
             throw new RuntimeException("Cursor must point to a child, was expecting a string index. Got '" + toKid.toString() + "'");
         }
-        String key = ((DescentKey)toKid.getStep()).get();
+        String key = ((DescentKey) toKid.getStep()).get();
         JsonNode oldKid = getChild(key);
         this.pinnedUnderMe -= oldKid.pinnedUnderMe;
         JsonNode newKid = kid.build(this, whereIAm.enterKey(key));
+        newKid.rootInfo = rootInfo;
         this.pinnedUnderMe += newKid.pinnedUnderMe;
         this.children.put(key, newKid);
         return newKid;
+    }
+
+    @Override
+    public void checkInvariants() throws InvariantException {
+        super.checkInvariants();
+        int pos = 0;
+        for (String key: displayOrder) {
+            if (whereIsDiplayed.get(key) != pos) {
+                throw new InvariantException("displayOrder inconsistent with whereIsDisplayed for map at " + asCursor().toString());
+            }
+            pos++;
+        }
+        for (String key: children.keySet()) {
+            if (this.children.get(key)==null) continue;
+            Cursor toChild = children.get(key).whereIAm;
+            DescentStep lastStep = toChild.getStep();
+            if (lastStep instanceof DescentKey) {
+                String hisKey = ((DescentKey)lastStep).get();
+                if (!key.equals(hisKey)) {
+                    throw new InvariantException("Child " + key + " thinks it is child " + hisKey + " at " + asCursor().toString());
+                }
+            } else {
+                throw new InvariantException("Child " + key + " thinks it is child \"" + lastStep + " at " + asCursor().toString());
+            }
+        }
     }
 }

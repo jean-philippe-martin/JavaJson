@@ -41,7 +41,9 @@ public class FuzzTest {
             KeyStroke key = choices[rnd.nextInt(choices.length)];
             main.actOnKey(key);
             main.display();
+            if (steps%10==0) main.checkInvariants();
         }
+        main.checkInvariants();
         String state = main.getTestViewOfScreen();
 
     }

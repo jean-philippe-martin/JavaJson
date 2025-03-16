@@ -292,9 +292,7 @@ public class JsonNodeList extends JsonNode {
 
     @Override
     public @NotNull JsonNode replaceChild(Cursor toKid, JsonNodeBuilder kid) {
-        if (toKid.getParent() != whereIAm) {
-            throw new RuntimeException("Cursor must point to a child. Got '" + toKid.toString() + "'");
-        }
+
         if (!(toKid.getStep() instanceof DescentIndex)) {
             throw new RuntimeException("Cursor must point to a child, was expecting a numerical index. Got '" + toKid.toString() + "'");
         }
@@ -302,9 +300,34 @@ public class JsonNodeList extends JsonNode {
         JsonNode oldKid = get(index);
         this.pinnedUnderMe -= oldKid.pinnedUnderMe;
         JsonNode newKid = kid.build(this, whereIAm.enterIndex(index));
+        newKid.rootInfo = rootInfo;
         this.pinnedUnderMe += newKid.pinnedUnderMe;
         this.children[index] = newKid;
         return newKid;
     }
 
+    @Override
+    public void checkInvariants() throws InvariantException {
+        super.checkInvariants();
+        int pos = 0;
+        for (int key: displayOrder) {
+            if (whereIsDiplayed[key] != pos) {
+                throw new InvariantException("displayOrder inconsistent with whereIsDisplayed for list at " + asCursor().toString());
+            }
+            pos++;
+        }
+        for (int i=0; i<this.children.length; i++) {
+            if (this.children[i]==null) continue;
+            Cursor toChild = this.children[i].whereIAm;
+            DescentStep lastStep = toChild.getStep();
+            if (lastStep instanceof DescentIndex) {
+                int index = ((DescentIndex)lastStep).get();
+                if (index != i) {
+                    throw new InvariantException("Child " + i + " thinks it is child " + index + " at " + asCursor().toString());
+                }
+            } else {
+                throw new InvariantException("Child " + i + " thinks it is child \"" + lastStep + " at " + asCursor().toString());
+            }
+        }
+    }
 }
