@@ -105,6 +105,20 @@ public abstract class JsonNode {
             this.userCursor = save.primaryCursor;
             this.secondaryCursors = save.secondaryCursors;
         }
+
+        // Makes sure the userCursor and its ancestors all point to nodes
+        // that are actually part of the current tree.
+        public void fixCursors() {
+            JsonNode node = this.root;
+            List<DescentStep> steps = userCursor.asListOfSteps();
+            try {
+                for (DescentStep step: steps) {
+                    node = step.apply(node);
+                }
+            } catch (Exception x) {
+            }
+            userCursor = node.asCursor();
+        }
     }
 
     protected boolean folded = false;

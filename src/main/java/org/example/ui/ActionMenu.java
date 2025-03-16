@@ -11,7 +11,7 @@ public class ActionMenu {
 
     private int row = 0;
     // the max allowed row value
-    private final int maxRow = 3;
+    private final int maxRow = Choice.values().length-2;
 
     public enum Choice {
         // leave the menu visible

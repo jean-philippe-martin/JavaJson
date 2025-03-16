@@ -410,6 +410,7 @@ public class Main {
                 myJson = result;
             }
         }
+        myJson.rootInfo.fixCursors();
     }
 
     // Sort at the cursor in the specified way.
@@ -564,6 +565,7 @@ public class Main {
                 Operation union = new Operation.UnionCursors(myJson);
                 notificationText = union.toString();
                 myJson = operationList.run(union);
+                myJson.rootInfo.fixCursors();
             }
             if (choice == MainMenu.Choice.GROUPBY) {
                 mainMenu = null;
