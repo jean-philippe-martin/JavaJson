@@ -6,6 +6,7 @@ import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
+import org.jetbrains.annotations.Nullable;
 
 public class MainMenu {
 
@@ -29,6 +30,20 @@ public class MainMenu {
         HELP,
         QUIT
     }
+
+    private final String[] help = new String[]{
+            "Menu to act on the current value",
+            "Select this, then paste the new document in",
+            "Menu to find keys/values",
+            "Menu to sort values in this list or object",
+            "Menu to show information about this list/object",
+            "Your cursors must point to arrays",
+            "Your cursor(s) must be in an object in a list",
+            "Press any key to exit the help screen",
+            "Quits this program",
+            "Close this menu",
+            null,
+    };
 
     public void init() {
         row = 0;
@@ -106,5 +121,10 @@ public class MainMenu {
             }
         }
         return Choice.NONE;
+    }
+
+    /** The help text for what the user has selected. */
+    public @Nullable String getHelpText() {
+        return help[row];
     }
 }

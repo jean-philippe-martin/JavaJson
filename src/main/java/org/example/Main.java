@@ -165,13 +165,14 @@ public class Main {
         // Bar at the bottom: notification if there's one, or path.
         String bottomText = notificationText;
         if (bottomText.isEmpty()) {
-            int numCursors = myJson.atAnyCursor().size();
-            bottomText = myJson.rootInfo.userCursor.toString() + " ♦ " + numCursors + " cursor";
-            if (numCursors!=1) bottomText += "s";
+            bottomText = myJson.rootInfo.userCursor.toString();
+        }
+        int numCursors = myJson.atAnyCursor().size();
+        bottomText += " ♦ " + numCursors + " cursor";
+        if (numCursors!=1) bottomText += "s";
 
-            if (numCursors>1 || !(myJson.rootInfo.secondaryCursors instanceof NoMultiCursor)) {
-                bottomText += " ♦ ESC for one";
-            }
+        if (numCursors>1 || !(myJson.rootInfo.secondaryCursors instanceof NoMultiCursor)) {
+            bottomText += " ♦ ESC for one";
         }
         StringBuilder sb = new StringBuilder();
         sb.append(bottomText);
@@ -510,6 +511,8 @@ public class Main {
                     break;
                 }
             }
+            String help = findControl.getHelpText();
+            if (null!=help) notificationText = help;
         }
         else if (null!=sortControl) {
             // manage the sort dialog
@@ -555,6 +558,8 @@ public class Main {
                 showFind = true;
                 findControl.init();
                 cursorsBeforeFind = myJson.rootInfo.save();
+                String help = findControl.getHelpText();
+                if (null!=help) notificationText = help;
             }
             if (choice == MainMenu.Choice.SORT) {
                 mainMenu = null;
@@ -582,6 +587,10 @@ public class Main {
             }
             if (choice == MainMenu.Choice.QUIT) {
                 return false;
+            }
+            if (null!=mainMenu) {
+                String help = mainMenu.getHelpText();
+                if (null != help) notificationText = help;
             }
         } else if (null!=pasteMenu) {
             var choice = pasteMenu.update(key);
@@ -678,6 +687,8 @@ public class Main {
                 showFind = true;
                 findControl.init();
                 cursorsBeforeFind = myJson.rootInfo.save();
+                String help = findControl.getHelpText();
+                if (null!=help) notificationText = help;
             }
             if (key.getCharacter() != null && ('+' == key.getCharacter())) {
                 Operation union = new Operation.UnionCursors(myJson);

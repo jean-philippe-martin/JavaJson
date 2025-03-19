@@ -8,6 +8,7 @@ import com.googlecode.lanterna.screen.Screen;
 import org.example.JsonNode;
 import org.example.cursor.FindCursor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -156,7 +157,7 @@ public class FindControl {
             if (key.getKeyType()==KeyType.ArrowRight) col += 1;
             if (key.getKeyType()==KeyType.ArrowLeft) col -= 1;
             if (col<0) col=0;
-            if (col>3) col=3;
+            if (col>4) col=4;
             if (key.getKeyType()== KeyType.Character && ((pressed==' ' && col==0)|| pressed=='w')) {
                 this.allowSubstring = !this.allowSubstring;
             }
@@ -210,12 +211,32 @@ public class FindControl {
         return Choice.NONE;
     }
 
+    /** The text the user is searching. */
     public @NotNull String getText() {
         return findInput.getText();
     }
 
     public void clearText() {
         this.findInput = new InputField();
+    }
+
+    /** The help text for what the user has selected. */
+    public @Nullable String getHelpText() {
+        if (row==0) {
+            return "Search done as you type. Press <down> to change options, n/N to navigate results. ";
+        }
+        if (row==1) {
+            if (col==0) return (getAllowSubstring() ? "Matching even as substring" : "Matching whole words only");
+            if (col==1) return (getIgnoreCase() ? "Matching ignores case" : "Case must match exactly");
+            if (col==2) {
+                if (getSearchKeys() && getSearchValues()) return "Matching both keys and values";
+                if (getSearchKeys()) return "Matching keys but not values";
+                return "Matching values but not keys";
+            }
+            if (col==3) return (getIgnoreComments() ? "Matching ignores comments" : "Matching includes comments");
+            if (col==4) return (getUseRegexp() ? "Query interpreted as a regular expression" : "Query interpreted literally");
+        }
+        return null;
     }
 
     public boolean getAllowSubstring() {
