@@ -25,6 +25,7 @@ replay_pid*
 
 # stuff
 old_releases/
+untracked/
 .DS_Store
 .idea/
 target/
