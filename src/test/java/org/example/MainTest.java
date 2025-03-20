@@ -46,12 +46,6 @@ public class MainTest {
     };
 
     @Test
-    public void testEmptyName() throws Exception {
-        Main.main(new String[]{});
-        // we shouldn't throw an exception
-    }
-
-    @Test
     public void testScrollDoesntCrash() throws Exception {
         Main main = Main.fromLinesAndVirtual(ONE_MAP, 80, 5);
         main.display();
@@ -319,6 +313,15 @@ public class MainTest {
         assertEquals(expected, beginning);
 
 
+    }
+
+    @Test
+    public void testEmptyObject() throws Exception {
+        Main main = Main.fromLinesAndVirtual(new String[]{"{}"}, 10, 10);
+        main.display();
+        main.actOnKey(KeyStroke.fromString("<down>"));
+        main.display();
+        // we shouldn't throw an exception.. or hang.
     }
 
 }

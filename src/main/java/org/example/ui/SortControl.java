@@ -202,9 +202,15 @@ public class SortControl {
         g.setForegroundColor(fc);
         if (reverse) {
             g.putString(optsPos.withRelative(1+sep[0],1), " R ", SGR.REVERSE);
+            g.putString(optsPos.withRelative(1+sep[1],1), " aA ");
         }
         if (!ignoreCase) {
-            g.putString(optsPos.withRelative(1+sep[1],1), " Aa ", SGR.REVERSE);
+            // the "Aa" icon shows the order in which they'll be sorted.
+            if (reverse) {
+                g.putString(optsPos.withRelative(1 + sep[1], 1), " aA ", SGR.REVERSE);
+            } else {
+                g.putString(optsPos.withRelative(1 + sep[1], 1), " Aa ", SGR.REVERSE);
+            }
         }
         if (numberify) {
             g.putString(optsPos.withRelative(1+sep[2],1), " num ", SGR.REVERSE);
@@ -273,6 +279,19 @@ public class SortControl {
             if (key.getKeyType()==KeyType.Character && (pressed=='?')) {
                 this.showHelp = !this.showHelp;
             }
+        }
+        return null;
+    }
+
+    /** The help text for what the user has selected. */
+    public @Nullable String getHelpText() {
+        if (row==0) {
+            return "For lists of maps, which key of the map to sort by";
+        }
+        if (row==1) {
+            if (col==0) return (reverse ? "Reverse order (large to small)" : "Sorted small to large");
+            if (col==1) return (ignoreCase ? "Ignoring case" : "Uppercase counts as 'smaller'");
+            if (col==2) return (numberify ? "Numbers in strings are sorted numerically": "Purely lexicographical sort");
         }
         return null;
     }

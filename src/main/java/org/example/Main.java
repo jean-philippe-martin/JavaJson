@@ -62,7 +62,7 @@ public class Main {
                 "1/2/3           : fold after this many levels\n" +
                 "                                            \n"+
                 "----------------[ Multicursor ]-------------\n"+
-                "f               : find                      \n"+
+                "f / \"/\"         : find                      \n"+
                 "e / *           : select all children       \n"+
                 "n / N           : navigate cursors          \n"+
                 "ESC             : remove secondary cursors  \n"+
@@ -100,6 +100,11 @@ public class Main {
         // load the JSON, using NIO libraries if they were added to the classpath.
         Path path = Paths.get(pathStr);
         JsonNode myJson = JsonNode.parse(path);
+        return new Main(myJson, terminalOverride);
+    }
+
+    protected static Main fromLines(@NotNull String[] lines, @Nullable Terminal terminalOverride) throws IOException {
+        JsonNode myJson = JsonNode.parseLines(lines);
         return new Main(myJson, terminalOverride);
     }
 
@@ -529,11 +534,19 @@ public class Main {
                 myJson = operationList.run(sort);
                 sortControl = null;
             }
+            if  (null!=sortControl) {
+                String help = sortControl.getHelpText();
+                if (null != help) notificationText = help;
+            }
         }
         else if (null!=aggregateMenu) {
             // manage the aggregate menu
             AggregateMenu.Choice choice = aggregateMenu.update(key);
             applyAggregation(choice);
+            if (null!=aggregateMenu) {
+                String help = aggregateMenu.getHelpText();
+                if (null != help) notificationText = help;
+            }
         }
         else if (null!=actionMenu) {
             ActionMenu.Choice choice = actionMenu.update(key);
@@ -552,6 +565,8 @@ public class Main {
             if (choice == MainMenu.Choice.AGGREGATE) {
                 mainMenu = null;
                 aggregateMenu = new AggregateMenu();
+                String help = aggregateMenu.getHelpText();
+                if (null!=help) notificationText = help;
             }
             if (choice == MainMenu.Choice.FIND) {
                 mainMenu = null;
@@ -564,6 +579,10 @@ public class Main {
             if (choice == MainMenu.Choice.SORT) {
                 mainMenu = null;
                 sortControl = new SortControl(myJson.atAnyCursor());
+                if  (null!=sortControl) {
+                    String help = sortControl.getHelpText();
+                    if (null != help) notificationText = help;
+                }
             }
             if (choice == MainMenu.Choice.UNION) {
                 mainMenu = null;
@@ -652,6 +671,8 @@ public class Main {
             if ((key.getCharacter() != null && 'a' == pressed)) {
                 // aggregate
                 aggregateMenu = new AggregateMenu();
+                String help = aggregateMenu.getHelpText();
+                if (null!=help) notificationText = help;
             }
 //                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
 //                        // restart (for testing)
@@ -683,7 +704,7 @@ public class Main {
             if (key.getCharacter() != null && ('h' == key.getCharacter() || '?' == key.getCharacter())) {
                 helpScreen(terminal, screen);
             }
-            if (key.getCharacter() != null && ('f' == key.getCharacter())) {
+            if (key.getCharacter() != null && ('f' == key.getCharacter() || '/' == key.getCharacter())) {
                 showFind = true;
                 findControl.init();
                 cursorsBeforeFind = myJson.rootInfo.save();
@@ -707,6 +728,10 @@ public class Main {
                 boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
                 if (!allValues) {
                     sortControl = new SortControl(myJson.atAnyCursor());
+                    if  (null!=sortControl) {
+                        String help = sortControl.getHelpText();
+                        if (null != help) notificationText = help;
+                    }
                 }
             }
             if (pressed=='1') {
@@ -777,7 +802,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length==0 || (args.length==1 && args[0].equals("--help"))) {
+        if (args.length==1 && args[0].equals("--help")) {
             System.out.println("(C) 2025 Jean-Philippe Martin");
             System.out.println();
             System.out.println("Usage:");
@@ -833,10 +858,13 @@ public class Main {
             fileName = s;
         }
 
+        Main main;
         if (null==fileName) {
-            System.out.println("Missing: a file name to open");
+            System.out.println("Missing: a file name to open. Will start from an empty document.");
+            main = Main.fromLines(new String[] {"[]"}, null);
+        } else {
+            main = Main.fromPathStr(fileName);
         }
-        Main main = Main.fromPathStr(fileName);
         String p = options.get("--print");
         if (null!=p) {
             JsonNode myJson = main.myJson;
@@ -862,8 +890,6 @@ public class Main {
         try {
             while(true) {
                 main.display();
-                //KeyStroke key = main.waitForKey();
-                //if (!(main.actOnKey(key))) break;
                 if (!main.actOnAllKeys()) break;
             }
         } catch (IOException e) {

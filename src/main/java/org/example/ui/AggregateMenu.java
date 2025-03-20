@@ -4,6 +4,7 @@ import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
+import org.jetbrains.annotations.Nullable;
 
 public class AggregateMenu {
 
@@ -24,8 +25,24 @@ public class AggregateMenu {
         REMOVE_AGGREGATE,
     }
 
+
+    private final String[] help = new String[]{
+            "Will show for each key, what fraction of the maps have it",
+            "Sum the numbers in a list",
+            "Shows the smallest and largest element of the list",
+            "Averages the numbers in a list",
+            "Remove the aggregate information",
+            "Close this menu",
+            null,
+    };
+
     public void init() {
         row = 0;
+    }
+
+    /** The help text for what the user has selected. */
+    public @Nullable String getHelpText() {
+        return help[row];
     }
 
     public void draw(TextGraphics g) {
