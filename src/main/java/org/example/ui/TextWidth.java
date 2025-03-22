@@ -14,6 +14,19 @@ public class TextWidth {
         return len;
     }
 
+    // How many characters will fit in that space, starting at startPos (included).
+    public static int charsInSpace(String text, int startPos, int space) {
+        int i=startPos;
+        int c=0;
+        while (i+c<text.length()) {
+            int w = spacesTakenBy(text.charAt(i+c));
+            if (w>space) return c;
+            space -= w;
+            c++;
+        }
+        return c;
+    }
+
     private static int spacesTakenBy(char c) {
         if (FULLWIDTH_PATTERN.matcher(String.valueOf(c)).matches() || isKoreanCharacter(c) || isChineseCharacter(c)) return 2;
         return 1;

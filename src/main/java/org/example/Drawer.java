@@ -278,18 +278,27 @@ public class Drawer {
                 int down = 0;
                 if (jsonValue.getFolded()) {
                     // show only one line, regardless of length
-                    if (str.length()>w) {
-                        str = str.substring(0, w-3) + "...";
+                    int charsUntilEllipsis = TextWidth.charsInSpace(str, 0, w-3);
+                    if (charsUntilEllipsis<str.length()) {
+                        // not enough room for the whole string
+                        int charsLeft = TextWidth.charsInSpace(str, charsUntilEllipsis, 3);
+                        if (charsUntilEllipsis+charsLeft<str.length()) {
+                            // even if we don't put the ellipsis, not enough room for the string. So, let's cut.
+                            str = str.substring(0, charsUntilEllipsis) + "...";
+                        }
                     }
                     printMaybeReversed(g_str, start.withRelativeColumn(initialOffset), str, json.isAtCursor());
                     down = 1;
                 } else {
                     int index = 0;
-                    while (index < str.length()) {
-                        String oneLine = str.substring(index, Math.min(str.length(), index + w));
+                    int zeroes = 0;
+                    while (index < str.length() && zeroes<2) {
+                        int room = TextWidth.charsInSpace(str, index, w);
+                        String oneLine = str.substring(index, index+room);
                         printMaybeReversed(g_str, start.withRelative(initialOffset, down), oneLine, json.isAtCursor());
-                        index += w;
+                        index += room;
                         down++;
+                        if (room==0) zeroes++;
                     }
                 }
                 if (json.isAtPrimaryCursor()) {
