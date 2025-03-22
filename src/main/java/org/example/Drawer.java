@@ -2,6 +2,7 @@ package org.example;
 
 import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.TextGraphics;
+import org.example.ui.TextWidth;
 import org.example.ui.Theme;
 import org.jetbrains.annotations.Nullable;
 
@@ -121,8 +122,8 @@ public class Drawer {
             TerminalPosition pos2 = pos;
             if (!it.isAggregate()) {
                 // skip key for aggregate.
-                printMaybeReversed(g_key, pos.withRelativeColumn(aggComment.length()), "\"" + key + "\"", jsonMap.isAtCursor(key));
-                pos2 = pos.withRelativeColumn(aggComment.length() + 2 + key.length());
+                printMaybeReversed(g_key, pos.withRelativeColumn(TextWidth.length(aggComment)), "\"" + key + "\"", jsonMap.isAtCursor(key));
+                pos2 = pos.withRelativeColumn(TextWidth.length(aggComment) + 2 + TextWidth.length(key));
             }
             // normal case, user data.
             if (child instanceof JsonNodeValue) {
@@ -145,7 +146,7 @@ public class Drawer {
                         }
                         g2.putString(pos4, intro);
                         //pos4 = pos.withColumn(pos4.getColumn() + intro.length());
-                        pos4 = pos.withRelativeColumn(intro.length()+1);
+                        pos4 = pos.withRelativeColumn(TextWidth.length(intro)+1);
                     } else {
                         g2.putString(pos4, ": ");
                     }
@@ -155,7 +156,7 @@ public class Drawer {
                 pos = pos.withRelativeRow(height);
             } else {
                 g.putString(pos2, ": ");
-                int childOffset = aggComment.length() + key.length() + 4;
+                int childOffset = TextWidth.length(aggComment) + TextWidth.length(key) + 4;
                 int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext);
                 line += childHeight;
                 pos = pos.withRelativeRow(childHeight);

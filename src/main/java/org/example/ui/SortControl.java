@@ -289,7 +289,7 @@ public class SortControl {
             return "For lists of maps, which key of the map to sort by";
         }
         if (row==1) {
-            if (col==0) return (reverse ? "Reverse order (large to small)" : "Sorted small to large");
+            if (col==0) return (reverse ? "Reversed order (large to small)" : "Sorted small to large");
             if (col==1) return (ignoreCase ? "Ignoring case" : "Uppercase counts as 'smaller'");
             if (col==2) return (numberify ? "Numbers in strings are sorted numerically": "Purely lexicographical sort");
         }
