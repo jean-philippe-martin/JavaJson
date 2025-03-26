@@ -44,6 +44,7 @@ public class Main {
     private Drawer drawer;
     private int scroll;
     private int rowLimit;
+    private boolean pleaseRefresh = false;
 
     private OperationList operationList = new OperationList();
     private String notificationText = "";
@@ -53,7 +54,8 @@ public class Main {
                 "----------------[ Movement ]----------------\n"+
                 "up/down         : navigate line             \n"+
                 "pg up / pg dn   : navigate page             \n"+
-                "home / end      : beginning/end of document \n"+
+                "home / g        : beginning of document \n"+
+                "end / G         : end of document \n"+
                 "shift + up/down : navigate sibling          \n"+
                 "                                            \n"+
                 "----------------[ View ]--------------------\n"+
@@ -72,8 +74,8 @@ public class Main {
                 "a               : aggregate sel. array(s)   \n"+
                 "g               : groupby sel. key(s)       \n"+
                 "s               : sort selected array(s)    \n"+
-                        "ENTER           : parse as JSON             \n"+
-                        "v               : paste a new document      \n"+
+                "ENTER           : parse as JSON             \n"+
+                "v               : paste a new document      \n"+
                 "shift-Z         : undo last transform       \n"+
                 "                                            \n"+
                 "----------------[ Program ]-----------------\n"+
@@ -138,7 +140,8 @@ public class Main {
      * Display the UI, including any menu open at the time.
      **/
     public void display() throws IOException {
-        screen.doResizeIfNecessary();
+        var nullIfNoResize = screen.doResizeIfNecessary();
+        if (nullIfNoResize!=null) pleaseRefresh = true;
         rowLimit = screen.getTerminalSize().getRows()-2;
         TextGraphics g = screen.newTextGraphics();
         screen.clear();
@@ -194,7 +197,12 @@ public class Main {
         // Notifications last only one frame.
         notificationText = "";
 
-        screen.refresh(Screen.RefreshType.DELTA);
+        if (pleaseRefresh) {
+            screen.refresh(Screen.RefreshType.COMPLETE);
+            pleaseRefresh = false;
+        } else {
+            screen.refresh(Screen.RefreshType.DELTA);
+        }
     }
 
     public KeyStroke waitForKey() throws IOException {
@@ -314,40 +322,6 @@ public class Main {
         return false;
     }
 
-    /**
-     * Behave as if the user had selected that action via menu or key.
-     * @return true if we did something.
-     **/
-    public boolean applyAction(ActionMenu.Choice choice) {
-        if (choice== ActionMenu.Choice.CANCEL) {
-            actionMenu = null;
-            return true;
-        } else if (choice== ActionMenu.Choice.PARSE) {
-
-            Operation.OpParse op = new Operation.OpParse(myJson);
-            JsonNode foo = operationList.run(op);
-            if (null == foo) {
-                notificationText = "Could not parse as JSON";
-            } else {
-                notificationText = "Parsed as JSON";
-            }
-            actionMenu = null;
-            return true;
-        } else if (choice==ActionMenu.Choice.COPY) {
-            copyToClipboard(stringifyAllCursors(), false);
-            actionMenu = null;
-            return true;
-        } else if (choice==ActionMenu.Choice.ADD_TO_COPY) {
-            copyToClipboard(stringifyAllCursors(), true);
-            actionMenu = null;
-            return true;
-        } else if (choice==ActionMenu.Choice.NONE) {
-            return false;
-        }
-        notificationText = "Unknown action: " + choice.toString();
-        return false;
-    }
-
     @VisibleForTesting
     public String getTestViewOfScreen() {
         StringBuilder ret = new StringBuilder();
@@ -387,6 +361,91 @@ public class Main {
                 scroll++;
             }
         }
+    }
+
+    public void moveCursorNextCousin(boolean doScroll) {
+        JsonNode atCursor = myJson.atCursor();
+        var step = atCursor.asCursor().getStep();
+        JsonNode parent = atCursor.getParent();
+        if (null==parent || parent==atCursor) {
+            // We are root.
+            moveCursorDown(doScroll);
+            return;
+        }
+        JsonNode grandParent = parent.getParent();
+        if (null==grandParent || grandParent==parent) {
+            // We don't have a grandpa.
+            JsonNode goal = parent.nextChild(atCursor.asCursor());
+            if (null!=goal) {
+                myJson.rootInfo.setPrimaryCursor(goal.whereIAm);
+            } else {
+                moveCursorDown(doScroll);
+            }
+            return;
+        }
+        JsonNode parentsSibling = grandParent.nextChild(parent.asCursor());
+        if (null==parentsSibling) {
+            // This is the last sibling.
+            moveCursorDown(doScroll);
+            return;
+        }
+        JsonNode goal = null;
+        try {
+            goal = step.apply(parentsSibling);
+        } catch (Exception x) {
+            // "child not found", etc.
+            goal = parentsSibling.firstChild();
+            if (null==goal) goal = parentsSibling;
+        }
+        if (null!=goal) {
+            myJson.rootInfo.setPrimaryCursor(goal.whereIAm);
+        }
+        if (doScroll && goal == atCursor) {
+            // We are at the end of the document, didn't actually move down.
+            // Let's scroll down a bit, maybe the user wants to see the closing
+            // brackets.
+            scroll++;
+        }
+    }
+
+    public void moveCursorPrevCousin(boolean doScroll) {
+        JsonNode atCursor = myJson.atCursor();
+        var step = atCursor.asCursor().getStep();
+        JsonNode parent = atCursor.getParent();
+        if (null==parent || parent==atCursor) {
+            // We are root.
+            moveCursorUp();
+            return;
+        }
+        JsonNode grandParent = parent.getParent();
+        if (null==grandParent || grandParent==parent) {
+            // We don't have a grandpa.
+            JsonNode goal = parent.prevChild(atCursor.asCursor());
+            if (null!=goal) {
+                myJson.rootInfo.setPrimaryCursor(goal.whereIAm);
+            } else {
+                moveCursorUp();
+            }
+            return;
+        }
+        JsonNode parentsSibling = grandParent.prevChild(parent.asCursor());
+        if (null==parentsSibling) {
+            // This is the first sibling.
+            moveCursorUp();
+            return;
+        }
+        JsonNode goal = null;
+        try {
+            goal = step.apply(parentsSibling);
+        } catch (Exception x) {
+            // "child not found", etc.
+            goal = parentsSibling.firstChild();
+            if (null==goal) goal = parentsSibling;
+        }
+        if (null!=goal) {
+            myJson.rootInfo.setPrimaryCursor(goal.whereIAm);
+        }
+
     }
 
     public void groupby() {
@@ -447,6 +506,121 @@ public class Main {
      * Returns TRUE if you should continue, FALSE if quitting.
      **/
     public boolean actOnKey(KeyStroke key) throws IOException {
+
+        // key -> Action
+        Action choice = actionFromKey(key);
+
+        // Action -> it is done.
+        return act(choice);
+    }
+
+    /**
+     * Updates the state based on the chosen action.
+     * Returns TRUE if you should continue, FALSE if quitting.
+     **/
+    public boolean act(Action choice) throws IOException {
+        switch (choice) {
+            case QUIT:
+                return false;
+            case NOTHING:
+                if (null!=mainMenu) {
+                    String help = mainMenu.getHelpText();
+                    if (null != help) notificationText = help;
+                }
+                return true;
+            case NAV_PREV_LINE:
+                moveCursorUp();
+                return true;
+            case NAV_NEXT_LINE:
+                moveCursorDown(true);
+                return true;
+            case NAV_NEXT_COUSIN:
+                moveCursorNextCousin(true);
+                return true;
+            case NAV_PREV_COUSIN:
+                moveCursorPrevCousin(true);
+                return true;
+            case GROUPBY:
+                mainMenu = null;
+                groupby();
+                return true;
+            case UNION:
+                mainMenu = null;
+                Operation union = new Operation.UnionCursors(myJson);
+                notificationText = union.toString();
+                myJson = operationList.run(union);
+                myJson.rootInfo.fixCursors();
+                return true;
+            case COPY_AT_CURSORS:
+                copyToClipboard(stringifyAllCursors(), false);
+                return true;
+            case ADD_COPY_AT_CURSORS:
+                copyToClipboard(stringifyAllCursors(), true);
+                return true;
+            case SHOW_HELP_SCREEN:
+                mainMenu = null;
+                helpScreen(terminal, screen);
+                return true;
+            case SHOW_FIND_MENU:
+                mainMenu = null;
+                showFind = true;
+                findControl.init();
+                cursorsBeforeFind = myJson.rootInfo.save();
+                maybeShowNotification(findControl.getHelpText());
+                return true;
+            case SHOW_ACTION_MENU:
+                mainMenu = null;
+                actionMenu = new ActionMenu();
+                return true;
+            case SHOW_PASTE_MENU:
+                mainMenu = null;
+                pasteMenu = new PasteScreen();
+                notificationText = "Paste text, then press right arrow.";
+                return true;
+            case SHOW_SORT_MENU:
+                boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
+                if (!allValues) {
+                    mainMenu = null;
+                    sortControl = new SortControl(myJson.atAnyCursor());
+                    if (null != sortControl) {
+                        String help = sortControl.getHelpText();
+                        if (null != help) notificationText = help;
+                    }
+                } else {
+                    notificationText = "Select a list/map for sort";
+                }
+                return true;
+            case SHOW_AGGREGATE_MENU:
+                mainMenu = null;
+                aggregateMenu = new AggregateMenu();
+                String help = aggregateMenu.getHelpText();
+                if (null!=help) notificationText = help;
+                return true;
+            case SHOW_MAIN_MENU:
+                mainMenu = new MainMenu();
+                notificationText = "Hint: the shortcut keys here work even if the menu is not open";
+                return true;
+            case HIDE_MENU:
+                mainMenu = null;
+                actionMenu = null;
+                pasteMenu = null;
+                aggregateMenu = null;
+                sortControl = null;
+                return true;
+        }
+        return true;
+    }
+
+    private void maybeShowNotification(@Nullable String help) {
+        if (null!=help) notificationText = help;
+    }
+
+    // In principle this should return an Action that says what we want to do,
+    // and the act method will do it. This allows the same action to reliably be
+    // triggered e.g. from a menu and also a keyboard shortcut.
+    //
+    // However, not all have been converted yet so you'll see some acting in here still.
+    public Action actionFromKey(KeyStroke key) {
         char pressed = '\0';
         if (key.getKeyType()==KeyType.Character) pressed = key.getCharacter();
 
@@ -526,7 +700,10 @@ public class Main {
                 sort(s);
             }
             if (key.getKeyType()==KeyType.Escape) {
-                sortControl = null;
+                return Action.HIDE_MENU;
+            }
+            if (key.getKeyType()==KeyType.Character && key.getCharacter()=='q') {
+                return Action.HIDE_MENU;
             }
             if (key.getKeyType()==KeyType.Character && key.getCharacter()=='x') {
                 Operation sort = new Operation.Sort(myJson, null);
@@ -550,71 +727,37 @@ public class Main {
         }
         else if (null!=actionMenu) {
             ActionMenu.Choice choice = actionMenu.update(key);
-            applyAction(choice);
+            if (choice== ActionMenu.Choice.CANCEL) {
+                return Action.HIDE_MENU;
+            } else if (choice== ActionMenu.Choice.PARSE) {
+
+                Operation.OpParse op = new Operation.OpParse(myJson);
+                JsonNode foo = operationList.run(op);
+                if (null == foo) {
+                    notificationText = "Could not parse as JSON";
+                } else {
+                    notificationText = "Parsed as JSON";
+                }
+                actionMenu = null;
+                return Action.NOTHING;
+            } else if (choice==ActionMenu.Choice.COPY) {
+                actionMenu = null;
+                return Action.COPY_AT_CURSORS;
+            } else if (choice==ActionMenu.Choice.ADD_TO_COPY) {
+                actionMenu = null;
+                return Action.ADD_COPY_AT_CURSORS;
+            } else if (choice==ActionMenu.Choice.NONE) {
+                return Action.NOTHING;
+            }
+            notificationText = "Unknown action: " + choice.toString();
+            return Action.NOTHING;
         }
         else if (mainMenu!=null) {
-            // The "main menu" is a bit special, because it doesn't block the normal keys.
-            MainMenu.Choice choice = mainMenu.update(key);
-            if (choice == MainMenu.Choice.CANCEL) {
-                mainMenu = null;
-            }
-            if (choice == MainMenu.Choice.ACTION) {
-                mainMenu = null;
-                actionMenu = new ActionMenu();
-            }
-            if (choice == MainMenu.Choice.AGGREGATE) {
-                mainMenu = null;
-                aggregateMenu = new AggregateMenu();
-                String help = aggregateMenu.getHelpText();
-                if (null!=help) notificationText = help;
-            }
-            if (choice == MainMenu.Choice.FIND) {
-                mainMenu = null;
-                showFind = true;
-                findControl.init();
-                cursorsBeforeFind = myJson.rootInfo.save();
-                String help = findControl.getHelpText();
-                if (null!=help) notificationText = help;
-            }
-            if (choice == MainMenu.Choice.SORT) {
-                mainMenu = null;
-                sortControl = new SortControl(myJson.atAnyCursor());
-                if  (null!=sortControl) {
-                    String help = sortControl.getHelpText();
-                    if (null != help) notificationText = help;
-                }
-            }
-            if (choice == MainMenu.Choice.UNION) {
-                mainMenu = null;
-                Operation union = new Operation.UnionCursors(myJson);
-                notificationText = union.toString();
-                myJson = operationList.run(union);
-                myJson.rootInfo.fixCursors();
-            }
-            if (choice == MainMenu.Choice.GROUPBY) {
-                mainMenu = null;
-                groupby();
-            }
-            if (choice == MainMenu.Choice.HELP) {
-                mainMenu = null;
-                helpScreen(terminal, screen);
-            }
-            if (choice == MainMenu.Choice.PASTE) {
-                mainMenu = null;
-                pasteMenu = new PasteScreen();
-                notificationText = "Paste text, then press right arrow.";
-            }
-            if (choice == MainMenu.Choice.QUIT) {
-                return false;
-            }
-            if (null!=mainMenu) {
-                String help = mainMenu.getHelpText();
-                if (null != help) notificationText = help;
-            }
+            return mainMenu.update(key);
         } else if (null!=pasteMenu) {
             var choice = pasteMenu.update(key);
             if (choice == PasteScreen.Choice.CANCEL) {
-                pasteMenu = null;
+                return Action.HIDE_MENU;
             } else if (choice== PasteScreen.Choice.NONE) {
                 // nothing to do
             } else if (choice==PasteScreen.Choice.PARSE) {
@@ -631,48 +774,58 @@ public class Main {
         } else {
             // normal key handling
             if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
-                moveCursorDown(true);
+                return Action.NAV_NEXT_LINE;
             }
-            if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) myJson.cursorNextSibling();
+            if (key.isCtrlDown() && pressed=='n') {
+                // Ctrl-n: next line (Emacs shortcut)
+                return Action.NAV_NEXT_LINE;
+            }
+            if (key.getKeyType() == KeyType.ArrowDown && key.isShiftDown()) {
+                return Action.NAV_NEXT_COUSIN;
+            }
             if (key.getKeyType() == KeyType.ArrowUp && !key.isShiftDown()) {
-                moveCursorUp();
+                return Action.NAV_PREV_LINE;
             }
-            if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) myJson.cursorPrevSibling();
+            if (key.isCtrlDown() && pressed=='p') {
+                // Ctrl-p: previous line (Emacs shortcut)
+                return Action.NAV_PREV_LINE;
+            }
+            if (key.getKeyType() == KeyType.ArrowUp && key.isShiftDown()) {
+                return Action.NAV_PREV_COUSIN;
+            }
             if (key.getKeyType() == KeyType.ArrowLeft) {
                 if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
                     myJson.cursorParent();
                 }
             }
             if (key.getKeyType() == KeyType.ArrowRight
-                    || (key.getCharacter() != null && 'f' == pressed)) {
+                    /*|| (key.getCharacter() != null && 'f' == pressed)*/) {
                 myJson.setFoldedAtCursors(false);
             }
             if (key.getKeyType() == KeyType.Enter) {
-                actionMenu = new ActionMenu();
+                return Action.SHOW_ACTION_MENU;
             }
             if (key.getCharacter() != null && ('e' == pressed || '*' == key.getCharacter())) {
                 myJson.cursorDownToAllChildren();
             }
-            if ((key.getCharacter() != null && 'p' == pressed)) {
+            if ((key.getCharacter() != null && 'p' == pressed && !key.isCtrlDown())) {
                 boolean pinned = myJson.getPinnedAtCursor();
                 myJson.setPinnedAtCursors(!pinned);
             }
-            if ((key.getCharacter() != null && 'n' == key.getCharacter())) {
+            if ((key.getCharacter() != null && 'n' == key.getCharacter()) && !key.isCtrlDown()) {
                 // next cursor/match
                 myJson.cursorNextCursor();
             }
-            if ((key.getCharacter() != null && 'N' == key.getCharacter())) {
+            if ((key.getCharacter() != null && 'N' == key.getCharacter()) && !key.isCtrlDown()) {
                 // prev cursor/match
                 myJson.cursorPrevCursor();
             }
-            if (pressed=='g') {
-                groupby();
+            if (pressed=='b' && !key.isCtrlDown()) {
+                return Action.GROUPBY;
             }
             if ((key.getCharacter() != null && 'a' == pressed)) {
                 // aggregate
-                aggregateMenu = new AggregateMenu();
-                String help = aggregateMenu.getHelpText();
-                if (null!=help) notificationText = help;
+                return Action.SHOW_AGGREGATE_MENU;
             }
 //                    if ((key.getCharacter() != null && 'r' == key.getCharacter())) {
 //                        // restart (for testing)
@@ -689,10 +842,10 @@ public class Main {
                     moveCursorUp();
                 }
             }
-            if (key.getKeyType() == KeyType.Home) {
+            if (key.getKeyType() == KeyType.Home || pressed=='g') {
                 myJson.rootInfo.setPrimaryCursor(myJson.whereIAm);
             }
-            if (key.getKeyType() == KeyType.End) {
+            if (key.getKeyType() == KeyType.End || pressed=='G') {
                 JsonNode lastChild = myJson;
                 for (int i=0; i<100; i++) {
                     JsonNode x = lastChild.lastChild();
@@ -702,19 +855,13 @@ public class Main {
                 myJson.rootInfo.setPrimaryCursor(lastChild.whereIAm);
             }
             if (key.getCharacter() != null && ('h' == key.getCharacter() || '?' == key.getCharacter())) {
-                helpScreen(terminal, screen);
+                return Action.SHOW_HELP_SCREEN;
             }
             if (key.getCharacter() != null && ('f' == key.getCharacter() || '/' == key.getCharacter())) {
-                showFind = true;
-                findControl.init();
-                cursorsBeforeFind = myJson.rootInfo.save();
-                String help = findControl.getHelpText();
-                if (null!=help) notificationText = help;
+                return Action.SHOW_FIND_MENU;
             }
             if (key.getCharacter() != null && ('+' == key.getCharacter())) {
-                Operation union = new Operation.UnionCursors(myJson);
-                notificationText = union.toString();
-                myJson = operationList.run(union);
+                return Action.UNION;
             }
             if (key.getCharacter() != null && ('Z' == key.getCharacter())) {
                 Operation op = operationList.peek();
@@ -725,14 +872,15 @@ public class Main {
                 }
             }
             if (key.getCharacter() != null && ('s' == key.getCharacter())) {
-                boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
-                if (!allValues) {
-                    sortControl = new SortControl(myJson.atAnyCursor());
-                    if  (null!=sortControl) {
-                        String help = sortControl.getHelpText();
-                        if (null != help) notificationText = help;
-                    }
-                }
+                return Action.SHOW_SORT_MENU;
+//                boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
+//                if (!allValues) {
+//                    sortControl = new SortControl(myJson.atAnyCursor());
+//                    if  (null!=sortControl) {
+//                        String help = sortControl.getHelpText();
+//                        if (null != help) notificationText = help;
+//                    }
+//                }
             }
             if (pressed=='1') {
                 myJson.atCursor().setFoldedLevels(1);
@@ -760,26 +908,27 @@ public class Main {
                 myJson.atCursor().setFoldedLevels(999);
             }
             if (pressed=='m') {
-                mainMenu = new MainMenu();
-                notificationText = "Hint: the shortcut keys here work even if the menu is not open";
+                return Action.SHOW_MAIN_MENU;
             }
             if (pressed=='c') {
-                copyToClipboard(stringifyAllCursors(), false);
+                return Action.COPY_AT_CURSORS;
             } else if (pressed=='C') {
-                Object val = myJson.atCursor().getValue();
-                copyToClipboard(stringifyAllCursors(), true);
+                return Action.ADD_COPY_AT_CURSORS;
             }
             if (pressed=='v') {
-                pasteMenu = new PasteScreen();
-                notificationText = "Paste text, then press right arrow.";
+                return Action.SHOW_PASTE_MENU;
             }
             if (key.getKeyType() == KeyType.Escape) {
                 myJson.rootInfo.secondaryCursors = new NoMultiCursor();
             }
+            if (key.isCtrlDown() && pressed=='l') {
+                // Ctrl-L: refresh
+                this.pleaseRefresh = true;
+            }
             if (pressed=='q')
-                return false;
+                return Action.QUIT;
         }
-        return true;
+        return Action.NOTHING;
     }
 
     public void closeScreen() {

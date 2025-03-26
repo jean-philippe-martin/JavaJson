@@ -11,25 +11,23 @@ import org.jetbrains.annotations.Nullable;
 public class MainMenu {
 
     private int row = 0;
-    // the max allowed row value
-    private final int maxRow = Choice.values().length-2;
 
-    public enum Choice {
+    public Action[] choice = new Action[]{
         // leave the menu visible
-        NONE,
+        Action.NOTHING,
         // close the menu, do nothing
-        CANCEL,
-        // Action choices:
-        ACTION,
-        PASTE,
-        FIND,
-        SORT,
-        AGGREGATE,
-        UNION,
-        GROUPBY,
-        HELP,
-        QUIT
-    }
+        Action.HIDE_MENU,
+        // actions:
+        Action.SHOW_ACTION_MENU,
+        Action.SHOW_PASTE_MENU,
+        Action.SHOW_FIND_MENU,
+        Action.SHOW_SORT_MENU,
+        Action.SHOW_AGGREGATE_MENU,
+        Action.UNION,
+        Action.GROUPBY,
+        Action.SHOW_HELP_SCREEN,
+        Action.QUIT
+    };
 
     private final String[] help = new String[]{
             "Menu to act on the current value",
@@ -44,6 +42,9 @@ public class MainMenu {
             "Close this menu",
             null,
     };
+    // the max allowed row value
+    private final int maxRow = help.length-2;
+
 
     public void init() {
         row = 0;
@@ -62,7 +63,7 @@ public class MainMenu {
                     "│ s: sort                     │\n"+
                     "│ a: aggregate                │\n"+
                     "│ +: union selected arrays    │\n"+
-                    "│ g: group by selected key(s) │\n"+
+                    "│ b: group by selected key(s) │\n"+
                     "│ h: help                     │\n"+
                     "│ q: quit                     │\n"+
                     "├─────────────────────────────┤\n"+
@@ -92,7 +93,7 @@ public class MainMenu {
 
     }
 
-    public Choice update(KeyStroke key) {
+    public Action update(KeyStroke key) {
         if (key.getKeyType()==KeyType.ArrowUp && row>0) {
             row -= 1;
         }
@@ -100,27 +101,27 @@ public class MainMenu {
             row++;
         }
         if (key.getKeyType()==KeyType.Escape) {
-            return Choice.CANCEL;
+            return Action.HIDE_MENU;
         }
         if (key.getKeyType()==KeyType.Enter) {
-            if (row==maxRow) return Choice.CANCEL;
+            if (row==maxRow) return Action.HIDE_MENU;
             // +2 to skip NONE and CANCEL
-            return Choice.values()[row+2];
+            return choice[row+2];
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (Character.toLowerCase(key.getCharacter())) {
-                case 'p': return Choice.ACTION;
-                case 'v': return Choice.PASTE;
-                case 'f': return Choice.FIND;
-                case 's': return Choice.SORT;
-                case 'a': return Choice.AGGREGATE;
-                case '+': return Choice.UNION;
-                case 'g': return Choice.GROUPBY;
-                case 'h': return Choice.HELP;
-                case 'q': return Choice.QUIT;
+                case 'p': return Action.SHOW_ACTION_MENU;
+                case 'v': return Action.SHOW_PASTE_MENU;
+                case 'f': return Action.SHOW_FIND_MENU;
+                case 's': return Action.SHOW_SORT_MENU;
+                case 'a': return Action.SHOW_AGGREGATE_MENU;
+                case '+': return Action.UNION;
+                case 'b': return Action.GROUPBY;
+                case 'h': return Action.SHOW_HELP_SCREEN;
+                case 'q': return Action.QUIT;
             }
         }
-        return Choice.NONE;
+        return Action.NOTHING;
     }
 
     /** The help text for what the user has selected. */

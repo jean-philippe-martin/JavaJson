@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GroupbyTest {
 
+    static final KeyStroke GROUPBY_KEY= KeyStroke.fromString("b");
 
     // Yes I treat "groupby" as a single word.
     @Test
@@ -33,7 +34,7 @@ public class GroupbyTest {
         // we should now be at the "c"
 
         // Do the groupby
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         main.display();
@@ -95,7 +96,7 @@ public class GroupbyTest {
         // we should now be at the "c"
 
         // Do the groupby
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         // fold the two we know are good.
@@ -156,7 +157,7 @@ public class GroupbyTest {
         // we should now be at the "c"
 
         // Do the groupby
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         main.actOnKey(KeyStroke.fromString("<Home>"));
@@ -209,7 +210,7 @@ public class GroupbyTest {
         // we should now be at the "c"
 
         // Do the groupby
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         // Fold one section
@@ -279,7 +280,7 @@ public class GroupbyTest {
         // we should now be at the "c" of *both* lists
 
         // Do the groupby
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         main.actOnKey(KeyStroke.fromString("<Home>"));
@@ -356,7 +357,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.checkInvariants();
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         // Undo the groupby
@@ -420,7 +421,7 @@ public class GroupbyTest {
 
         // Do the groupby
         main.checkInvariants();
-        main.actOnKey(KeyStroke.fromString("g"));
+        main.actOnKey(GROUPBY_KEY);
         main.checkInvariants();
 
         // Fold one section

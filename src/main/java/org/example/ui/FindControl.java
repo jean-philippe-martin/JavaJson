@@ -195,11 +195,14 @@ public class FindControl {
             if (key.getKeyType()== KeyType.Character && key.getCharacter()=='N') {
                 myJson.cursorPrevCursor();
             }
-            if (key.getKeyType()== KeyType.Character && pressed=='?') {
+            if (pressed=='?') {
                 showHelp = !showHelp;
             }
-            if (key.getKeyType()== KeyType.Character && pressed=='g') {
+            if (pressed=='g') {
                 return Choice.GOTO;
+            }
+            if (pressed=='q') {
+                return Choice.CANCEL;
             }
         }
         if (key.getKeyType() == KeyType.Escape) {

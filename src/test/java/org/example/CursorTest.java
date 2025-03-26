@@ -4,6 +4,7 @@ import org.example.cursor.FindCursor;
 
 import java.util.List;
 
+import org.example.ui.Action;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -521,5 +522,69 @@ public class CursorTest {
         node.cursorPrevCursor();
 
         assertEquals(".red", node.rootInfo.userCursor.toString());
+    }
+
+    @Test
+    public void testNextCousinFromRootInMap() throws Exception {
+        String[] lines = new String[] {
+                " {",
+                        "   \"red\": {",
+                        "     \"code\": \"#ff0000\",",
+                        "     \"closest\": \"pink\"",
+                        "   },",
+                        "   \"pink\": {",
+                        "     \"code\": \"#ff1493\",",
+                        "     \"closest\": \"red\"",
+                        "   }",
+                        " }"};
+        Main main = Main.fromLinesAndVirtual(lines, 10, 10);
+        assertEquals("", main.getRoot().atCursor().asCursor().toString());
+        main.act(Action.NAV_NEXT_COUSIN);
+        assertEquals(".red", main.getRoot().atCursor().asCursor().toString());
+    }
+
+    @Test
+    public void testNextCousinFromRootInList() throws Exception {
+        String[] lines = new String[] {
+                " [",
+                "   {",
+                "     \"code\": \"#ff0000\",",
+                "     \"closest\": \"pink\"",
+                "   },",
+                "   {",
+                "     \"code\": \"#ff1493\",",
+                "     \"closest\": \"red\"",
+                "   }",
+                " ]"};
+        Main main = Main.fromLinesAndVirtual(lines, 10, 10);
+        assertEquals("", main.getRoot().atCursor().asCursor().toString());
+        main.act(Action.NAV_NEXT_COUSIN);
+        assertEquals("[0]", main.getRoot().atCursor().asCursor().toString());
+    }
+
+    @Test
+    public void testPrevCousinDeep() throws Exception {
+        String[] lines = new String[] {
+                " [",
+                "   {",
+                "     \"code\": \"#ff0000\",",
+                "     \"closest\": \"pink\"",
+                "   },",
+                "   {",
+                "     \"code\": \"#ff1493\",",
+                "     \"closest\": \"red\",",
+                "     \"pet\": {",
+                "        \"name\": \"kitty\"",
+                "     }",
+                "   }",
+                " ]"};
+        Main main = Main.fromLinesAndVirtual(lines, 10, 10);
+        assertEquals("", main.getRoot().atCursor().asCursor().toString());
+        for (int i=0; i<9; i++) main.moveCursorDown(true);
+        assertEquals("[1].pet.name", main.getRoot().atCursor().asCursor().toString());
+
+        main.act(Action.NAV_PREV_COUSIN);
+
+        assertEquals("[1].closest", main.getRoot().atCursor().asCursor().toString());
     }
 }
