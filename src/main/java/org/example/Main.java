@@ -72,7 +72,7 @@ public class Main {
                 "----------------[ Transform ]---------------\n"+
                 "+               : union selected arrays     \n"+
                 "a               : aggregate sel. array(s)   \n"+
-                "g               : groupby sel. key(s)       \n"+
+                "b               : groupby sel. key(s)       \n"+
                 "s               : sort selected array(s)    \n"+
                 "ENTER           : parse as JSON             \n"+
                 "v               : paste a new document      \n"+
