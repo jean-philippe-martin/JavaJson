@@ -17,17 +17,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
+import java.awt.Toolkit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
+
+    public static class DebugMode {
+        final List<KeyStroke> keys = new ArrayList<>();
+    }
 
     // All about the search feature
     private boolean showFind = false;
@@ -37,6 +40,7 @@ public class Main {
     private ActionMenu actionMenu;
     private MainMenu mainMenu;
     private PasteScreen pasteMenu=null;
+    private DeleteMenu deleteMenu = null;
     private JsonNode.SavedCursors cursorsBeforeFind = null;
     private JsonNode myJson;
     private Terminal terminal;
@@ -49,6 +53,9 @@ public class Main {
     private OperationList operationList = new OperationList();
     private String notificationText = "";
     private String copied = "";
+
+    // Non-null iff we're in debug mode.
+    public @Nullable DebugMode debugMode;
 
     private static final String keys_help =
                 "----------------[ Movement ]----------------\n"+
@@ -168,6 +175,8 @@ public class Main {
             mainMenu.draw(screen.newTextGraphics());
         } else if (pasteMenu!=null) {
             pasteMenu.draw(screen.newTextGraphics());
+        } else if (deleteMenu!=null) {
+            deleteMenu.draw(screen.newTextGraphics());
         }
 
         // Bar at the bottom: notification if there's one, or path.
@@ -507,6 +516,10 @@ public class Main {
      **/
     public boolean actOnKey(KeyStroke key) throws IOException {
 
+        if (null!=debugMode) {
+            debugMode.keys.add(key);
+        }
+
         // key -> Action
         Action choice = actionFromKey(key);
 
@@ -599,6 +612,10 @@ public class Main {
             case SHOW_MAIN_MENU:
                 mainMenu = new MainMenu();
                 notificationText = "Hint: the shortcut keys here work even if the menu is not open";
+                return true;
+            case SHOW_DELETE_MENU:
+                mainMenu = null;
+                deleteMenu = new DeleteMenu();
                 return true;
             case HIDE_MENU:
                 mainMenu = null;
@@ -771,6 +788,8 @@ public class Main {
                 }
                 pasteMenu = null;
             }
+        } else if (null!=deleteMenu) {
+            return deleteMenu.update(key);
         } else {
             // normal key handling
             if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
@@ -925,6 +944,9 @@ public class Main {
                 // Ctrl-L: refresh
                 this.pleaseRefresh = true;
             }
+//            if (pressed=='d') {
+//                return Action.SHOW_DELETE_MENU;
+//            }
             if (pressed=='q')
                 return Action.QUIT;
         }
@@ -975,6 +997,8 @@ public class Main {
         boolean ignoreOpts = false;
         options.put("--goto", null);
         options.put("--print", null);
+        HashMap<String, Boolean> flags = new HashMap<>();
+        flags.put("--debug", false);
 
 
         int i=-1;
@@ -985,19 +1009,21 @@ public class Main {
                     ignoreOpts = true;
                     continue;
                 }
-                if (!options.containsKey(s)) {
+                if (options.containsKey(s)) {
+                    if (options.get(s) != null) {
+                        System.err.println("Cannot set " + s + " more than once.");
+                        return;
+                    }
+                    if (i + 1 == args.length) {
+                        System.err.println("Missing value for " + s);
+                        return;
+                    }
+                    options.put(s, args[++i]);
+                } else if (flags.containsKey(s)) {
+                    flags.put(s, true);
+                } else {
                     System.err.println("Unrecognized option: " + s);
-                    return;
                 }
-                if (options.get(s)!=null) {
-                    System.err.println("Cannot set " + s + " more than once.");
-                    return;
-                }
-                if (i+1==args.length) {
-                    System.err.println("Missing value for " + s);
-                    return;
-                }
-                options.put(s, args[++i]);
                 continue;
             }
             if (null!=fileName) {
@@ -1035,16 +1061,34 @@ public class Main {
         } catch (RuntimeException oops) {
             main.notificationText = oops.getMessage();
         }
-
+        boolean debugMode = flags.get("--debug");
+        if (debugMode) main.debugMode = new Main.DebugMode();
+        boolean startedDebugReport = false;
         try {
             while(true) {
                 main.display();
+                if (debugMode) {
+                    main.getRoot().checkInvariants();
+                }
                 if (!main.actOnAllKeys()) break;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
+            main.closeScreen();
+            if (debugMode) {
+                startedDebugReport = true;
+                System.out.println("[BEGIN DEBUG REPORT]------------------------------------------------");
+            }
             e.printStackTrace();
         } finally {
             main.closeScreen();
+            if (debugMode) {
+                if (!startedDebugReport) {
+                    System.out.println("[BEGIN DEBUG REPORT]------------------------------------------------");
+                }
+                System.out.println("Command line: " + (Arrays.stream(args).map(s->"\""+s+"\"").collect(Collectors.joining(" "))));
+                System.out.println("keys: " + (main.debugMode.keys.stream().map(KeyStroke::toString).collect(Collectors.joining(", "))));
+                System.out.println("--------------------------------------------------[END DEBUG REPORT]");
+            }
         }
 
     }

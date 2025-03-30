@@ -22,5 +22,6 @@ public enum Action {
     SHOW_PASTE_MENU,
     SHOW_SORT_MENU,
     SHOW_AGGREGATE_MENU,
+    SHOW_DELETE_MENU,
     HIDE_MENU
 }
