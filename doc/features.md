@@ -547,7 +547,7 @@ In this case we'd like to group by country, so bring the cursor down to
 one of the lines that says "country". You should see the `>>` symbol in the margin
 on that line and the line should be highlighted.
 
-Press `g` to call the `groupby` transformation.
+Press `b` to call the `groupby` transformation.
 
 The list of cities will now be replaced by a map with multiple lists: one per country.
 It will look like this:
@@ -589,7 +589,7 @@ to indicate those don't have a value for the grouping key.
 
 Grouping can be undone with the `shift-Z` key, like any other transformation.
 
-If you have multiple cursors when you press `g`, then a groupby will be attempted
+If you have multiple cursors when you press `b`, then a groupby will be attempted
 at each of the cursors.
 
 ### Lists of strings
