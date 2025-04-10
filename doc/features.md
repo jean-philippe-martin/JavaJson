@@ -15,12 +15,12 @@ The program focuses on viewing JSON files and has the following features:
 
 ## Basic navigation
 
-You use `up arrow`, `down`, `page up`, `page down`, `home` and `end` to navigate through the document.
-The view will scroll as needed.
+You use <kbd>↑</kbd>, <kbd>↓</kbd>, <kbd>page up</kbd>, <kbd>page down</kbd>, <kbd>home</kbd>, and
+<kbd>end</kbd> to navigate through the document. The view will scroll as needed.
 
-You can press `?` to view a help screen with a list of keys and their functions.
+You can press <kbd>?</kbd> to view a help screen with a list of keys and their functions.
 
-You can press `q` to quit the program.
+You can press <kbd>q</kbd> to quit the program.
 
 ## Folding
 
@@ -33,7 +33,7 @@ mvn package -DskipTests
 java -jar target/JavaJson-1.10-SNAPSHOT-jar-with-dependencies.jar testdata/hello.json
 ```
 
-Here is what you'd see after pressing `arrow down` a few times to reach "count_to_five".
+Here is what you'd see after pressing <kbd>↓</kbd> a few times to reach "count_to_five".
 ```
 {
   "greeting": "hello"
@@ -52,7 +52,7 @@ Here is what you'd see after pressing `arrow down` a few times to reach "count_t
   ]
 ```
 
-Now, suppose `count_to_five` takes up too much of your screen and it's not important at the moment. You could *fold* it by pressing the `left arrow` key.
+Now, suppose `count_to_five` takes up too much of your screen and it's not important at the moment. You could *fold* it by pressing the <kbd>←</kbd> key.
 The screen would now look like this:
 
 ```
@@ -75,7 +75,7 @@ The screen would now look like this:
 
 As you can see, the ellipsis indicates that the list was hidden. This works on maps as well (the things with "{" that include named fields).
 
-You can un-fold sections with the `right arrow` key.
+You can un-fold sections with the <kbd>→</kbd> key.
 
 Folding interacts with [pinning](#pinning) and [multicursors](#multicursor). Folding state isn't saved to disk (nothing is - this is a viewer only).
 
@@ -91,7 +91,7 @@ For example, let's open the car_maintenance test file (you can skip the build st
 mvn package -DskipTests
 java -jar target/JavaJson-1.10-SNAPSHOT-jar-with-dependencies.jar testdata/car_maintenance.json
 ```
-Here's what it looks like after we lower the cursor a few times with `arrow down`:
+Here's what it looks like after we lower the cursor a few times with <kbd>↓</kbd>:
 
 ```
 [ // 1 entry
@@ -106,7 +106,7 @@ Here's what it looks like after we lower the cursor a few times with `arrow down
         }
 ```
 
-Suppose we only cared about the make of the vehicles. To hide everything else, we first press `p` to pin this row, and then `left arrow` twice to fold.
+Suppose we only cared about the make of the vehicles. To hide everything else, we first press <kbd>p</kbd> to pin this row, and then <kbd>←</kbd> twice to fold.
 
 The result should look like this:
 
@@ -124,9 +124,9 @@ P       "make": "Subaru"
 
 As you can see, the selected vehicle is now summarized as just its make.
 
-Pressing `p` again on a pinned item will unpin it. This may cause it to be hidden from view if it's in a folded region.
+Pressing <kbd>p</kbd> again on a pinned item will unpin it. This may cause it to be hidden from view if it's in a folded region.
 
-The letter 'P' is shown on the left margin to indicate whether a row is pinned.
+The letter `P` is shown on the left margin to indicate whether a row is pinned.
 
 Pinning interacts with [folding](#folding) and [multicursors](#multicursor). Pinned state isn't saved to disk (nothing is - this is a viewer only).
 
@@ -146,15 +146,16 @@ Let's open the car_maintenance test file (you can skip the build step if you alr
  java -jar target/JavaJson-1.10-SNAPSHOT-jar-with-dependencies.jar testdata/car_maintenance.json
 ```
 
-Now press the `f` key to open the find dialog, type `make` and press the `enter` key.
+Now press the <kbd>f</kbd> key to open the find dialog, type `make` and press the <kbd>⏎ Enter</kbd>
+key.
 
 The "make" field in every vehicle should be highlighted now, indicating you have multiple cursors: whatever you do will happen to all of them.
 
-Only one row has the `>>` indicator: this is the main cursor. That's the one that will remain if you remove the multicursors with the `ESC` key.
+Only one row has the `>>` indicator: this is the main cursor. That's the one that will remain if you remove the multicursors with the <kbd>⎋ Escape</kbd> key.
 
-You can press `n` and `N` to move from one secondary cursor to the next. This is especially useful if some of them are beyond the visible area of the screen.
+You can press <kbd>n</kbd> and <kbd>N</kbd> to move from one secondary cursor to the next. This is especially useful if some of them are beyond the visible area of the screen.
 
-If now you pin using the `p` key, you will notice that both of the "make" rows are marked with the "P" in the margin. If you then fold the "vehicle" section, the make of both vehicles will still show.
+If now you pin using the <kbd>p</kbd> key, you will notice that both of the "make" rows are marked with the `P` in the margin. If you then fold the "vehicle" section, the make of both vehicles will still show.
 
 You should see this:
 
@@ -179,7 +180,7 @@ Search will put a cursor at every row that matches your query. It will also move
 
 The search dialog follows the consistent UI style of this application, now's a good time to introduce it.
 
-Here is what you will see when you press `f` to open the "find" dialog.
+Here is what you will see when you press <kbd>f</kbd> to open the "find" dialog.
 
 ```
 ┏━━━━━━━━━━━━[ FIND ]━━━━━━━━━━━━┓
@@ -205,29 +206,29 @@ The top row has focus, so it's surrounded by a bold, colored rectangle. The chev
 
 In the top row, type the word you're searching for (for example "make").
 
-Then you can either press the `ENTER` key to do the search, or press the `down arrow` to access the options (contorl/alt would have been nice but they do not work consistently in the terminal, hence this design choice).
+Then you can either press the <kbd>⏎ Enter</kbd> key to do the search, or press the <kbd>↓</kbd> to access the options (control/alt would have been nice but they do not work consistently in the terminal, hence this design choice).
 
-If you press `ENTER`, all the places that match your search criteria will be selected as a multicursor.
+If you press <kbd>⏎ Enter</kbd>, all the places that match your search criteria will be selected as a multicursor.
 Including, possibly, areas that are not visible because they are folded or offscreen.
 
-If instead you press `down arrow` then you can access the options. They are:
+If instead you press <kbd>↓</kbd> then you can access the options. They are:
 
 - match whole words only
 - case-sensitive search
 - search only in keys, only in values, or both.
 - regular expressions
 
-You can use the `SPACE` key to toggle the option under the cursor and the `left` and `right` arrow keys to change which is focused.
+You can use the <kbd>Space</kbd> key to toggle the option under the cursor and the <kbd>←</kbd> and <kbd>→</kbd> arrow keys to change which is focused.
 
-You can also directly press their corresponding key (w, c, k, r).
+You can also directly press their corresponding key (<kbd>w</kbd>, <kbd>c</kbd>, <kbd>k</kbd>, <kbd>r</kbd>).
 
-The options should be fairly self-explanatory. You can press `?` (while on the second row) to toggle the on-screen descriptions.
+The options should be fairly self-explanatory. You can press <kbd>?</kbd> (while on the second row) to toggle the on-screen descriptions.
 
-You can press `ENTER` from there when you're happy with the choice, no need to return to the top row.
+You can press <kbd>⏎ Enter</kbd> from there when you're happy with the choice, no need to return to the top row.
 
-But you can also press `n` or `N` to navigate the finds (the cursor indicates the finds immediately as you type)
+But you can also press <kbd>n</kbd> or <kbd>N</kbd> to navigate the finds (the cursor indicates the finds immediately as you type)
 
-Finally, you can press `g` to keep only the current main selection (unselecting all the other matches), or `ESC` to cancel the find and return the cursor(s) to what they were before search.
+Finally, you can press <kbd>g</kbd> to keep only the current main selection (unselecting all the other matches), or <kbd>⎋ Escape</kbd> to cancel the find and return the cursor(s) to what they were before search.
 
 ## Sorting
 
@@ -243,7 +244,7 @@ mvn package -DskipTests
 java -jar target/JavaJson-1.10-SNAPSHOT-jar-with-dependencies.jar testdata/sortme.json
 ```
 
-Press `down arrow` once to move the cursor to the "numbers" section and press the `s` key.
+Press <kbd>↓</kbd> once to move the cursor to the "numbers" section and press the `s` key.
 This will open the sort dialog:
 
 ```
@@ -262,18 +263,18 @@ This will open the sort dialog:
     "a"                       ╰───────────────────────────────────╯
 ```
 
-When you press the `ENTER` key, it will sort the numbers by the cursor in ascending order.
-If you pressed `r` first (or the `space bar`), then they are sorted in reverse order instead, from
+When you press the <kbd>⏎ Enter</kbd> key, it will sort the numbers by the cursor in ascending order.
+If you pressed <kbd>r</kbd> (or <kbd>Space</kbd>) first, then they are sorted in reverse order instead, from
 large to small.
 
-You can toggle the options by either pressing their key (`r`, `a`, `n`) or by using the `left` and `right` arrows
-to select them and then `space bar` to toggle. I'll explain the "n" option shortly.
+You can toggle the options by either pressing their key (<kbd>r</kbd>, <kbd>a</kbd>, <kbd>n</kbd>)
+or by using the <kbd>←</kbd> and <kbd>→</kbd> arrows to select them and then <kbd>Space</kbd> to toggle. I'll explain the <kbd>n</kbd> option shortly.
 
-To close the dialog you either press `ENTER` to sort,
-`ESC` to leave the list as it was when you opened the sort dialog,
-or `x` to re-order the list to match the order of the input file.
+To close the dialog you either press <kbd>⏎ Enter</kbd> to sort,
+<kbd>⎋ Escape</kbd> to leave the list as it was when you opened the sort dialog,
+or <kbd>x</kbd> to re-order the list to match the order of the input file.
 
-You can also press `?` to show/hide the help text.
+You can also press <kbd>?</kbd> to show/hide the help text.
 
 Now, the "n" option. It's useful when a string contains numbers. Consider this example:
 
@@ -308,7 +309,7 @@ to a list. The non-list cursors will be ignored.
 ### B. Sorting lists of objects
 
 It is also possible to sort lists that contain JSON objects. For example, in
-the "sortme" file we opened in section A, if you go down to "records" and press `s`
+the "sortme" file we opened in section A, if you go down to "records" and press <kbd>s</kbd>
 you will notice the dialog is slightly different:
 
 ```
@@ -332,8 +333,9 @@ you will notice the dialog is slightly different:
 The sort dialog now has two rows. A new row is present at the top, asking which
 field you'd like to sort by. The options are what you can see in the records on
 the screen: name, score, level, league, streak, difficulty, ssn. You can type those
-in directly, or you can press the `TAB` key to be presented with a list of options.
-Press `up/down` then `ENTER` to select an option, or `TAB` again to close the list.
+in directly, or you can press the <kbd>⇥ Tab</kbd> key to be presented with a list of options.
+Press <kbd>↑</kbd>/<kbd>↓</kbd> then <kbd>⏎ Enter</kbd> to select an option, or <kbd>⇥ Tab</kbd>
+again to close the list.
 
 ### C. Sorting maps of strings/numbers
 
@@ -348,7 +350,7 @@ Sometimes, the things we want to sort are not in an array. Consider the example 
   }
 ```
 
-Here we have an associative map, where the key is the person's name, and the value is their score. Pressing `s`
+Here we have an associative map, where the key is the person's name, and the value is their score. Pressing <kbd>s</kbd>
 there allows us to sort these too. The only difference is that instead of a field name, we get to choose between
 "(keys)" to sort from Aaron to Zebulon, of "(values)" to sort by score, 2 to 50.
 
@@ -379,8 +381,8 @@ you should be able to sort them.
 
 ## Sibling selection
 
-Select all the children of the current node by pressing `e` or `*`.
-Press `ESC` to remove the secondary cursors.
+Select all the children of the current node by pressing <kbd>e</kbd> or <kbd>*</kbd>.
+Press <kbd>⎋ Escape</kbd> to remove the secondary cursors.
 
 While you have multiple cursors, all the operations you do (like fold, pin, sort, etc.) will apply
 to all the cursors.
@@ -444,9 +446,9 @@ Here I only show two, but there could be a lot of entries. How do you check that
 and "fave color" spelled correctly? A typo could cause problems to whatever needs to process the JSON.
 
 Move the cursor to the list (the `[` line), then
-press the `a` key to open the "aggregates" menu.
+press the <kbd>a</kbd> key to open the "aggregates" menu.
 Highlight "unique keys" (in this menu you use the up/down arrows to move the highlight)
-and press `enter` (or press the shortcut key, `u`). This adds the "unique_keys()" annotation:
+and press <kbd>⏎ Enter</kbd> (or press the shortcut key, <kbd>u</kbd>). This adds the "unique_keys()" annotation:
 
 ```
 [ // 1000 entries
@@ -465,7 +467,7 @@ The count will say "=100%" when every single row has that value, to distinguish 
 entries where almost all the rows have that value to the point that it rounds up to 100%.
 
 You can navigate through this aggregate as normal, fold it, pin it, search it etc. 
-You can press `shift-Z` to undo adding the aggregation (see also below).
+You can press <kbd>⇧ Shift</kbd> + <kbd>Z</kbd> to undo adding the aggregation (see also below).
 
 The search dialog has an option called "exclude comments" you can use if you do not want the
 results to include the aggregate information.
@@ -473,10 +475,10 @@ results to include the aggregate information.
 ### Remove unique keys indication
 
 You can remove the "unique_keys" indication by navigating to it (or the list that contains it), then
-press `a` to open the aggregate menu and select "remove aggregate".
+press <kbd>a</kbd> to open the aggregate menu and select "remove aggregate".
 
 This will remove the whole "unique_keys" section. This will work even if you have done multiple
-other operations since, whereas undo (`shift-Z`) will start by undoing the latest operation.
+other operations since, whereas undo (<kbd>⇧ Shift</kbd> + <kbd>Z</kbd>) will start by undoing the latest operation.
 
 ### Hierarchical unique keys
 
@@ -547,7 +549,7 @@ In this case we'd like to group by country, so bring the cursor down to
 one of the lines that says "country". You should see the `>>` symbol in the margin
 on that line and the line should be highlighted.
 
-Press `b` to call the `groupby` transformation.
+Press <kbd>b</kbd> to call the `groupby` transformation.
 
 The list of cities will now be replaced by a map with multiple lists: one per country.
 It will look like this:
@@ -587,14 +589,14 @@ Everything that was in the original list will be kept, even if it doesn't have
 a "country" key. Those will be shown in the `(null)` list, named this way
 to indicate those don't have a value for the grouping key.
 
-Grouping can be undone with the `shift-Z` key, like any other transformation.
+Grouping can be undone with the <kbd>⇧ Shift</kbd> + <kbd>Z</kbd> key, like any other transformation.
 
-If you have multiple cursors when you press `b`, then a groupby will be attempted
+If you have multiple cursors when you press <kbd>b</kbd>, then a groupby will be attempted
 at each of the cursors.
 
 ### Lists of strings
 
-If you press `g` on a string in a list, it will do a kind of groupby as well: it will group
+If you press <kbd>g</kbd> on a string in a list, it will do a kind of groupby as well: it will group
 the identical strings together, and show you a count. So for example if you start with:
 
 ```
@@ -616,7 +618,7 @@ It will find that you have two unique words ("hello" and "world"), and show you 
 }
 ```
 
-This can also be undone via `shift-Z`. 
+This can also be undone via <kbd>⇧ Shift</kbd> + <kbd>Z</kbd>.
 
 If you have multiple cursors it will do either the standard groupby or the "count duplicate" on all, depending
 on which type is most common.
@@ -624,10 +626,10 @@ on which type is most common.
 ## Parse JSON
 
 When the cursor is on a line of text that happens to be JSON, you can press the
-`ENTER` key to open the action menu; then select the "parse" option to
+<kbd>⏎ Enter</kbd> key to open the action menu; then select the "parse" option to
 parse the line as JSON and make it part of the document.
 
-Parsing can be undone with the `shift-Z` key.
+Parsing can be undone with the <kbd>⇧ Shift</kbd> + <kbd>Z</kbd> key.
 
 # Print select values
 
