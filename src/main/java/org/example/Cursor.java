@@ -84,10 +84,24 @@ public class Cursor {
         sb.append(step.toString());
     }
 
+    // note: x.ancestorOf(x) returns false.
+    public boolean ancestorOf(Cursor maybeDescendant) {
+        List<DescentStep> mySteps = this.asListOfSteps();
+        List<DescentStep> theirSteps = maybeDescendant.asListOfSteps();
+        // I'm their ancestor if my steps are a prefix of theirs.
+        if (theirSteps.size() <= mySteps.size()) return false;
+        for (int i=0; i< mySteps.size(); i++) {
+            if (!mySteps.get(i).equals(theirSteps.get(i))) return false;
+        }
+        return true;
+    }
+
+    // when you call this you still have to set the value.
     public Cursor enterKey(String key) {
         return new Cursor(new DescentKey(key), this);
     }
 
+    // when you call this you still have to set the value.
     public Cursor enterIndex(int index) {
         return new Cursor(new DescentIndex(index), this);
     }

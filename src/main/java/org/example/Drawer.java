@@ -66,7 +66,9 @@ public class Drawer {
     }
 
     // inFoldedContext = we're folded, only print pinned rows.
-    public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext, boolean inSyntheticContext) {
+    public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext, boolean inSyntheticContext, Deleter deleter) {
+        TextGraphics myG = g;
+        boolean beingDeleted = possiblyChangeToDeletedColors(myG, jsonMap, deleter);
         int line = 0;
         Collection<String> keys = jsonMap.getKeysInOrder();
         int indent = start.getColumn();
@@ -83,13 +85,13 @@ public class Drawer {
 
         if (inFoldedContext) {
             if (!jsonMap.hasPins()) {
-                printMaybeReversed(g, pos.withRelativeColumn(initialOffset),  "{ ... }", jsonMap.isAtCursor());
+                printMaybeReversed(myG, pos.withRelativeColumn(initialOffset),  "{ ... }", jsonMap.isAtCursor());
                 return 1;
             }
             // we contain at least one thing that'll be shown, so open up.
-            printMaybeReversed(g, pos.withRelativeColumn(initialOffset),   "{ ...", jsonMap.isAtCursor());
+            printMaybeReversed(myG, pos.withRelativeColumn(initialOffset),   "{ ...", jsonMap.isAtCursor());
         } else {
-            printMaybeReversed(g, pos.withRelativeColumn(initialOffset),  "{", jsonMap.isAtCursor());
+            printMaybeReversed(myG, pos.withRelativeColumn(initialOffset),  "{", jsonMap.isAtCursor());
         }
 
         if (jsonMap.getAnnotation()!=null && !jsonMap.getAnnotation().isEmpty()) {
@@ -103,7 +105,7 @@ public class Drawer {
         pos = pos.withRelativeColumn(myIndent).withRelativeRow(1);
 
         line += 1;
-        for (JsonNodeIterator it = jsonMap.iterateChildren(); it!=null; it=it.next()) {
+        for (JsonNodeIterator it = jsonMap.iterateChildren(true); it!=null; it=it.next()) {
             JsonNode child = it.get();
             String key = (String)it.key();
             if (inFoldedContext && !child.hasPins()) {
@@ -117,8 +119,10 @@ public class Drawer {
             }
 
             TextGraphics g2 = g;
+            possiblyChangeToDeletedColors(g2, child, deleter);
             TextGraphics g_key = Theme.withColor(g, Theme.key);
-            printMaybeReversed(g, pos, aggComment, jsonMap.isAtCursor(key));
+            possiblyChangeToDeletedColors(g_key, child, deleter);
+            printMaybeReversed(g2, pos, aggComment, jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos;
             if (!it.isAggregate()) {
                 // skip key for aggregate.
@@ -129,9 +133,10 @@ public class Drawer {
             if (child instanceof JsonNodeValue) {
                 int height;
                 if (inSyntheticContext) {
-                    printGutterIndicator(g, pos, child, 1);
+                    printGutterIndicator(g, pos, child, 1, deleter);
                     height = 1;
                 } else {
+                    possiblyChangeToDeletedColors(g2, child, deleter);
                     JsonNodeValue v = (JsonNodeValue) child;
                     Object val = v.getValue();
                     TerminalPosition pos4 = pos2;
@@ -150,14 +155,14 @@ public class Drawer {
                     } else {
                         g2.putString(pos4, ": ");
                     }
-                    height = printJsonSubtree(g2, pos, pos4.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext || v.isSynthetic());
+                    height = printJsonSubtree(g2, pos, pos4.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext || v.isSynthetic(), deleter);
                 }
                 line += height;
                 pos = pos.withRelativeRow(height);
             } else {
-                g.putString(pos2, ": ");
+                myG.putString(pos2, ": ");
                 int childOffset = TextWidth.length(aggComment) + TextWidth.length(key) + 4;
-                int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext);
+                int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext, deleter);
                 line += childHeight;
                 pos = pos.withRelativeRow(childHeight);
             }
@@ -167,7 +172,7 @@ public class Drawer {
         line += 1;
         pos = pos.withRelativeColumn(-myIndent);
         g.putString(pos.withColumn(2), prefix);
-        g.putString(pos, "}");
+        myG.putString(pos, "}");
         return line;
     }
 
@@ -189,12 +194,12 @@ public class Drawer {
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public int printJsonTree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json) {
+    public int printJsonTree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, Deleter deleter) {
         this.drewCursor = false;
-        return printJsonSubtree(g, start, initialOffset, json, false, false);
+        return printJsonSubtree(g, start, initialOffset, json, false, false, deleter);
     }
 
-    public void printGutterIndicator(TextGraphics g, TerminalPosition start, JsonNode json, int lines) {
+    public void printGutterIndicator(TextGraphics g, TerminalPosition start, JsonNode json, int lines, Deleter deleter) {
         // Make sure the text is on top of the indicators.
         g = g.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER, new TerminalSize(start.getColumn(), g.getSize().getRows()));
         if (json.isAtPrimaryCursor()) {
@@ -231,6 +236,9 @@ public class Drawer {
             this.cursorScreenLine = start.getRow() + offset;
             this.drewCursor = true;
         }
+        if (deleter!=null && deleter.targets(json)) {
+            g.putString(start.withColumn(0), "×");
+        }
         if (json.getPinned()) {
             // draw the pin
             g.putString(start.withColumn(0), "P");
@@ -242,13 +250,15 @@ public class Drawer {
 
     // Returns how many lines it went down, beyond the initial one.
     // jsonObj can be String, List, LinkedHashMap<String, Object>, ...
-    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
-        int lines = innerPrintJsonSubtree(g, start, initialOffset, json, inFoldedContext, inSyntheticContext);
-        printGutterIndicator(g, start, json, lines);
+    public int printJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext, Deleter deleter) {
+        int lines = innerPrintJsonSubtree(g, start, initialOffset, json, inFoldedContext, inSyntheticContext, deleter);
+        printGutterIndicator(g, start, json, lines, deleter);
         return lines;
     }
 
-    public int innerPrintJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext) {
+    public int innerPrintJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext, Deleter deleter) {
+        TextGraphics myG = g;
+        boolean beingDeleted = possiblyChangeToDeletedColors(myG, json, deleter);
         int line = 0;
         if (json instanceof JsonNodeValue) {
             JsonNodeValue jsonValue = (JsonNodeValue) json;
@@ -268,11 +278,13 @@ public class Drawer {
             Object value = jsonValue.getValue();
             if (null==value) {
                 var g_num = Theme.withColor(g, Theme.value_null);
+                possiblyChangeToDeletedColors(g_num, json, deleter);
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
             } else if (value instanceof String) {
                 String str = "\"" + (String)value + "\"";
                 TextGraphics g_str = Theme.withColor(g, Theme.value_str);
+                possiblyChangeToDeletedColors(g_str, json, deleter);
                 // todo: use actual screen width
                 int w = g.getSize().getColumns() - start.getColumn() - initialOffset;
                 int down = 0;
@@ -323,6 +335,7 @@ public class Drawer {
                 return lines;
             } else {
                 var g_num = Theme.withColor(g, Theme.value_num);
+                possiblyChangeToDeletedColors(g_num, json, deleter);
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
             }
@@ -335,17 +348,17 @@ public class Drawer {
             JsonNode dad = jsonList.getParent();
             if (json.isAtCursor() && (dad==null || dad instanceof JsonNodeList)) {
                 // we have no label, so let's make the bracket bold.
-                g.putString(pos2, "[", SGR.REVERSE);
+                myG.putString(pos2, "[", SGR.REVERSE);
             } else {
-                g.putString(pos2, "[");
+                myG.putString(pos2, "[");
             }
             pos2 = pos2.withRelativeColumn(1);
             if (inFoldedContext) {
                 if (jsonList.hasPins()) {
-                    g.putString(pos2, " ...");
+                    myG.putString(pos2, " ...");
                     pos2 = pos2.withRelativeColumn(4);
                 } else {
-                    g.putString(pos2, " ... ]");
+                    myG.putString(pos2, " ... ]");
                     pos2 = pos2.withRelativeColumn(6);
                 }
             }
@@ -364,7 +377,7 @@ public class Drawer {
             line += 1;
             pos3 = pos3.withRelativeRow(1);
 
-            for (JsonNodeIterator it = jsonList.iterateChildren(); it!=null; it=it.next()) {
+            for (JsonNodeIterator it = jsonList.iterateChildren(true); it!=null; it=it.next()) {
                 JsonNode child = it.get();
                 if (inFoldedContext && !child.hasPins()) {
                     // skip that one, we're folded and it's not pinned.
@@ -383,7 +396,7 @@ public class Drawer {
                     }
                     g.putString(pos4, intro);
                 }
-                int height = printJsonSubtree(g, pos4, intro.length(), child, inFoldedContext, inSyntheticContext || it.isAggregate());
+                int height = printJsonSubtree(g, pos4, intro.length(), child, inFoldedContext, inSyntheticContext || it.isAggregate(), deleter);
                 g.setForegroundColor(oldColor);
                 line += height;
                 pos3 = pos3.withRelativeRow(height);
@@ -391,7 +404,7 @@ public class Drawer {
                 if (drewCursor && pos3.getRow() > g.getSize().getRows() + 10) break;
             }
             pos = pos3.withRelativeColumn(-INDENT);
-            g.putString(pos, "]");
+            myG.putString(pos, "]");
             return line + 1;
         }
         else if (json instanceof JsonNodeMap) {
@@ -399,7 +412,7 @@ public class Drawer {
             if (inFoldedContext && !(jsonMap.getPinned() || jsonMap.hasPins())) {
                 return 0; // hidden in the fold
             }
-            return printJsonMap(g, jsonMap, start, initialOffset, inFoldedContext, inSyntheticContext);
+            return printJsonMap(g, jsonMap, start, initialOffset, inFoldedContext, inSyntheticContext, deleter);
         }
 
         throw new RuntimeException("Unrecognized type: " + json.getClass());
@@ -412,6 +425,17 @@ public class Drawer {
             str = decimalFormat.format(maybeNumber);
         }
         return str;
+    }
+
+    // returns true if we changed to deleted colors.
+    private boolean possiblyChangeToDeletedColors(TextGraphics g, JsonNode node, Deleter deleter) {
+        if (null==deleter) return false;
+        var shouldDelete = deleter.targets(node);
+        if (shouldDelete) {
+            g.setForegroundColor(Theme.deleting_row_fg);
+            g.setBackgroundColor(Theme.deleting_row_bg);
+        }
+        return shouldDelete;
     }
 
 }

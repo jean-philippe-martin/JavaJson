@@ -313,9 +313,11 @@ public interface Operation {
 
     // Parse string to JSON
     public class OpParse extends TransformGeneric {
+        private final boolean interpretEscapes;
 
-        public OpParse(JsonNode beforeRoot) {
+        public OpParse(JsonNode beforeRoot, boolean alsoInterpret) {
             super(beforeRoot);
+            this.interpretEscapes = alsoInterpret;
         }
 
         @Override
@@ -331,7 +333,11 @@ public interface Operation {
             // ok, let's parse this.
             JsonNode parsedNoBuilder = null;
             try {
-                parsedNoBuilder = JsonNode.parseJson(s);
+                if (interpretEscapes) {
+                    parsedNoBuilder = JsonNode.parseJson(s);
+                } else {
+                    parsedNoBuilder = JsonNode.parseJsonIgnoreEscapes(s);
+                }
             } catch (Exception x) {
                 // nope
             }

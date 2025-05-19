@@ -89,7 +89,7 @@ public class PathCursor implements MultiCursor {
             if (step instanceof DescentKey || step instanceof DescentKey) {
                 node = step.apply(node);
             } else if (step instanceof DescentAll) {
-                var it = node.iterateChildren();
+                var it = node.iterateChildren(true);
                 while (it!=null) {
                     if (!it.isAggregate()) {
                         addAllNodesInternal(depth, it.get(), primary, list);

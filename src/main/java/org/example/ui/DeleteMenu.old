@@ -1,3 +1,4 @@
+/*
 package org.example.ui;
 
 import com.googlecode.lanterna.SGR;
@@ -7,30 +8,25 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
+import org.example.Deleter;
+import org.example.Deleter.SUBJECT;
+import org.example.Deleter.TARGET;
 import org.example.Drawer;
+import org.example.JsonNode;
 import org.jetbrains.annotations.Nullable;
 
 public class DeleteMenu {
 
+
+
     int row = 0;
     int col = 0;
+    JsonNode root;
 
-    public Action[] choice = new Action[]{
-        // leave the menu visible
-        Action.NOTHING,
-        // close the menu, do nothing
-        Action.HIDE_MENU,
-        // actions:
-        Action.SHOW_ACTION_MENU,
-        Action.SHOW_PASTE_MENU,
-        Action.SHOW_FIND_MENU,
-        Action.SHOW_SORT_MENU,
-        Action.SHOW_AGGREGATE_MENU,
-        Action.UNION,
-        Action.GROUPBY,
-        Action.SHOW_HELP_SCREEN,
-        Action.QUIT
-    };
+    //TARGET target = TARGET.EVERYTHING;
+    //SUBJECT subject = SUBJECT.CHOSEN;
+
+
 
     private final String[] help = new String[]{
             "Menu to act on the current value",
@@ -48,9 +44,39 @@ public class DeleteMenu {
     // the max allowed row value
     private final int maxRow = help.length-2;
 
+    // row,col -> screen pos of left side
+    final int[][] xOffset = {
+            {0, 13, 27 },
+            {0, 7, 20 },
+            {0, 6, 17 },
+            {1, 32},
+            {1, 32},
+            {1, 32},
+            {4,13}
+    };
+    // row -> screen Y coord
+    final int[] yOffset = {
+            2,4,6,9,10,11,13
+    };
+    // row -> selected column
+    int[] choice = {
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+    };
 
-    public void init() {
+
+    public DeleteMenu(JsonNode root) {
+        init(root);
+    }
+
+    public void init(JsonNode root) {
         row = 0; col=0;
+        this.root = root;
     }
 
     public void draw(TextGraphics g) {
@@ -84,43 +110,46 @@ public class DeleteMenu {
                     "│   ╰────────╯                    │\n"+
                     "├─────────────────────────────────┤\n"+
                     "│ esc : cancel                    │\n"+
-                    "│ GO : Delete all children of the │\n"+
-                    "│      main cursor except those   │\n"+
-                    "│      that contain a pin.        │\n"+
+                    "│ GO :                            │\n"+
+                    "│                                 │\n"+
+                    "│                                 │\n"+
                     "╰─────────────────────────────────╯\n";
 
 
         String[] lines = menu.split("\n");
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER;
         TerminalPosition pos = top;
-        int[][] xOffset = {
-                {0, 13, 27 },
-                {0, 7, 20 },
-                {0, 6, 17 },
-        };
-        int[] yOffset = {
-            2,4,6
-        };
         int i=0;
         for (String l : lines) {
-            if (i==yOffset[row]) {
-                // selected row
-                int xo = xOffset[row][col];
-                if (xo>0) {
-                    String before = l.substring(0, xo);
-                    g.putString(pos, before);
-                }
-                int xo2 = xOffset[row][col+1];
-                String selected = l.substring(xo+1, xo2);
-                g.putString(pos.withRelativeColumn(xo+1), selected, SGR.REVERSE);
-                String rest = l.substring(xo2+1);
-                g.putString(pos.withRelativeColumn(xo2+1), rest);
-            } else {
-                // rest of the menu
-                g.putString(pos, l);
-            }
+            g.putString(pos, l);
             i++;
             pos = pos.withRelativeRow(1);
+        }
+
+        // draw highlight
+        for (int r=0; r<choice.length; r++) {
+            for (int c = 0; c < xOffset[r].length-1; c++) {
+                int y = yOffset[r];
+                String l = lines[y];
+                int xo = xOffset[r][c];
+                int xo2 = xOffset[r][c + 1];
+                String selection = l.substring(xo + 1, xo2);
+                pos = top.withRelativeRow(y);
+                boolean selected = (choice[r] == c);
+                if (r>=3 && r<6) {
+                    selected = choice[r] == 1;
+                    if (selected) selection = "[X]" + selection.substring(3);
+                            else selection = "[ ]" + selection.substring(3);
+                }
+                if (r==6) {
+                    selected = (row==6);
+                }
+                if (selected) {
+                    g.putString(pos.withRelativeColumn(xo + 1), selection, SGR.REVERSE);
+                } else {
+                    g.putString(pos.withRelativeColumn(xo + 1), selection);
+                }
+            }
         }
 
         // draw selection rectangle
@@ -132,7 +161,42 @@ public class DeleteMenu {
         g2.putString(pos.withRelativeColumn(xo), ">");
         g2.putString(pos.withRelativeColumn(xo2), "<");
 
+        String desc = getDeleter(root).explain();
+        pos = top.withRelative(7,17);
+        int width = 31;
+        int margin = 5;
+        g.putString(pos, atMost(desc, width-margin));
+        desc = trim(desc, width-margin);
+        pos = pos.withRelative(-margin, 1 );
+        while (desc.length()>0) {
+            g.putString(pos, atMost(desc, width));
+            desc = trim(desc,width);
+            pos = pos.withRelativeRow(1 );
+        }
+    }
 
+    private String atMost(String str, int maxLen) {
+        if (str.length()<=maxLen) return str;
+        return str.substring(0, maxLen);
+    }
+
+    private String trim(String str, int leftTrim) {
+        if (str.length()<=leftTrim) return "";
+        return str.substring(leftTrim);
+    }
+
+    public Deleter getDeleter(JsonNode root) {
+        int filter = 0;
+        if (choice[3]==1) filter |= Deleter.FILTER.PINNED;
+        if (choice[4]==1) filter |= Deleter.FILTER.SELECTED;
+        if (choice[5]==1) filter |= Deleter.FILTER.VISIBLE;
+        return new Deleter(
+                root.getRoot(),
+                choice[0]==0? TARGET.EVERYTHING: TARGET.CHILDREN,
+                choice[1]==0? SUBJECT.CHOSEN : SUBJECT.EXCEPT_CHOSEN,
+                choice[2]==0? Deleter.MOD.IS : Deleter.MOD.CONTAINS,
+                filter
+        );
     }
 
     public Action update(KeyStroke key) {
@@ -140,11 +204,11 @@ public class DeleteMenu {
             row -= 1;
             col = 0;
         }
-        if (key.getKeyType()==KeyType.ArrowDown && row<maxRow) {
+        if (key.getKeyType()==KeyType.ArrowDown && row<xOffset.length-1) {
             row++;
             col = 0;
         }
-        if (key.getKeyType()==KeyType.ArrowRight) {
+        if (key.getKeyType()==KeyType.ArrowRight && col<xOffset[row].length-2) {
             col++;
         }
         if (key.getKeyType()==KeyType.ArrowLeft && col>0) {
@@ -153,11 +217,20 @@ public class DeleteMenu {
         if (key.getKeyType()==KeyType.Escape) {
             return Action.HIDE_MENU;
         }
-        if (key.getKeyType()==KeyType.Enter) {
-            if (row==maxRow) return Action.HIDE_MENU;
-            // +2 to skip NONE and CANCEL
-            return choice[row+2];
+        if (key.getKeyType()==KeyType.Character && key.getCharacter()==' ') {
+            if (row<choice.length) {
+                if (row>=3) {
+                    choice[row] = (choice[row]==0?1:0);
+                } else {
+                    choice[row] = col;
+                }
+            }
         }
+//        if (key.getKeyType()==KeyType.Enter) {
+//            if (row==maxRow) return Action.HIDE_MENU;
+//            // +2 to skip NONE and CANCEL
+//            return choice[row+2];
+//        }
         if (key.getKeyType()==KeyType.Character) {
             switch (Character.toLowerCase(key.getCharacter())) {
                 case 'p': return Action.SHOW_ACTION_MENU;
@@ -179,3 +252,4 @@ public class DeleteMenu {
         return help[row];
     }
 }
+*/

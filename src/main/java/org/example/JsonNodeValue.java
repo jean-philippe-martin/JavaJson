@@ -80,7 +80,9 @@ public class JsonNodeValue<T> extends JsonNode {
                 return;
             }
         }
-        if (key.endsWith("On") || key.endsWith("_epoch") || key.endsWith("_at") ||  key.endsWith("_timestamp") || key.endsWith("Timestamp") || "timestamp".equalsIgnoreCase(key)) {
+        if (key.endsWith("On") || key.endsWith("At")|| key.endsWith("_on") || key.endsWith("_at")
+                || key.endsWith("_epoch") ||  key.endsWith("_timestamp") || key.endsWith("Timestamp")
+                || "timestamp".equalsIgnoreCase(key)) {
             // "CreatedOn", "bootedOn", etc. Assume we are getting a time value in epoch smth.
             Date date = Conversions.nodeToDate(this);
             if (date!=null) {
@@ -120,7 +122,7 @@ public class JsonNodeValue<T> extends JsonNode {
     }
 
     @Override
-    public @Nullable JsonNodeIterator iterateChildren() {
+    public @Nullable JsonNodeIterator iterateChildren(boolean _includeAggregates) {
         return null;
     }
 

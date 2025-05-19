@@ -43,9 +43,9 @@ public class JsonNodeMap extends JsonNode {
         final JsonNodeMap dad;
         final int displayIndex;
 
-        public JsonNodeMapIterator(JsonNodeMap dad) {
+        public JsonNodeMapIterator(JsonNodeMap dad, boolean includeAggregates) {
             this.dad = dad;
-            if (this.dad.aggregate != null) {
+            if (this.dad.aggregate != null && includeAggregates) {
                 this.displayIndex = -1;
             } else {
                 this.displayIndex = 0;
@@ -203,9 +203,9 @@ public class JsonNodeMap extends JsonNode {
     }
 
     @Override
-    public @Nullable JsonNodeIterator iterateChildren() {
+    public @Nullable JsonNodeIterator iterateChildren(boolean includeAggregates) {
         if (childCount() == 0) return null;
-        return new JsonNodeMapIterator(this);
+        return new JsonNodeMapIterator(this, includeAggregates);
     }
 
     @Override
@@ -300,7 +300,7 @@ public class JsonNodeMap extends JsonNode {
     @Override
     public void reparent(JsonNode newParent, Cursor cursorToMe) {
         super.reparent(newParent, cursorToMe);
-        var it = this.iterateChildren();
+        var it = this.iterateChildren(true);
         while (it != null) {
             it.get().reparent(this, cursorToMe.enterKey((String) it.key()));
             it = it.next();

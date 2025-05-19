@@ -28,7 +28,7 @@ public class OpGroupby implements Operation {
             } else if (null!=holderList) {
                 // we're root, but we still need to fix all the maps to have the correct parent.
                 List<JsonNode> children = new ArrayList<>();
-                var it = holderList.iterateChildren();
+                var it = holderList.iterateChildren(true);
                 while (it!=null) {
                     children.add(it.get());
                     it = it.next();
@@ -94,7 +94,7 @@ public class OpGroupby implements Operation {
         // find the groups
         // (value of the key being grouped by -> list of objects that have that value for that key)
         LinkedHashMap<String, List<JsonNode>> groups = new LinkedHashMap<>();
-        JsonNodeIterator it = list.iterateChildren();
+        JsonNodeIterator it = list.iterateChildren(true);
         while (null!=it) {
             JsonNode kid = it.get();
             it = it.next();

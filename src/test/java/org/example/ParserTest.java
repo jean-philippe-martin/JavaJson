@@ -25,13 +25,6 @@ public class ParserTest {
     }
 
     @Test
-    public void testParseString() throws Exception {
-        JsonNode json = JsonNode.parseJson("\"hello\"");
-        json.cursorDown();
-        assertEquals("", json.rootInfo.userCursor.toString());
-    }
-
-    @Test
     public void testParseInteger() throws Exception {
         JsonNode json = JsonNode.parseJson("1980");
         json.cursorDown();
@@ -124,6 +117,64 @@ public class ParserTest {
         assertTrue(json instanceof JsonNodeMap);
         JsonNodeMap map = (JsonNodeMap) json;
         map.getChild("null_value");
+    }
+
+    @Test
+    public void testParseNormalString() throws Exception {
+        JsonNode json = JsonNode.parseJson("\"hello\"");
+        Object val = json.getValue();
+        assert(val instanceof String);
+        String s = (String)val;
+        assertEquals("hello", s);
+    }
+
+    @Test
+    public void testParseStringWithUnicode() throws Exception {
+        JsonNode json = JsonNode.parseJson("\"hello\\u0048\"");
+        Object val = json.getValue();
+        assert(val instanceof String);
+        String s = (String)val;
+        assertEquals("helloH", s);
+    }
+
+    @Test
+    public void testParseStringWithNull() throws Exception {
+        JsonNode json = JsonNode.parseJson("\"hello\\u0000bye\"");
+        Object val = json.getValue();
+        assert(val instanceof String);
+        String s = (String)val;
+        assertEquals("hello\0bye", s);
+    }
+
+    @Test
+    public void testParseStringWithNewline() throws Exception {
+        JsonNode json = JsonNode.parseJson("\"hello\\nbye\"");
+        Object val = json.getValue();
+        assert(val instanceof String);
+        String s = (String)val;
+        assertEquals("hello\nbye", s);
+    }
+
+    @Test
+    public void testParseStringEscapeNewline() throws Exception {
+        // The input string has an escape for a newline inside of it.
+        JsonNode json = JsonNode.parseJsonIgnoreEscapes("\"hello\\nbye\"");
+        // We want to NOT interpret the escape
+        Object val = json.getValue();
+        assert(val instanceof String);
+        String s = (String)val;
+        assertEquals("hello\\nbye", s);
+    }
+
+    @Test
+    public void testParseMapEscapeNewline() throws Exception {
+        // The input string has an escape for a newline inside of it.
+        JsonNode json = JsonNode.parseJsonIgnoreEscapes("{\"hello\":\"world\",\"bye\":\"toil\\nnewline\"}");
+        // We want to NOT interpret the escape
+        assert(json instanceof JsonNodeMap);
+        JsonNodeMap jsm = (JsonNodeMap) json;
+        String bye = (String)jsm.getChild("bye").getValue();
+        assertEquals("toil\\nnewline", bye);
     }
 
 

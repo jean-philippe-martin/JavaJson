@@ -1,6 +1,5 @@
 package org.example.ui;
 
-import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TerminalPosition;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
@@ -9,7 +8,6 @@ import com.googlecode.lanterna.input.KeyType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class PasteScreen {
 
@@ -17,7 +15,8 @@ public class PasteScreen {
         // leave the menu visible
         NONE,
         // just do the thing.
-        PARSE,
+        PARSE_AND_INTERPRET,
+        PARSE_IGNORE_ESCAPES,
         // close the menu, do nothing
         CANCEL
 
@@ -58,6 +57,7 @@ public class PasteScreen {
                 "│ Juste paste (or type) stuff.       │\n"+
                 "├────────────────────────────────────┤\n"+
                 "│ right : accept                     │\n"+
+                "│ shift-right : accept and interpret │\n"+
                 "│ left : cancel                      │\n"+
                 "╰────────────────────────────────────╯\n";
 
@@ -79,7 +79,11 @@ public class PasteScreen {
     public PasteScreen.Choice update(KeyStroke key) {
         if (key.getKeyType()== KeyType.ArrowRight) {
             lines.add(consumeLine());
-            return Choice.PARSE;
+            if (key.isShiftDown()) {
+                return Choice.PARSE_AND_INTERPRET;
+            } else {
+                return Choice.PARSE_IGNORE_ESCAPES;
+            }
         }
         if (key.getKeyType()== KeyType.ArrowLeft || key.getKeyType()==KeyType.Escape) {
             return Choice.CANCEL;

@@ -131,7 +131,7 @@ public class SortControl {
     }
 
     private void addAll(SortEntry prefix, JsonNode node) {
-        JsonNodeIterator it = node.iterateChildren();
+        JsonNodeIterator it = node.iterateChildren(true);
         while (it!=null) {
             JsonNode kid = it.get();
             fieldChoices.add(prefix.withAlso(it.key().toString()));

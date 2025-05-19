@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -131,7 +132,7 @@ public abstract class JsonNode {
         private void addAndAllChildren(@NotNull JsonNode me, @NotNull Set<JsonNode> addHere) throws InvariantException {
             addHere.add(me);
             int pinnedCount = 0;
-            var it = me.iterateChildren();
+            var it = me.iterateChildren(true);
             while (it!=null) {
                 JsonNode kid = it.get();
                 addAndAllChildren(kid, addHere);
@@ -175,7 +176,7 @@ public abstract class JsonNode {
                 throw new InvariantException(brokenInvariants.stream().collect(Collectors.joining("\nAND ")));
             }
             // Recurse.
-            var it = me.iterateChildren();
+            var it = me.iterateChildren(true);
             while (it!=null) {
                 checkAllCursors(root, me, it.get(), depth+1);
                 it = it.next();
@@ -240,6 +241,15 @@ public abstract class JsonNode {
 
     public static JsonNode parseJson(String jsonLines) throws JsonProcessingException {
         // Parse it
+        ObjectMapper parser = new ObjectMapper();
+        Object parsed = parser.readValue(jsonLines, Object.class);
+        return JsonNode.fromObject(parsed, null, new Cursor(), null);
+    }
+
+    public static JsonNode parseJsonIgnoreEscapes(String jsonLines) throws JsonProcessingException {
+        // Remove escapes
+        jsonLines = Pattern.compile("\\\\").matcher(jsonLines).replaceAll("\\\\\\\\");
+        // Parse
         ObjectMapper parser = new ObjectMapper();
         Object parsed = parser.readValue(jsonLines, Object.class);
         return JsonNode.fromObject(parsed, null, new Cursor(), null);
@@ -383,7 +393,7 @@ public abstract class JsonNode {
             return;
         }
         this.folded = false;
-        var it = iterateChildren();
+        var it = iterateChildren(true);
         while (it!=null) {
             JsonNode kid = it.get();
             kid.setFoldedLevels(levelCount-1);
@@ -452,7 +462,7 @@ public abstract class JsonNode {
     // Mark this node and all descendants as "synthetic" (marked as a comment when drawn)
     private void markAsSynthetic(JsonNode aggregate) {
         aggregate.isAggregate = true;
-        for (JsonNodeIterator it = aggregate.iterateChildren(); it!=null; it = it.next()) {
+        for (JsonNodeIterator it = aggregate.iterateChildren(true); it!=null; it = it.next()) {
             JsonNode kid = it.get();
             markAsSynthetic(kid);
         }
@@ -468,7 +478,7 @@ public abstract class JsonNode {
 
     public abstract JsonNode lastChild();
 
-    public abstract @Nullable JsonNodeIterator iterateChildren();
+    public abstract @Nullable JsonNodeIterator iterateChildren(boolean includeAggregates);
 
     public JsonNode nextSibling() {
         JsonNode dad = getParent();

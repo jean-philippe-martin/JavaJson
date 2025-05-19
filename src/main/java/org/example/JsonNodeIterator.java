@@ -8,5 +8,6 @@ public interface JsonNodeIterator<T> {
     @NotNull T key();
     boolean isAggregate();
 
+    /* Returns null if we're at the end. */
     @Nullable JsonNodeIterator next();
 }

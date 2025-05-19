@@ -57,7 +57,7 @@ public class DrawTest {
             "    \"one\": \"hello\",\n"+
             "    \"two\": \"world\"\n"+
             "}\n");
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -84,7 +84,7 @@ public class DrawTest {
             "    }, \n"+
             "    \"two\": \"more\" \n"+
             "}");
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -120,7 +120,7 @@ public class DrawTest {
 "                }, \n"+
 "                \"two\": \"more\" \n"+
 "            } \n");
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
         assertEquals(expected, got);
 
@@ -157,7 +157,7 @@ public class DrawTest {
            "    }, \n"+
            "    \"conclusion\": \"good bye\" \n"+
            "  } \n");
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
         assertEquals(expected, got);
     }
@@ -185,7 +185,7 @@ public class DrawTest {
         // fold root
         state.cursorParent();
         state.setFoldedAtCursors(true);
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -231,7 +231,7 @@ public class DrawTest {
         state.cursorParent();
         state.cursorParent();
         state.setFoldedAtCursors(true);
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -264,7 +264,7 @@ public class DrawTest {
         state.cursorParent();
         state.cursorParent();
         state.setFoldedAtCursors(true);
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -289,7 +289,7 @@ public class DrawTest {
            "       11 \n"+
            "     ] \n"+
            " }");
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -313,7 +313,7 @@ public class DrawTest {
             "}\n");
         state.cursorDown();
         state.setFoldedAtCursors(true);
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -370,7 +370,7 @@ public class DrawTest {
         node.cursorUp();
         node.setFoldedAtCursors(true);
         // render
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);
@@ -413,7 +413,7 @@ public class DrawTest {
         node.cursorUp();
         node.setFoldedAtCursors(true);
         // render
-        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, node, null);
         String got = extractAsString(screen);
 
         assertEquals(expected, got);

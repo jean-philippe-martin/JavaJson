@@ -21,7 +21,7 @@ public class DescentAll extends DescentStep {
 
     /** get the first child of the node, or null if none exist **/
     public JsonNode applyFirst(JsonNode node) {
-        var it = node.iterateChildren();
+        var it = node.iterateChildren(false);
         while (it!=null) {
             if (it.isAggregate()) {
                 it = it.next();

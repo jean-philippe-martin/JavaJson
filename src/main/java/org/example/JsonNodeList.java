@@ -39,9 +39,11 @@ public class JsonNodeList extends JsonNode {
     protected class JsonNodeListIterator implements JsonNodeIterator<Integer> {
         final JsonNodeList dad;
         final int displayIndex;
+        final boolean includeAggregates;
 
-        public JsonNodeListIterator(JsonNodeList dad) {
+        public JsonNodeListIterator(JsonNodeList dad, boolean includeAggregates) {
             this.dad = dad;
+            this.includeAggregates = includeAggregates;
             if (this.dad.aggregate != null) {
                 this.displayIndex = -1;
             } else {
@@ -49,8 +51,9 @@ public class JsonNodeList extends JsonNode {
             }
         }
 
-        public JsonNodeListIterator(JsonNodeList dad, int displayIndex) {
+        public JsonNodeListIterator(JsonNodeList dad, int displayIndex, boolean includeAggregates) {
             this.dad = dad;
+            this.includeAggregates = includeAggregates;
             this.displayIndex = displayIndex;
         }
 
@@ -75,7 +78,13 @@ public class JsonNodeList extends JsonNode {
         @Override
         public @Nullable JsonNodeIterator next() {
             if (displayIndex + 1 >= dad.childCount()) return null;
-            return new JsonNodeListIterator(dad, displayIndex + 1);
+            JsonNodeIterator ret = new JsonNodeListIterator(dad, displayIndex + 1, includeAggregates);
+            if (!includeAggregates) {
+                while (ret.isAggregate()) {
+                    ret = ret.next();
+                }
+            }
+            return ret;
         }
     }
 
@@ -158,9 +167,9 @@ public class JsonNodeList extends JsonNode {
     }
 
     @Override
-    public @Nullable JsonNodeIterator iterateChildren() {
+    public @Nullable JsonNodeIterator iterateChildren(boolean includeAggregates) {
         if (children.length==0 && null==this.aggregate) return null;
-        return new JsonNodeListIterator(this);
+        return new JsonNodeListIterator(this, includeAggregates);
     }
 
 

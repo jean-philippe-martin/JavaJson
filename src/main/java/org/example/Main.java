@@ -49,6 +49,7 @@ public class Main {
     private int scroll;
     private int rowLimit;
     private boolean pleaseRefresh = false;
+    private Deleter deleter = null;
 
     private OperationList operationList = new OperationList();
     private String notificationText = "";
@@ -153,15 +154,21 @@ public class Main {
         TextGraphics g = screen.newTextGraphics();
         screen.clear();
 
-        drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+        if (deleteMenu!=null) {
+            deleter = deleteMenu.getDeleter(myJson);
+        } else {
+            deleter = null;
+        }
+
+        drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson, deleter);
         if (drawer.getCursorLineLastTime()>rowLimit) {
             scroll += (drawer.getCursorLineLastTime()-rowLimit);
             screen.clear();
-            drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+            drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson, deleter);
         } else if (drawer.getCursorLineLastTime()<0) {
             scroll += drawer.getCursorLineLastTime();
             screen.clear();
-            drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson);
+            drawer.printJsonTree(g, TerminalPosition.TOP_LEFT_CORNER.withRelativeRow(-scroll), 0, myJson, deleter);
         }
         if (null!=sortControl) {
             sortControl.draw(screen.newTextGraphics());
@@ -615,7 +622,17 @@ public class Main {
                 return true;
             case SHOW_DELETE_MENU:
                 mainMenu = null;
-                deleteMenu = new DeleteMenu();
+                deleteMenu = new DeleteMenu(myJson);
+                return true;
+            case DELETE:
+                mainMenu = null;
+                var deleter = deleteMenu.getDeleter(myJson);
+                deleteMenu = null;
+                Operation deleteOp = new OpDelete(myJson, deleter);
+                notificationText = deleteOp.toString();
+                myJson = operationList.run(deleteOp);
+                myJson.rootInfo.fixCursors();
+
                 return true;
             case HIDE_MENU:
                 mainMenu = null;
@@ -623,6 +640,8 @@ public class Main {
                 pasteMenu = null;
                 aggregateMenu = null;
                 sortControl = null;
+                deleteMenu = null;
+                deleter = null;
                 return true;
         }
         return true;
@@ -746,9 +765,8 @@ public class Main {
             ActionMenu.Choice choice = actionMenu.update(key);
             if (choice== ActionMenu.Choice.CANCEL) {
                 return Action.HIDE_MENU;
-            } else if (choice== ActionMenu.Choice.PARSE) {
-
-                Operation.OpParse op = new Operation.OpParse(myJson);
+            } else if (choice==ActionMenu.Choice.PARSE_AND_INTERPRET || choice==ActionMenu.Choice.PARSE_IGNORE_ESCAPES) {
+                Operation.OpParse op = new Operation.OpParse(myJson, choice==ActionMenu.Choice.PARSE_AND_INTERPRET);
                 JsonNode foo = operationList.run(op);
                 if (null == foo) {
                     notificationText = "Could not parse as JSON";
@@ -777,11 +795,21 @@ public class Main {
                 return Action.HIDE_MENU;
             } else if (choice== PasteScreen.Choice.NONE) {
                 // nothing to do
-            } else if (choice==PasteScreen.Choice.PARSE) {
+            } else if (choice==PasteScreen.Choice.PARSE_AND_INTERPRET) {
                 try {
                     JsonNode newJson = JsonNode.parseLines(pasteMenu.getLines());
                     Operation op = new OpReplaceRoot(myJson, newJson);
-                    notificationText = "Replaced with pasted text";
+                    notificationText = "Replaced with pasted text (interpreting the escapes)";
+                    myJson = operationList.run(op);
+                } catch (Exception x) {
+                    notificationText = "Pasted text was not valid JSON nor JSONL";
+                }
+                pasteMenu = null;
+            } else if (choice==PasteScreen.Choice.PARSE_IGNORE_ESCAPES) {
+                try {
+                    JsonNode newJson = JsonNode.parseJsonIgnoreEscapes(String.join("\n", pasteMenu.getLines()));
+                    Operation op = new OpReplaceRoot(myJson, newJson);
+                    notificationText = "Replaced with pasted text (interpreting the escapes)";
                     myJson = operationList.run(op);
                 } catch (Exception x) {
                     notificationText = "Pasted text was not valid JSON nor JSONL";
@@ -944,9 +972,9 @@ public class Main {
                 // Ctrl-L: refresh
                 this.pleaseRefresh = true;
             }
-//            if (pressed=='d') {
-//                return Action.SHOW_DELETE_MENU;
-//            }
+            if (pressed=='d') {
+                return Action.SHOW_DELETE_MENU;
+            }
             if (pressed=='q')
                 return Action.QUIT;
         }

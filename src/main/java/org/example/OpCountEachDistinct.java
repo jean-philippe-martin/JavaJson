@@ -73,9 +73,9 @@ public class OpCountEachDistinct implements Operation {
         // find the groups
         // (value of the key being grouped by -> list of objects that have that value for that key)
         LinkedHashMap<String, Integer> groups = new LinkedHashMap<>();
-        JsonNodeIterator it = listToGroup.iterateChildren();
+        JsonNodeIterator it = listToGroup.iterateChildren(false);
         while (null!=it) {
-            if (it.isAggregate()) continue;
+            if (it.isAggregate()) {it = it.next();continue;}
             JsonNode kid = it.get();
             it = it.next();
             String groupName;

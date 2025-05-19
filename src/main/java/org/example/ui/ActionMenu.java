@@ -19,7 +19,8 @@ public class ActionMenu {
         // close the menu, do nothing
         CANCEL,
         // Action choices:
-        PARSE,
+        PARSE_AND_INTERPRET,
+        PARSE_IGNORE_ESCAPES,
         COPY,
         ADD_TO_COPY,
     }
@@ -36,6 +37,7 @@ public class ActionMenu {
         String menu =
                         "╭─────────[ ACTION ]─────────╮\n"+
                         "│ p: parse JSON              │\n"+
+                        "│ P: parse JSON and escapes  │\n"+
                         "│ c: copy                    │\n"+
                         "│ shift-C: add to copy       │\n"+
                         "├────────────────────────────┤\n"+
@@ -77,12 +79,14 @@ public class ActionMenu {
         }
         if (key.getKeyType()==KeyType.Enter) {
             if (row==maxRow) return Choice.CANCEL;
-            if (row==0) return Choice.PARSE;
-            if (row==1) return Choice.COPY;
+            if (row==0) return Choice.PARSE_IGNORE_ESCAPES;
+            if (row==1) return Choice.PARSE_AND_INTERPRET;
+            if (row==2) return Choice.COPY;
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (Character.toLowerCase(key.getCharacter())) {
-                case 'p': return Choice.PARSE;
+                case 'p': return Choice.PARSE_IGNORE_ESCAPES;
+                case 'P': return Choice.PARSE_AND_INTERPRET;
                 case 'q': return Choice.CANCEL;
             }
             switch (key.getCharacter()) {
