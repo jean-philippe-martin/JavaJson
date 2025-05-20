@@ -29,6 +29,7 @@ public class JsonNodeValue<T> extends JsonNode {
     protected JsonNodeValue(T value, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.value = value;
+        this.folded = false;
         autoAnnotate();
     }
 

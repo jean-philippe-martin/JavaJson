@@ -108,9 +108,35 @@ public class DeleterTest {
         assertEquals(false, del.targets(two));
     }
 
-    // contents of pinned are saved too.
+    // children of pinned are saved too.
     @Test
-    public void deleteEverythingExceptPinned2() throws Exception {
+    public void deleteEverythingExceptPinned2_KeepChildren() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                        "    \"one\": {\n" +
+                        "        \"fish\": 1\n" +
+                        "    },\n" +
+                        "    \"two\": {\n" +
+                        "        \"world\": 1\n" +
+                        "    }\n" +
+                        "}");
+        JsonNodeMap one = (JsonNodeMap)((JsonNodeMap) json).getChild("one");
+        JsonNodeMap two = (JsonNodeMap)((JsonNodeMap) json).getChild("two");
+        two.setPinned(true);
+
+        Deleter del = new Deleter(json, TARGET.EVERYTHING, SUBJECT.UNLESS, MOD.IS, FILTER.PINNED, OPTIONS.KEEP_CHILDREN);
+        assertEquals(true, del.targets(json)); // parent of saved node, but we're not keeping parents.
+        assertEquals(true, del.targets(one));
+        JsonNode fish = one.getChild("fish");
+        assertEquals(true, del.targets(fish));
+        assertEquals(false, del.targets(two)); // pinned
+        JsonNode world = two.getChild("world");
+        assertEquals(false, del.targets(world)); // child of saved node
+    }
+
+    // children of pinned are not saved.
+    @Test
+    public void deleteEverythingExceptPinned2_NoKeepChildren() throws Exception {
         JsonNode json = JsonNode.parseJson(
                 "{\n" +
                         "    \"one\": {\n" +
@@ -131,7 +157,7 @@ public class DeleterTest {
         assertEquals(true, del.targets(fish));
         assertEquals(false, del.targets(two)); // pinned
         JsonNode world = two.getChild("world");
-        assertEquals(false, del.targets(world)); // child of saved node
+        assertEquals(true, del.targets(world)); // child of saved node
     }
 
     @Test

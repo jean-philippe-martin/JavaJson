@@ -626,13 +626,9 @@ public class Main {
                 return true;
             case DELETE:
                 mainMenu = null;
-                var deleter = deleteMenu.getDeleter(myJson);
+                deleter = deleteMenu.getDeleter(myJson);
                 deleteMenu = null;
-                Operation deleteOp = new OpDelete(myJson, deleter);
-                notificationText = deleteOp.toString();
-                myJson = operationList.run(deleteOp);
-                myJson.rootInfo.fixCursors();
-
+                delete(deleter);
                 return true;
             case HIDE_MENU:
                 mainMenu = null;
@@ -645,6 +641,15 @@ public class Main {
                 return true;
         }
         return true;
+    }
+
+    // Apply this deletion operation.
+    @VisibleForTesting
+    public void delete(Deleter deleter) {
+        Operation deleteOp = new OpDelete(myJson, deleter);
+        notificationText = deleteOp.toString();
+        myJson = operationList.run(deleteOp);
+        myJson.rootInfo.fixCursors();
     }
 
     private void maybeShowNotification(@Nullable String help) {

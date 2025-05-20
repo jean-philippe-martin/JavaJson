@@ -37,7 +37,7 @@ public class Deleter {
     public static class OPTIONS {
         public static final int KEEP_NOTHING = 0;
         public static final int KEEP_PARENTS = 1;
-        public static final int KEEP_ORPHANS = 2;
+        public static final int KEEP_CHILDREN = 2;
         public static final int KEEP_ALL = 3;
     }
 
@@ -50,8 +50,8 @@ public class Deleter {
     // cache of node -> whether it's deleted
     Map<JsonNode, Boolean> shouldDelete = new HashMap<>();
 
-    static final Deleter DELETE_ALL = new Deleter(null, TARGET.EVERYTHING, SUBJECT.UNLESS, MOD.IS, FILTER.NOTHING, OPTIONS.KEEP_PARENTS);
-    static final Deleter DELETE_NEVER = new Deleter(null, TARGET.EVERYTHING, SUBJECT.THAT, MOD.IS, FILTER.NOTHING, OPTIONS.KEEP_ALL);
+//    static final Deleter DELETE_ALL = new Deleter(null, TARGET.EVERYTHING, SUBJECT.UNLESS, MOD.IS, FILTER.NOTHING, OPTIONS.KEEP_PARENTS);
+//    static final Deleter DELETE_NEVER = new Deleter(null, TARGET.EVERYTHING, SUBJECT.THAT, MOD.IS, FILTER.NOTHING, OPTIONS.KEEP_ALL);
 
 
     public Deleter(JsonNode root, TARGET target, SUBJECT subject, MOD mod, int filter, int options) {
@@ -68,13 +68,13 @@ public class Deleter {
         precomputeTargets(root);
     }
 
-    static public Deleter always() {
-        return DELETE_ALL;
-    }
-
-    static public Deleter never() {
-        return DELETE_NEVER;
-    }
+//    static public Deleter always() {
+//        return DELETE_ALL;
+//    }
+//
+//    static public Deleter never() {
+//        return DELETE_NEVER;
+//    }
 
 
     private void precomputeTargets(JsonNode root) {
@@ -93,7 +93,6 @@ public class Deleter {
     }
 
     public boolean targets(JsonNode node) {
-        boolean chosen = false;
         if (shouldDelete.containsKey(node)) {
             return shouldDelete.get(node);
         }
@@ -112,7 +111,13 @@ public class Deleter {
             if (subject == SUBJECT.UNLESS) {
                 chosen = !chosen;
                 if (!chosen) {
-                    markAllChildren(node, false);
+                    if ((options&OPTIONS.KEEP_CHILDREN)!=0) {
+                        // consider: DELETE UNLESS VISIBLE
+                        // A child might not be visible and thus gets deleted.
+                        // Unless we set KEEP_CHILDREN, in which case all children of anything visible
+                        // will be kept.
+                        markAllChildren(node, false);
+                    }
                 }
             } else if (chosen) {
                 markAllChildren(node, true);

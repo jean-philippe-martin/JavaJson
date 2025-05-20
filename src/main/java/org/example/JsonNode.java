@@ -344,7 +344,7 @@ public abstract class JsonNode {
         // if any of our ancestors is folded, then we're hidden since we have no pins.
         // If any of our ancestors is pinned, then we're visible because folds higher up
         // wouldn't have an effect.
-        JsonNode cur = this.getParent();
+        JsonNode cur = getParent();
         while (cur!=null) {
             if (cur.getPinned()) return true;
             if (cur.getFolded()) return false;
