@@ -21,9 +21,13 @@ public class Theme {
     public static TextColor disabled_option = TextColor.ANSI.BLACK_BRIGHT;
 
     public static TextGraphics withColor(TextGraphics g, TextColor c) {
-        TextGraphics ret = g.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER, g.getSize());
+        TextGraphics ret = clone(g);
         ret.setForegroundColor(c);
         return ret;
+    }
+
+    public static TextGraphics clone(TextGraphics g) {
+        return g.newTextGraphics(TerminalPosition.TOP_LEFT_CORNER, g.getSize());
     }
 
 }

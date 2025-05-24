@@ -67,7 +67,7 @@ public class Drawer {
 
     // inFoldedContext = we're folded, only print pinned rows.
     public int printJsonMap(TextGraphics g, JsonNodeMap jsonMap, TerminalPosition start, int initialOffset, boolean inFoldedContext, boolean inSyntheticContext, Deleter deleter) {
-        TextGraphics myG = g;
+        TextGraphics myG = Theme.clone(g);
         boolean beingDeleted = possiblyChangeToDeletedColors(myG, jsonMap, deleter);
         int line = 0;
         Collection<String> keys = jsonMap.getKeysInOrder();
@@ -118,7 +118,7 @@ public class Drawer {
                 printMaybeReversed(g, pos.withColumn(2), "//", false);
             }
 
-            TextGraphics g2 = g;
+            TextGraphics g2 = Theme.clone(g);
             possiblyChangeToDeletedColors(g2, child, deleter);
             TextGraphics g_key = Theme.withColor(g, Theme.key);
             possiblyChangeToDeletedColors(g_key, child, deleter);
@@ -136,6 +136,7 @@ public class Drawer {
                     printGutterIndicator(g, pos, child, 1, deleter);
                     height = 1;
                 } else {
+                    g2 = Theme.clone(g2);
                     possiblyChangeToDeletedColors(g2, child, deleter);
                     JsonNodeValue v = (JsonNodeValue) child;
                     Object val = v.getValue();
@@ -257,7 +258,7 @@ public class Drawer {
     }
 
     public int innerPrintJsonSubtree(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, boolean inFoldedContext, boolean inSyntheticContext, Deleter deleter) {
-        TextGraphics myG = g;
+        TextGraphics myG = Theme.clone(g);
         boolean beingDeleted = possiblyChangeToDeletedColors(myG, json, deleter);
         int line = 0;
         if (json instanceof JsonNodeValue) {
