@@ -25,6 +25,7 @@ public class MainMenu {
         Action.SHOW_AGGREGATE_MENU,
         Action.UNION,
         Action.GROUPBY,
+        Action.SHOW_DELETE_MENU,
         Action.SHOW_HELP_SCREEN,
         Action.QUIT
     };
@@ -37,6 +38,7 @@ public class MainMenu {
             "Menu to show information about this list/object",
             "Your cursors must point to arrays",
             "Your cursor(s) must be in a map/string in a list",
+            "Delete at the cursor, or more",
             "Press any key to exit the help screen",
             "Quit this program",
             "Close this menu",
@@ -64,6 +66,7 @@ public class MainMenu {
                     "│ a: aggregate                │\n"+
                     "│ +: union selected arrays    │\n"+
                     "│ b: group by selected key(s) │\n"+
+                    "│ d: delete                   │\n"+
                     "│ h: help                     │\n"+
                     "│ q: quit                     │\n"+
                     "├─────────────────────────────┤\n"+
@@ -117,6 +120,7 @@ public class MainMenu {
                 case 'a': return Action.SHOW_AGGREGATE_MENU;
                 case '+': return Action.UNION;
                 case 'b': return Action.GROUPBY;
+                case 'd': return Action.SHOW_DELETE_MENU;
                 case 'h': return Action.SHOW_HELP_SCREEN;
                 case 'q': return Action.QUIT;
             }

@@ -51,7 +51,7 @@ public class DeleteMenu {
     };
     // row -> screen Y coord
     final int[] yOffset = {
-            3,5,7,10,11,12, 15,16, 18
+            2,4,6,9,10,11, 14,15, 17
     };
     // row -> multiple-choice options
     final String[][] choices = new String[][]{
@@ -125,7 +125,6 @@ public class DeleteMenu {
 
         String menu =
                     "╭────────────[ DELETE ]───────────╮\n"+
-                    "│ (still under development)       │\n"+
                     "├──────────────────────────┬──────┤\n"+
                     "│ Every child below >>>  | │      │\n"+
                     "├──────────────┬───────────┴──────┤\n"+

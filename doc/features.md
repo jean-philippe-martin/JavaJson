@@ -11,6 +11,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Annotations](#annotations)
 - [Unique keys](#Unique-keys)
 - [Groupby](#groupby)
+- [Delete](#delete)
 - [Print select values](#Print-select-values)
 
 ## Basic navigation
@@ -630,6 +631,18 @@ When the cursor is on a line of text that happens to be JSON, you can press the
 parse the line as JSON and make it part of the document.
 
 Parsing can be undone with the <kbd>⇧ Shift</kbd> + <kbd>Z</kbd> key.
+
+## Delete
+
+The delete menu lets you delete parts of the document. These changes will NOT be saved to disk, they're only 
+for display until you close the program (or press undo).
+
+The simplest way to use it is to press the <key>d</key> key and then <key>enter</key>. This will
+delete whatever is under the cursor(s).
+
+You can also use the options in the delete menu to choose what to delete. It can choose based on pinned, selected
+(by a cursor), or visible (meaning not folded). You can choose to either delete those things, or delete everything
+except those things.
 
 # Print select values
 
