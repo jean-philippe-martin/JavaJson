@@ -432,7 +432,7 @@ Annotations include:
   
 ## Unique keys
 
-### Check keys are unique
+### Check whether keys are unique
 
 Sometimes your JSON includes a list of repeated maps, all with the same structure. Something like this example:
 
@@ -634,15 +634,143 @@ Parsing can be undone with the <kbd>⇧ Shift</kbd> + <kbd>Z</kbd> key.
 
 ## Delete
 
-The delete menu lets you delete parts of the document. These changes will NOT be saved to disk, they're only 
+### Basic operation
+
+The `delete` menu lets you delete parts of the document. These changes will NOT be saved to disk, they're only 
 for display until you close the program (or press undo).
 
-The simplest way to use it is to press the <key>d</key> key and then <key>enter</key>. This will
+The simplest way to use it is to press the <kbd>d</kbd> key and then <kbd>⏎ Enter</kbd>. This will
 delete whatever is under the cursor(s).
+
+### Simple delete options
 
 You can also use the options in the delete menu to choose what to delete. It can choose based on pinned, selected
 (by a cursor), or visible (meaning not folded). You can choose to either delete those things, or delete everything
 except those things.
+
+Here are some examples of how one might use the delete feature.
+
+A. Suppose your data is a list of countries, and you'd like to delete one of the fields (say, "demographics").
+
+- Use the `find` dialog to search for the string "demographics" but only as a key, not as part of a value (press <kbd>down</kbd>, <kbd>k</kbd>).
+- Press <kbd>d</kbd> for the `delete` dialog, then <kbd>⏎ Enter</kbd> to delete at every cursor.
+
+Done! Of course for the second step you could also have used the <kbd>left</kbd> arrow to fold them, but delete is an option as well.
+The second example below shows something where folding wouldn't be an option.
+
+B. Suppose your data is a list of contestants, and some of them have special requests. You want to look at only those contestants.
+
+- Use the `find` dialog to search for the string "requests" but only as a key, not as part of a value (press <kbd>down</kbd>, <kbd>k</kbd>).
+- pin all the results to mark them (<kbd>p</kbd>).
+- Move the cursor back up to the top (<kbd>home</kbd>) and remove the non-primary cursors (<kbd>ESC</kbd>).
+- Open the `delete` dialog (<kbd>d</kbd>), select:
+  - `every child of >>>` (to search from your cursor, at the top),
+  - `unless` (we want to keep the pinned values)
+  - `has a child that is`, `pinned`. 
+- Press <kbd>⏎ Enter</kbd> to confirm.
+
+This will keep only the contestants that have a special request! Mission accomplished.
+
+### Advanced delete options
+
+The `keep parents` option determines what happens when an object is kept that is not at the root level.
+
+Consider the following example:
+```
+[ // 1000 entries
+  {
+    "name": "Elijah"
+    "city": "Boston"
+    "friends": [ // 2 entries
+      {
+        "name": "Michelle"
+>>      "hobbies": [ // 3 entries
+          "Watching Sports"
+          "Reading"
+          "Skiing & Snowboarding"
+        ]
+      }
+      {
+        "name": "Robert"
+->      "hobbies": [ // 2 entries
+          "Traveling"
+          "Video Games"
+        ]
+      }
+    ]
+  }
+```
+
+Suppose we have searched for "hobbies" so that all the hobbies are selected.
+
+If we now delete "delete everything unless it is selected" to keep only the hobbies,
+the final outcome will depend on whether `keep parents` is selected.
+
+- Without `keep parents` (default choice): we get each person's list of hobbies, gathered in a new list.  
+  it looks like this:
+```
+[ // 4064 entries
+  [ // 3 entries
+    "Watching Sports"
+    "Reading"
+    "Skiing & Snowboarding"
+  ]
+  [ // 2 entries (...)
+```
+- With `keep parents`: we get each person's list of hobbies, but also the objects that contain them (with the other fields removed).
+  It looks like this:
+
+```
+[ // 1000 entries
+  {
+    "friends": [ // 2 entries
+      {
+        "hobbies": [ // 3 entries
+          "Watching Sports"
+          "Reading"
+          "Skiing & Snowboarding"
+        ]
+      }
+      {
+        "hobbies": [ // 2 entries
+          "Traveling"
+          "Video Games"
+        ]
+      }
+    ]
+  }
+```
+
+Keeping the parents leaves a hint of the structure that the remaining data were under. When it's useful to conserve it, you have the option to do so.
+
+
+The delete menu also has a `keep children` option that is useful in some specific cases.
+
+Consider the following example:
+```
+[ // 3 entries
+  {
+    "name": "Alice"
+  }
+P {
+P   "name": "Bob"
+P   "score": 35
+    "category": "heavyweight"
+    "age": 32
+    "requests": "pillow on chair"
+    "fastest_move_in_seconds": // 1.50 ms
+                               0.002
+  }
+  { ... }
+]
+```
+
+Here if you select "delete everything unless it is pinned" then "Alice" and the
+third entry will be deleted, but what happens to "Bob" will depend on the `keep children` setting as follows:
+
+- With `keep children` (default): the full "Bob" record is kept, including `age`
+- Without `keep children`: Only the `name` and `score` are kept for "Bob", the other fields are deleted.
+
 
 # Print select values
 

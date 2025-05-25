@@ -81,6 +81,7 @@ public class Main {
                 "+               : union selected arrays     \n"+
                 "a               : aggregate sel. array(s)   \n"+
                 "b               : groupby sel. key(s)       \n"+
+                "d               : delete parts of the doc   \n"+
                 "s               : sort selected array(s)    \n"+
                 "ENTER           : parse as JSON             \n"+
                 "v               : paste a new document      \n"+
