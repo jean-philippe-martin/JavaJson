@@ -18,9 +18,10 @@ Available features:
 - [groupby](doc/features.md#groupby)
 - help screen showing the supported keys (press 'h' or '?')
 - shift-Z to undo union, sort, or aggregation
+- support for Unicode and CJK scripts
 
 Missing features:
-- unicode support
+- support of right-to-left scripts
 - color choice that works on light-colored terminals
 
 ## Testing
