@@ -22,17 +22,16 @@ public class DeleteMenu {
     JsonNode root;
 
     private final String[] help = new String[]{
-            "Menu to act on the current value",
-            "Select this, then paste the new document in",
-            "Menu to find keys/values",
-            "Menu to sort values in this list or map",
-            "Menu to show information about this list/object",
-            "Your cursors must point to arrays",
-            "Your cursor(s) must be in a map/string in a list",
-            "Press any key to exit the help screen",
-            "Quit this program",
-            "Close this menu",
-            null,
+            "",
+            "This option reverses the search",
+            "\"Descendant\" means child or their children etc.",
+            "Pinned, shown with a P on the left",
+            "\"Selected\" means has a cursor on it.",
+            "\"Visible\" means not folded",
+            "Keep parents vs move inside root",
+            "Keep vs delete children of what is kept",
+            "Delete",
+            null
     };
     // the max allowed row value
     private final int maxRow = help.length-2;
@@ -289,6 +288,13 @@ public class DeleteMenu {
 
     /** The help text for what the user has selected. */
     public @Nullable String getHelpText() {
-        return help[row];
+        switch (row) {
+            case 0:
+                if (choice[0]==0) return "Search everywhere";
+                return "Search below the primary cursor only";
+            default:
+                return help[row];
+
+        }
     }
 }

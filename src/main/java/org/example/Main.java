@@ -624,6 +624,7 @@ public class Main {
             case SHOW_DELETE_MENU:
                 mainMenu = null;
                 deleteMenu = new DeleteMenu(myJson);
+                maybeShowNotification(deleteMenu.getHelpText());
                 return true;
             case DELETE:
                 mainMenu = null;
@@ -823,7 +824,9 @@ public class Main {
                 pasteMenu = null;
             }
         } else if (null!=deleteMenu) {
-            return deleteMenu.update(key);
+            Action ret = deleteMenu.update(key);
+            maybeShowNotification(deleteMenu.getHelpText());
+            return ret;
         } else {
             // normal key handling
             if (key.getKeyType() == KeyType.ArrowDown && !key.isShiftDown()) {
