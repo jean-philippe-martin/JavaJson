@@ -147,6 +147,7 @@ public class DeleteMenu {
                     "│ enter :                         │\n"+
                     "│                                 │\n"+
                     "│                                 │\n"+
+                    "│                                 │\n"+
                     "╰─────────────────────────────────╯\n";
 
 
@@ -210,24 +211,34 @@ public class DeleteMenu {
         pos = top.withRelative(10,yOffset[yOffset.length-1]+4);
         int width = 31;
         int margin = 8;
-        g.putString(pos, atMost(desc, width-margin));
-        desc = trim(desc, width-margin);
+        String line = atMost(desc, width-margin);
+        g.putString(pos, line);
+        desc = trim(desc, line.length());
         pos = pos.withRelative(-margin, 1 );
         while (desc.length()>0) {
-            g.putString(pos, atMost(desc, width));
-            desc = trim(desc,width);
+            line = atMost(desc, width);
+            g.putString(pos, line);
+            desc = trim(desc, line.length());
             pos = pos.withRelativeRow(1 );
         }
     }
 
     private String atMost(String str, int maxLen) {
         if (str.length()<=maxLen) return str;
+        if (str.length()>maxLen && str.charAt(maxLen)==' ') {
+            return str.substring(0, maxLen);
+        }
+        // Look for a space to break at
+        for (int i=0; i<7; i++) {
+            if (str.charAt(maxLen-i)==' ')
+                return str.substring(0,maxLen-i);
+        }
         return str.substring(0, maxLen);
     }
 
     private String trim(String str, int leftTrim) {
         if (str.length()<=leftTrim) return "";
-        return str.substring(leftTrim);
+        return str.substring(leftTrim).stripLeading();
     }
 
     public Deleter getDeleter(JsonNode root) {

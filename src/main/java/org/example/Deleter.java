@@ -249,7 +249,7 @@ public class Deleter {
                 ret.append(" everything");
                 break;
             case CHILDREN:
-                ret.append(" children of the main cursor");
+                ret.append(" each child of the main cursor");
                 break;
         }
         switch (subject) {
