@@ -24,5 +24,12 @@
       "#ffe0e0",
       "#ffffff"
     ]
+  },
+  {
+    "string": "hello",
+    "number": 123456,
+    "annotated_seconds": 60000,
+    "null": null,
+    "bool": true
   }
 ]

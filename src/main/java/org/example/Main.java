@@ -1014,7 +1014,7 @@ public class Main {
             System.out.println("(C) 2025 Jean-Philippe Martin");
             System.out.println();
             System.out.println("Usage:");
-            System.out.println("java -jar JavaJson*.jar myfile.json [--goto <path>]");
+            System.out.println("java -jar JavaJson*.jar myfile.json [--theme LIGHT|DARK|BW|WB] [--goto <path>]");
             System.out.println("OR");
             System.out.println("java -jar JavaJson*.jar myfile.json --print <path>");
             System.out.println();
@@ -1034,6 +1034,7 @@ public class Main {
         boolean ignoreOpts = false;
         options.put("--goto", null);
         options.put("--print", null);
+        options.put("--theme", null);
         HashMap<String, Boolean> flags = new HashMap<>();
         flags.put("--debug", false);
 
@@ -1102,6 +1103,12 @@ public class Main {
         if (debugMode) main.debugMode = new Main.DebugMode();
         boolean startedDebugReport = false;
         try {
+            String theme = options.get("--theme");
+            if (null==theme) {
+                Theme.selected = Theme.getTheme("DARK");
+            } else {
+                Theme.selected = Theme.getTheme(theme);
+            }
             while(true) {
                 main.display();
                 if (debugMode) {

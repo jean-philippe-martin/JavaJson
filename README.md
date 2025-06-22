@@ -19,10 +19,10 @@ Available features:
 - help screen showing the supported keys (press 'h' or '?')
 - shift-Z to undo union, sort, or aggregation
 - support for Unicode and CJK scripts
+- light or dark color options ("themes")
 
 Missing features:
 - support of right-to-left scripts
-- color choice that works on light-colored terminals
 
 ## Testing
 
@@ -48,6 +48,9 @@ as needed.)
 (Change the input file as desired)
 
 The file can be in `JSON` or `JSONL` format (JSONL = each individual line is valid JSON). 
+
+You can add `--theme light` or `--theme dark` to choose colors that fit with a light or dark background in your
+terminal. Or even `--theme bw` for simple black-on-white text.
 
 Use the up and down arrows to navigate. h for help, q to quit.
 

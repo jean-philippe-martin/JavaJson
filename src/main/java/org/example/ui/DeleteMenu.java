@@ -183,14 +183,14 @@ public class DeleteMenu {
         {
             TextGraphics g2;
             if (keepParentsEnabled()) g2 = g;
-            else g2 = Theme.withColor(g, Theme.disabled_option);
+            else g2 = Theme.withColor(g, Theme.selected.disabled_option);
             g2.putString(top.withRelative(xOffset[ROW_OPT_KEEP_PARENTS][0]+5, yOffset[ROW_OPT_KEEP_PARENTS]), "keep parents");
             if (!keepParentsEnabled()) g2.putString(top.withRelative(xOffset[ROW_OPT_KEEP_PARENTS][0]+1, yOffset[ROW_OPT_KEEP_PARENTS]), "[x]");
         }
         {
             TextGraphics g2;
             if (keepChildrenEnabled()) g2 = g;
-            else g2 = Theme.withColor(g, Theme.disabled_option);
+            else g2 = Theme.withColor(g, Theme.selected.disabled_option);
             g2.putString(top.withRelative(xOffset[ROW_OPT_KEEP_CHILDREN][0]+5, yOffset[ROW_OPT_KEEP_CHILDREN]), "keep children");
             if (!keepChildrenEnabled()) g2.putString(top.withRelative(xOffset[ROW_OPT_KEEP_CHILDREN][0]+1, yOffset[ROW_OPT_KEEP_CHILDREN]), "[ ]");
 

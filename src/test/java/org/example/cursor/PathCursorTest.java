@@ -183,6 +183,7 @@ public class PathCursorTest {
         JsonNode state = JsonNode.parseJson(TWO_PLAYERS);
         PathCursor cur = new PathCursor(".players.*");
         JsonNode alexScore = ((JsonNodeMap)((JsonNodeMap)((JsonNodeMap)state).getChild("players")).getChild("Alex")).getChild("score");
+        assertEquals(".players.Alex.Score", alexScore.toString());
 
         Cursor got = cur.nextCursor(alexScore.asCursor());
         assertEquals(".players.Bob", got.toString());

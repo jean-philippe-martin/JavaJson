@@ -96,7 +96,7 @@ public class Drawer {
 
         if (jsonMap.getAnnotation()!=null && !jsonMap.getAnnotation().isEmpty()) {
             String countAnno = " // " + jsonMap.getAnnotation();
-            TextGraphics green = Theme.withColor(g, Theme.synthetic);
+            TextGraphics green = Theme.withColor(g, Theme.selected.synthetic);
             green.putString(pos.withRelativeColumn(initialOffset+1), countAnno);
         }
 
@@ -120,7 +120,7 @@ public class Drawer {
 
             TextGraphics g2 = Theme.clone(g);
             possiblyChangeToDeletedColors(g2, child, deleter);
-            TextGraphics g_key = Theme.withColor(g, Theme.key);
+            TextGraphics g_key = Theme.withColor(g, Theme.selected.key);
             possiblyChangeToDeletedColors(g_key, child, deleter);
             printMaybeReversed(g2, pos, aggComment, jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos;
@@ -142,7 +142,7 @@ public class Drawer {
                     Object val = v.getValue();
                     TerminalPosition pos4 = pos2;
                     if (it.isAggregate()) {
-                        g2 = Theme.withColor(g, Theme.synthetic);
+                        g2 = Theme.withColor(g, Theme.selected.synthetic);
                         g2.putString(pos4.withColumn(2), "//");
                         //String intro = jsonMap.aggregateComment + "() ";
                         String intro = key + "() ";
@@ -270,7 +270,7 @@ public class Drawer {
             }
             String annotation = jsonValue.getAnnotation();
             if (!annotation.isEmpty()) {
-                TextGraphics gg = Theme.withColor(g, Theme.synthetic);
+                TextGraphics gg = Theme.withColor(g, Theme.selected.synthetic);
                 printMaybeReversed(gg, start.withRelativeColumn(initialOffset), "// " + annotation, false);
                 start = start.withRelativeRow(1);
                 lines++;
@@ -278,13 +278,13 @@ public class Drawer {
 
             Object value = jsonValue.getValue();
             if (null==value) {
-                var g_num = Theme.withColor(g, Theme.value_null);
+                var g_num = Theme.withColor(g, Theme.selected.value_null);
                 possiblyChangeToDeletedColors(g_num, json, deleter);
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
             } else if (value instanceof String) {
                 String str = "\"" + (String)value + "\"";
-                TextGraphics g_str = Theme.withColor(g, Theme.value_str);
+                TextGraphics g_str = Theme.withColor(g, Theme.selected.value_str);
                 possiblyChangeToDeletedColors(g_str, json, deleter);
                 // todo: use actual screen width
                 int w = g.getSize().getColumns() - start.getColumn() - initialOffset;
@@ -327,7 +327,7 @@ public class Drawer {
                     int cr = Integer.parseInt(colorMatcher.group(1), 16);
                     int cg = Integer.parseInt(colorMatcher.group(2), 16);
                     int cb = Integer.parseInt(colorMatcher.group(3), 16);
-                    TextGraphics gg = Theme.withColor(g, Theme.synthetic);
+                    TextGraphics gg = Theme.withColor(g, Theme.selected.synthetic);
                     gg.putString(start.withRelativeColumn(initialOffset + 3 + str.length()), "//");
                     TextColor col = TextColor.Indexed.fromRGB(cr, cg, cb);
                     gg.setForegroundColor(col);
@@ -335,7 +335,7 @@ public class Drawer {
                 }
                 return lines;
             } else {
-                var g_num = Theme.withColor(g, Theme.value_num);
+                var g_num = Theme.withColor(g, Theme.selected.value_num);
                 possiblyChangeToDeletedColors(g_num, json, deleter);
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), formatNumber(value), json.isAtCursor());
                 return lines+1;
@@ -369,7 +369,7 @@ public class Drawer {
             countAnno += c;
             if (c==1) countAnno += " entry";
             else countAnno += " entries";
-            TextGraphics green = Theme.withColor(g, Theme.synthetic);
+            TextGraphics green = Theme.withColor(g, Theme.selected.synthetic);
             green.putString(pos2, countAnno);
             if (inFoldedContext && !jsonList.hasPins()) {
                 return 1;
@@ -388,7 +388,7 @@ public class Drawer {
                 String intro = "";
                 TerminalPosition pos4 = pos3;
                 if (it.isAggregate()) {
-                    g.setForegroundColor(Theme.synthetic);
+                    g.setForegroundColor(Theme.selected.synthetic);
                     g.putString(pos4.withColumn(2), "//");
                     intro = jsonList.aggregateComment + "() ";
                     if (pos4.getColumn()<=5) {
@@ -433,8 +433,8 @@ public class Drawer {
         if (null==deleter) return false;
         var shouldDelete = deleter.targets(node);
         if (shouldDelete) {
-            g.setForegroundColor(Theme.deleting_row_fg);
-            g.setBackgroundColor(Theme.deleting_row_bg);
+            g.setForegroundColor(Theme.selected.deleting_row_fg);
+            g.setBackgroundColor(Theme.selected.deleting_row_bg);
         }
         return shouldDelete;
     }
