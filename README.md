@@ -1,6 +1,9 @@
 # Java Json
 
-A simple folding JSON viewer for the terminal, written in Java.
+An open source interactive JSON viewer for the terminal. Includes useful features like folding, sort,
+multiple cursors, groupby, JSONL support, and more. Watch the demo below for a taste.
+
+![demo](doc/demo.gif)
 
 The basic functionality is there, it should be usable. There may still be some bugs though.
 
@@ -24,36 +27,44 @@ Available features:
 Missing features:
 - support of right-to-left scripts
 
-## Testing
+## Installation
+
+To install, grab the `jar` file from the latest release at this link:
+[https://github.com/jean-philippe-martin/JavaJson/releases/latest](https://github.com/jean-philippe-martin/JavaJson/releases/latest)
+
+You can then run it with `java -jar <thejarfile> <your JSON file>`.
+I recommend setting up an alias (perhaps call it `jj`).
+
+You can download example JSON files from 
+[https://github.com/jean-philippe-martin/JavaJson/tree/main/testdata](https://github.com/jean-philippe-martin/JavaJson/tree/main/testdata)
+
+The program will work even with old versions of Java. If you don't already have Java on your computer,
+I recommend downloading a recent version of OpenJDK.
+
+On MacOS, the command is:
 
 ```
-mvn test
+brew install openjdk
 ```
 
-## Building (without tests)
+You can also [download it directly online](https://jdk.java.net/24/).
+
+## Getting started
+
+Starting JavaJson with a demo file will look something like this:
 
 ```
-mvn package -DskipTests
+java -jar JavaJson-1.11-jar-with-dependencies.jar testdata/demo.json	
 ```
 
-## Running
+Then you can use the arrow keys to navigate, <key>H</key> for help, 
+and <key>M</key> to open the main menu.
 
-```
-java -jar target/JavaJson-1.12-SNAPSHOT-jar-with-dependencies.jar testdata/list.json
-```
+The file can be in `JSON` or `JSONL` format (JSONL = each individual line is valid JSON).
 
-(If you're using a release JAR instead of building your own then adjust the jar's file name
-as needed.)
+You can add `--theme light` or `--theme dark` to choose colors that fit with a light or dark background in
+your terminal. Or even `--theme bw` for simple black-on-white text.
 
-(Change the input file as desired)
+## Documentation
 
-The file can be in `JSON` or `JSONL` format (JSONL = each individual line is valid JSON). 
-
-You can add `--theme light` or `--theme dark` to choose colors that fit with a light or dark background in your
-terminal. Or even `--theme bw` for simple black-on-white text.
-
-Use the up and down arrows to navigate. h for help, q to quit.
-
-## Intro to each feature
-
-See the "[features](doc/features.md)" page.
+For more information, read the documentation on [this page](doc/features.md).
