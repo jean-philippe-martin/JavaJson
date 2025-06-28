@@ -62,9 +62,10 @@ public class Main {
                 "----------------[ Movement ]----------------\n"+
                 "up/down         : navigate line             \n"+
                 "pg up / pg dn   : navigate page             \n"+
-                "home / g        : beginning of document \n"+
-                "end / G         : end of document \n"+
+                "home / g        : beginning of document      \n"+
+                "end / G         : end of document           \n"+
                 "shift + up/down : navigate sibling          \n"+
+                "shift + left    : parent                    \n"+
                 "                                            \n"+
                 "----------------[ View ]--------------------\n"+
                 "left / right    : fold / unfold             \n"+
@@ -850,8 +851,14 @@ public class Main {
                 return Action.NAV_PREV_COUSIN;
             }
             if (key.getKeyType() == KeyType.ArrowLeft) {
-                if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
+                if (key.isShiftDown()) {
+                    // shift-left: up
                     myJson.cursorParent();
+                } else {
+                    // left: fold/up
+                    if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
+                        myJson.cursorParent();
+                    }
                 }
             }
             if (key.getKeyType() == KeyType.ArrowRight
@@ -929,14 +936,6 @@ public class Main {
             }
             if (key.getCharacter() != null && ('s' == key.getCharacter())) {
                 return Action.SHOW_SORT_MENU;
-//                boolean allValues = myJson.atAnyCursor().stream().allMatch(x->x instanceof JsonNodeValue);
-//                if (!allValues) {
-//                    sortControl = new SortControl(myJson.atAnyCursor());
-//                    if  (null!=sortControl) {
-//                        String help = sortControl.getHelpText();
-//                        if (null != help) notificationText = help;
-//                    }
-//                }
             }
             if (pressed=='1') {
                 myJson.atCursor().setFoldedLevels(1);

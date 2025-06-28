@@ -1,0 +1,136 @@
+{
+    "automatic_annotations_demo": {
+        "colors": [
+            "#3997f5",
+            "#f53997",
+            "#3902f5" 
+        ],
+        "creation_timestamp": 1667950165,
+        "too_many_seconds": 3628800
+    },
+    "challenges": [
+        "sort characters by name",
+        "how many characters have blue eyes?",
+        "find characters with a sword"
+    ],
+    "fictional_characters": 
+        [
+  {
+    "character": "Walter White",
+    "attribute": "High school chemistry teacher turned meth kingpin",
+    "eye_color": "blue"
+  },
+  {
+    "character": "Geralt of Rivia",
+    "sword": "Silver Sword",
+    "attribute": "Monster hunter known as a Witcher",
+    "eye_color": "yellow (cat-like)"
+  },
+  {
+    "character": "Thundarr the Barbarian",
+    "sword": "Sun Sword",
+    "attribute": "Barbarian warrior in a post-apocalyptic world",
+    "eye_color": "blue"
+  },
+  {
+    "character": "Cloud Strife",
+    "sword": "Buster Sword",
+    "attribute": "Ex-SOLDIER with a mysterious past and a powerful Buster Sword",
+    "eye_color": "blue (Mako-infused)"
+  },
+  {
+    "character": "Tony Stark",
+    "attribute": "Genius inventor and wears the Iron Man suit",
+    "eye_color": "brown"
+  },
+  {
+    "character": "Indiana Jones",
+    "attribute": "Archaeologist and skilled with a whip",
+    "eye_color": "hazel"
+  },
+  {
+    "character": "Darth Vader",
+    "attribute": "Wields a red lightsaber and uses the Force",
+    "eye_color": "yellow (Sith), originally blue"
+  },
+  {
+    "character": "King Arthur",
+    "sword": "Excalibur",
+    "attribute": "Legendary king of Camelot and leader of the Knights of the Round Table",
+    "eye_color": "blue (varies by depiction)"
+  },
+  {
+    "character": "Frodo Baggins",
+    "sword": "Sting",
+    "attribute": "Hobbit who carries the One Ring to Mount Doom",
+    "eye_color": "blue"
+  },
+  {
+    "character": "Sherlock Holmes",
+    "attribute": "Brilliant detective with exceptional deductive reasoning",
+    "eye_color": "gray"
+  },
+  {
+    "character": "Sephiroth",
+    "sword": "Masamune",
+    "attribute": "Former SOLDIER and antagonist with god-like ambitions",
+    "eye_color": "green (glowing Mako-infused)"
+  },
+  {
+    "character": "Rick Sanchez",
+    "attribute": "Scientist with a portal gun and nihilistic worldview",
+    "eye_color": "brown"
+  },
+  {
+    "character": "Lara Croft",
+    "attribute": "Adventurer and expert with dual pistols",
+    "eye_color": "brown"
+  },
+  {
+    "character": "Elric of Melniboné",
+    "sword": "Stormbringer",
+    "attribute": "The last emperor of Melniboné and bearer of the sentient sword Stormbringer",
+    "eye_color": "crimson"
+  },
+  {
+    "character": "Katniss Everdeen",
+    "attribute": "Expert archer",
+    "eye_color": "gray"
+  },
+  {
+    "character": "Inuyasha",
+    "sword": "Tessaiga",
+    "attribute": "Half-demon with a powerful sword capable of slaying demons",
+    "eye_color": "gold"
+  },
+  {
+    "character": "Aragorn",
+    "sword": "Andúril",
+    "attribute": "Ranger and heir to the throne of Gondor",
+    "eye_color": "gray"
+  },
+  {
+    "character": "Link",
+    "sword": "Master Sword",
+    "attribute": "Hero of Hyrule destined to defeat Ganon and save Princess Zelda",
+    "eye_color": "blue"
+  },
+  {
+    "character": "The Doctor",
+    "attribute": "Time traveler with a sonic screwdriver",
+    "eye_color": "varies by incarnation"
+  },
+  {
+    "character": "Batman",
+    "attribute": "Master detective and martial artist with high-tech gadgets",
+    "eye_color": "blue"
+  },
+  {
+    "character": "Tony Stark",
+    "attribute": "Genius inventor and wears the Iron Man suit",
+    "eye_color": "brown"
+  }
+]
+
+    
+}

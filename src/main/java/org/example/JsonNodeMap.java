@@ -14,9 +14,21 @@ public class JsonNodeMap extends JsonNode {
     public static class Builder implements JsonNodeBuilder {
         private final LinkedHashMap<String, JsonNodeBuilder> children;
         private @Nullable Sorter sortOrder;
+        private boolean pinned = false;
+        private boolean folded = false;
 
         public Builder(LinkedHashMap<String, JsonNodeBuilder> children) {
             this.children = children;
+        }
+
+        public Builder pinned(boolean pinned) {
+            this.pinned = pinned;
+            return this;
+        }
+
+        public Builder folded(boolean folded) {
+            this.folded = folded;
+            return this;
         }
 
         // Optionally, set a sort order
@@ -32,6 +44,8 @@ public class JsonNodeMap extends JsonNode {
             // This also builds all the children, recursively.
             JsonNodeMap ret = new JsonNodeMap(children, parent, curToMe, root, true);
             ret.sort(sortOrder);
+            ret.setPinned(pinned);
+            ret.folded = folded;
             return ret;
         }
     }

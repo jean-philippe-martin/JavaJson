@@ -13,23 +13,38 @@ public class JsonNodeValue<T> extends JsonNode {
     // where you don't know in advance who the parent will be.
     public static class Builder<T> implements JsonNodeBuilder {
         protected T value;
+        boolean pinned = false;
+        boolean folded = false;
 
         public Builder(T newValue) {
             this.value = newValue;
+        }
+
+        public Builder pinned(boolean pinned) {
+            this.pinned = pinned;
+            return this;
+        }
+
+        public Builder folded(boolean folded) {
+            this.folded = folded;
+            return this;
         }
 
         @Override
         public JsonNodeValue<T> build(JsonNode parent, Cursor curToMe) {
             JsonNode root = null;
             if (null!=parent) root = parent.rootInfo.root;
-            return new JsonNodeValue<>(value, parent, curToMe, root);
+            JsonNodeValue<T> ret = new JsonNodeValue<>(value, parent, curToMe, root);
+            if (pinned) ret.setPinned(pinned);
+            if (folded) ret.folded = folded;
+            return ret;
         }
+
     }
 
     protected JsonNodeValue(T value, JsonNode parent, Cursor curToMe, JsonNode root) {
         super(parent, curToMe, root);
         this.value = value;
-        this.folded = false;
         autoAnnotate();
     }
 

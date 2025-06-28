@@ -13,9 +13,21 @@ public class JsonNodeList extends JsonNode {
     public static class Builder implements JsonNodeBuilder {
         private final JsonNodeBuilder[] children;
         private @Nullable Sorter sortOrder;
+        private boolean pinned = false;
+        private boolean folded = false;
 
         public Builder(JsonNodeBuilder[] children) {
             this.children = children;
+        }
+
+        public JsonNodeList.Builder pinned(boolean pinned) {
+            this.pinned = pinned;
+            return this;
+        }
+
+        public JsonNodeList.Builder folded(boolean folded) {
+            this.folded = folded;
+            return this;
         }
 
         // Optionally, set a sort order
@@ -31,6 +43,8 @@ public class JsonNodeList extends JsonNode {
             // This also builds all the children, recursively.
             JsonNodeList ret = new JsonNodeList(children, parent, curToMe, root, true);
             ret.sort(sortOrder);
+            ret.folded = folded;
+            ret.pinned = pinned;
             return ret;
         }
     }

@@ -45,7 +45,7 @@ public class OpDelete implements Operation {
         if (old instanceof JsonNodeValue) {
             JsonNodeValue node = (JsonNodeValue)old;
             if (instructions.targets(old)) return null;
-            return new JsonNodeValue.Builder(node.getValue());
+            return new JsonNodeValue.Builder(node.getValue()).pinned(node.pinned).folded(node.folded);
         } else if (old instanceof JsonNodeMap) {
             JsonNodeMap node = (JsonNodeMap)old;
             LinkedHashMap<String, JsonNodeBuilder> map = new LinkedHashMap<>();
@@ -55,7 +55,7 @@ public class OpDelete implements Operation {
                 JsonNodeBuilder kidBuilder = rebuild(kid);
                 if (null!=kidBuilder) map.put(k, kidBuilder);
             }
-            return new JsonNodeMap.Builder(map);
+            return new JsonNodeMap.Builder(map).folded(node.folded).pinned(node.pinned);
         } else if (old instanceof JsonNodeList) {
             JsonNodeList node = (JsonNodeList)old;
             ArrayList<JsonNodeBuilder> children = new ArrayList<>();
@@ -68,7 +68,8 @@ public class OpDelete implements Operation {
                 }
                 it = it.next();
             }
-            return new JsonNodeList.Builder(children.toArray(new JsonNodeBuilder[]{}));
+            return new JsonNodeList.Builder(children.toArray(new JsonNodeBuilder[]{}))
+                    .pinned(node.pinned).folded(node.folded);
         } else {
             throw new RuntimeException("Unexpected node type: " + old.getClass());
         }
