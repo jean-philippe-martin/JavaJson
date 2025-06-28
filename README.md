@@ -5,8 +5,6 @@ multiple cursors, groupby, JSONL support, and more. Watch the demo below for a t
 
 ![demo](doc/demo.gif)
 
-The basic functionality is there, it should be usable. There may still be some bugs though.
-
 Available features:
 
 - parse and display JSON files or JSONL files
