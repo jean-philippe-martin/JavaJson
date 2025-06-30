@@ -70,7 +70,7 @@ public class Main {
                 "----------------[ View ]--------------------\n"+
                 "left / right    : fold / unfold             \n"+
                 "p               : pin (show despite folds)  \n"+
-                "1/2/3           : fold after this many levels\n" +
+                "0/1/2/3/...     : fold after this many levels\n" +
                 "                                            \n"+
                 "----------------[ Multicursor ]-------------\n"+
                 "f / \"/\"         : find                      \n"+
@@ -84,7 +84,7 @@ public class Main {
                 "b               : groupby sel. key(s)       \n"+
                 "d               : delete parts of the doc   \n"+
                 "s               : sort selected array(s)    \n"+
-                "ENTER           : parse as JSON             \n"+
+                "ENTER           : value menu: copy/parse/...\n"+
                 "v               : paste a new document      \n"+
                 "shift-Z         : undo last transform       \n"+
                 "                                            \n"+
@@ -940,6 +940,11 @@ public class Main {
             }
             if (key.getCharacter() != null && ('s' == key.getCharacter())) {
                 return Action.SHOW_SORT_MENU;
+            }
+            if (pressed=='0') {
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.folded = true;
+                }
             }
             if (pressed=='1') {
                 for (JsonNode node : myJson.atAnyCursor()) {
