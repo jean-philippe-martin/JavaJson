@@ -6,6 +6,8 @@ import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
+import org.example.Operation;
+import org.example.OperationList;
 import org.jetbrains.annotations.Nullable;
 
 public class MainMenu {
@@ -26,6 +28,7 @@ public class MainMenu {
         Action.UNION,
         Action.GROUPBY,
         Action.SHOW_DELETE_MENU,
+        Action.UNDO,
         Action.SHOW_HELP_SCREEN,
         Action.QUIT
     };
@@ -39,6 +42,7 @@ public class MainMenu {
             "Your cursors must point to arrays",
             "Your cursor(s) must be in a map/string in a list",
             "Delete at the cursor, or more",
+            "Undo the last edit action",
             "Press any key to exit the help screen",
             "Quit this program",
             "Close this menu",
@@ -46,7 +50,11 @@ public class MainMenu {
     };
     // the max allowed row value
     private final int maxRow = help.length-2;
+    private OperationList opsList;
 
+    public MainMenu(OperationList opsList) {
+        this.opsList = opsList;
+    }
 
     public void init() {
         row = 0;
@@ -67,6 +75,7 @@ public class MainMenu {
                     "│ +: union selected arrays    │\n"+
                     "│ b: group by selected key(s) │\n"+
                     "│ d: delete                   │\n"+
+                    "│ Z: undo                     │\n"+
                     "│ h: help                     │\n"+
                     "│ q: quit                     │\n"+
                     "├─────────────────────────────┤\n"+
@@ -74,6 +83,16 @@ public class MainMenu {
                     "╰─────────────────────────────╯\n";
 
         String[] lines = menu.split("\n");
+        Operation op = opsList.peek();
+        if (null!=op) {
+            StringBuilder txt = new StringBuilder("│ Z: undo " + op.toString());
+            while (txt.length()+1 < lines[8].length()) {
+                txt.append(' ');
+            }
+            txt.append('│');
+            lines[9] = txt.substring(0, lines[8].length());
+        }
+
         TerminalPosition top = TerminalPosition.TOP_LEFT_CORNER;
         TerminalPosition pos = top;
         int i=0;
@@ -112,7 +131,7 @@ public class MainMenu {
             return choice[row+2];
         }
         if (key.getKeyType()==KeyType.Character) {
-            switch (Character.toLowerCase(key.getCharacter())) {
+            switch (key.getCharacter()) {
                 case 'p': return Action.SHOW_ACTION_MENU;
                 case 'v': return Action.SHOW_PASTE_MENU;
                 case 'f': return Action.SHOW_FIND_MENU;
@@ -121,6 +140,7 @@ public class MainMenu {
                 case '+': return Action.UNION;
                 case 'b': return Action.GROUPBY;
                 case 'd': return Action.SHOW_DELETE_MENU;
+                case 'Z': return Action.UNDO;
                 case 'h': return Action.SHOW_HELP_SCREEN;
                 case 'q': return Action.QUIT;
             }

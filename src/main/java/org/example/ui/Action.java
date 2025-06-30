@@ -12,6 +12,7 @@ public enum Action {
     GROUPBY,
     UNION,
     DELETE,
+    UNDO,
     // Action at main cursor
     COPY_AT_CURSORS,
     ADD_COPY_AT_CURSORS,

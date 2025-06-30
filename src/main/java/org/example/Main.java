@@ -75,7 +75,7 @@ public class Main {
                 "----------------[ Multicursor ]-------------\n"+
                 "f / \"/\"         : find                      \n"+
                 "e / *           : select all children       \n"+
-                "n / N           : navigate cursors          \n"+
+                "n / N           : next/prev cursor          \n"+
                 "ESC             : remove secondary cursors  \n"+
                 "                                            \n"+
                 "----------------[ Transform ]---------------\n"+
@@ -619,7 +619,7 @@ public class Main {
                 if (null!=help) notificationText = help;
                 return true;
             case SHOW_MAIN_MENU:
-                mainMenu = new MainMenu();
+                mainMenu = new MainMenu(operationList);
                 notificationText = "Hint: the shortcut keys here work even if the menu is not open";
                 return true;
             case SHOW_DELETE_MENU:
@@ -641,6 +641,15 @@ public class Main {
                 sortControl = null;
                 deleteMenu = null;
                 deleter = null;
+                return true;
+            case UNDO:
+                Operation op = operationList.peek();
+                if (null!=op) {
+                    notificationText = "undo " + op.toString();
+                    myJson = operationList.undo();
+                    myJson.rootInfo.fixCursors();
+                }
+                mainMenu = null;
                 return true;
         }
         return true;
@@ -927,40 +936,51 @@ public class Main {
                 return Action.UNION;
             }
             if (key.getCharacter() != null && ('Z' == key.getCharacter())) {
-                Operation op = operationList.peek();
-                if (null!=op) {
-                    notificationText = "undo " + op.toString();
-                    myJson = operationList.undo();
-                    myJson.rootInfo.fixCursors();
-                }
+                return Action.UNDO;
             }
             if (key.getCharacter() != null && ('s' == key.getCharacter())) {
                 return Action.SHOW_SORT_MENU;
             }
             if (pressed=='1') {
-                myJson.atCursor().setFoldedLevels(1);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(1);
+                }
             }
             if (pressed=='2') {
-                myJson.atCursor().setFoldedLevels(2);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(2);
+                }
             }
             if (pressed=='3') {
-                myJson.atCursor().setFoldedLevels(3);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(3);
+                }
             }
             if (pressed=='4') {
-                myJson.atCursor().setFoldedLevels(4);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(4);
+                }
             }
             if (pressed=='5') {
-                myJson.atCursor().setFoldedLevels(5);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(5);
+                }
             }
             if (pressed=='6') {
-                myJson.atCursor().setFoldedLevels(6);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(6);
+                }
             }
             if (pressed=='7') {
-                myJson.atCursor().setFoldedLevels(7);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(7);
+                }
             }
             if (pressed=='9') {
                 // unfold everything
-                myJson.atCursor().setFoldedLevels(999);
+                for (JsonNode node : myJson.atAnyCursor()) {
+                    node.setFoldedLevels(999);
+                }
             }
             if (pressed=='m') {
                 return Action.SHOW_MAIN_MENU;
