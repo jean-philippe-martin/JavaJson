@@ -55,8 +55,8 @@ Starting JavaJson with a demo file will look something like this:
 java -jar JavaJson-1.11-jar-with-dependencies.jar testdata/demo.json	
 ```
 
-Then you can use the arrow keys to navigate, <key>H</key> for help, 
-and <key>M</key> to open the main menu.
+Then you can use the arrow keys to navigate, <kbd>H</kbd> for help, 
+and <kbd>M</kbd> to open the main menu.
 
 The file can be in `JSON` or `JSONL` format (JSONL = each individual line is valid JSON).
 
