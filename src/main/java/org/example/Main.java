@@ -60,7 +60,7 @@ public class Main {
 
     private static final String keys_help =
                 "----------------[ Movement ]----------------\n"+
-                "up/down         : navigate line             \n"+
+                "up / down       : navigate line             \n"+
                 "pg up / pg dn   : navigate page             \n"+
                 "home / g        : beginning of document      \n"+
                 "end / G         : end of document           \n"+
@@ -232,6 +232,19 @@ public class Main {
         for (JsonNode node : myJson.atAnyCursor()) {
             Object value = node.getValue();
             String foo = (null==value?"null":value.toString());
+            if (ret.isEmpty()) {
+                ret = foo;
+            } else {
+                ret = ret + "\n" + foo;
+            }
+        }
+        return ret;
+    }
+
+    public String stringifyAllKeys() {
+        String ret = "";
+        for (JsonNode node : myJson.atAnyCursor()) {
+            String foo = node.asCursor().toString();
             if (ret.isEmpty()) {
                 ret = foo;
             } else {
@@ -579,6 +592,12 @@ public class Main {
             case ADD_COPY_AT_CURSORS:
                 copyToClipboard(stringifyAllCursors(), true);
                 return true;
+            case COPY_PATH_AT_CURSORS:
+                copyToClipboard(stringifyAllKeys(), false);
+                return true;
+            case ADD_PATH_TO_COPY_AT_CURSORS:
+                copyToClipboard(stringifyAllKeys(), true);
+                return true;
             case SHOW_HELP_SCREEN:
                 mainMenu = null;
                 helpScreen(terminal, screen);
@@ -798,6 +817,12 @@ public class Main {
             } else if (choice==ActionMenu.Choice.ADD_TO_COPY) {
                 actionMenu = null;
                 return Action.ADD_COPY_AT_CURSORS;
+            } else if (choice==ActionMenu.Choice.COPY_PATH) {
+                actionMenu = null;
+                return Action.COPY_PATH_AT_CURSORS;
+            } else if (choice==ActionMenu.Choice.ADD_PATH_TO_COPY) {
+                actionMenu = null;
+                return Action.ADD_PATH_TO_COPY_AT_CURSORS;
             } else if (choice==ActionMenu.Choice.NONE) {
                 return Action.NOTHING;
             }
@@ -994,6 +1019,11 @@ public class Main {
                 return Action.COPY_AT_CURSORS;
             } else if (pressed=='C') {
                 return Action.ADD_COPY_AT_CURSORS;
+            }
+            if (pressed=='k') {
+                return Action.COPY_PATH_AT_CURSORS;
+            } else if (pressed=='K') {
+                return Action.ADD_PATH_TO_COPY_AT_CURSORS;
             }
             if (pressed=='v') {
                 return Action.SHOW_PASTE_MENU;

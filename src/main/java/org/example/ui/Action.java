@@ -16,6 +16,8 @@ public enum Action {
     // Action at main cursor
     COPY_AT_CURSORS,
     ADD_COPY_AT_CURSORS,
+    COPY_PATH_AT_CURSORS,
+    ADD_PATH_TO_COPY_AT_CURSORS,
     // Menus
     SHOW_MAIN_MENU,
     SHOW_HELP_SCREEN,

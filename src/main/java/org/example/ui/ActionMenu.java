@@ -23,6 +23,8 @@ public class ActionMenu {
         PARSE_IGNORE_ESCAPES,
         COPY,
         ADD_TO_COPY,
+        COPY_PATH,
+        ADD_PATH_TO_COPY
     }
 
     public void init() {
@@ -40,6 +42,8 @@ public class ActionMenu {
                         "│ P: parse JSON and escapes  │\n"+
                         "│ c: copy                    │\n"+
                         "│ shift-C: add to copy       │\n"+
+                        "│ k: copy key (path)         │\n"+
+                        "│ shift-K: add key to copy   │\n"+
                         "├────────────────────────────┤\n"+
                         "│ esc : cancel               │\n"+
                         "╰────────────────────────────╯\n";
@@ -82,6 +86,8 @@ public class ActionMenu {
             if (row==0) return Choice.PARSE_IGNORE_ESCAPES;
             if (row==1) return Choice.PARSE_AND_INTERPRET;
             if (row==2) return Choice.COPY;
+            if (row==3) return Choice.COPY_PATH;
+            if (row==4) return Choice.ADD_PATH_TO_COPY;
         }
         if (key.getKeyType()==KeyType.Character) {
             switch (Character.toLowerCase(key.getCharacter())) {
@@ -92,6 +98,8 @@ public class ActionMenu {
             switch (key.getCharacter()) {
                 case 'c': return Choice.COPY;
                 case 'C': return Choice.ADD_TO_COPY;
+                case 'k': return Choice.COPY_PATH;
+                case 'K': return Choice.ADD_PATH_TO_COPY;
             }
         }
         return Choice.NONE;
