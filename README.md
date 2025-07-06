@@ -52,7 +52,7 @@ You can also [download it directly online](https://jdk.java.net/24/).
 Starting JavaJson with a demo file will look something like this:
 
 ```
-java -jar JavaJson-1.11-jar-with-dependencies.jar testdata/demo.json	
+java -jar JavaJson-1.12-jar-with-dependencies.jar testdata/demo.json	
 ```
 
 Then you can use the arrow keys to navigate, <kbd>H</kbd> for help, 
