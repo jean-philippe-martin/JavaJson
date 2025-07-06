@@ -31,7 +31,7 @@ To install, grab both the `jar` and the `jj` files from the latest release at th
 [https://github.com/jean-philippe-martin/JavaJson/releases/latest](https://github.com/jean-philippe-martin/JavaJson/releases/latest)
 
 You can then run the program with `./jj <your JSON file>`.
-I recommend putting both files in your PATH.
+I recommend putting `jj` and the `jar` file in your PATH.
 
 You can download example JSON files from 
 [https://github.com/jean-philippe-martin/JavaJson/tree/main/testdata](https://github.com/jean-philippe-martin/JavaJson/tree/main/testdata)
