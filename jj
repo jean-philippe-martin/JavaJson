@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# This script runs JavaJson with the specified input.
+# Feel free to modify it if you want to run a different version of Java.
+
+# 1. Find the jar file
+#    in either the same folder as this script, or target/ 
+
+DIR="$(dirname "$0")"
+TARGET="JavaJson-1.12-SNAPSHOT-jar-with-dependencies.jar"
+[ -f "${DIR}/${TARGET}" ] || TARGET="${DIR}/target/${TARGET}"
+
+if ! [ -f $TARGET ]; then
+  echo "$TARGET not found"
+  exit 1
+fi
+
+# 2. Execute the jar file
+
+java -jar "${TARGET}" "$@"
