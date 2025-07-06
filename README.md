@@ -27,11 +27,11 @@ Missing features:
 
 ## Installation
 
-To install, grab the `jar` file from the latest release at this link:
+To install, grab both the `jar` and the `jj` files from the latest release at this link:
 [https://github.com/jean-philippe-martin/JavaJson/releases/latest](https://github.com/jean-philippe-martin/JavaJson/releases/latest)
 
-You can then run it with `java -jar <thejarfile> <your JSON file>`.
-I recommend setting up an alias (perhaps call it `jj`).
+You can then run the program with `./jj <your JSON file>`.
+I recommend putting both files in your PATH.
 
 You can download example JSON files from 
 [https://github.com/jean-philippe-martin/JavaJson/tree/main/testdata](https://github.com/jean-philippe-martin/JavaJson/tree/main/testdata)
@@ -52,7 +52,7 @@ You can also [download it directly online](https://jdk.java.net/24/).
 Starting JavaJson with a demo file will look something like this:
 
 ```
-java -jar JavaJson-1.12-jar-with-dependencies.jar testdata/demo.json	
+./jj testdata/demo.json	
 ```
 
 Then you can use the arrow keys to navigate, <kbd>H</kbd> for help, 
