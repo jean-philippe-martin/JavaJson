@@ -7,7 +7,7 @@
 #    in either the same folder as this script, or target/ 
 
 DIR="$(dirname "$0")"
-TARGET="JavaJson-1.12-jar-with-dependencies.jar"
+TARGET="JavaJson-1.13-SNAPSHOT-jar-with-dependencies.jar"
 [ -f "${DIR}/${TARGET}" ] || TARGET="${DIR}/target/${TARGET}"
 
 if ! [ -f $TARGET ]; then
