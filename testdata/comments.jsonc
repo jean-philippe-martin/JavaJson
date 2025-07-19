@@ -1,0 +1,19 @@
+{
+                  // This is a single-line comment
+                  "name": "Jackson Config Example",
+                  /*
+                   * This is a multi-line comment.
+                   * It spans multiple lines for more detailed notes.
+                   */
+                  "version": "1.0",
+                  "settings": {
+                    "debugMode": true, // Another inline comment
+                    "logLevel": "DEBUG",
+                    "features": [
+                      "featureA", // Comment for feature A
+                      "featureB"  /* Comment for feature B */
+                    ]
+                  },
+                  # This is a YAML-style comment (if ALLOW_YAML_COMMENTS is enabled)
+                  "timestamp": 1678886400000
+                }

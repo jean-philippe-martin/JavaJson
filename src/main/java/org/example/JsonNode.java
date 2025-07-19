@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.cursor.*;
 import org.jetbrains.annotations.NotNull;
@@ -211,6 +212,13 @@ public abstract class JsonNode {
         return JsonNode.parseLines(allLines.toArray(String[]::new));
     }
 
+    private static ObjectMapper getObjectMapper() {
+        ObjectMapper ret = new ObjectMapper();
+        ret.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature(), true);
+        ret.configure(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature(), true); // for # comments
+        return ret;
+    }
+
     // Try to read as either JSON or JSONL.
     public static JsonNode parseLines(String[] lines) throws JsonProcessingException {
 
@@ -221,7 +229,7 @@ public abstract class JsonNode {
             i++;
             try {
                 if (l.isEmpty()) continue;
-                ObjectMapper parser = new ObjectMapper();
+                ObjectMapper parser = getObjectMapper();
                 Object parsed = parser.readValue(l, Object.class);
                 all.add(parsed);
             } catch (JsonProcessingException jpx) {
@@ -241,7 +249,7 @@ public abstract class JsonNode {
 
     public static JsonNode parseJson(String jsonLines) throws JsonProcessingException {
         // Parse it
-        ObjectMapper parser = new ObjectMapper();
+        ObjectMapper parser = getObjectMapper();
         Object parsed = parser.readValue(jsonLines, Object.class);
         return JsonNode.fromObject(parsed, null, new Cursor(), null);
     }
@@ -250,7 +258,7 @@ public abstract class JsonNode {
         // Remove escapes
         jsonLines = Pattern.compile("\\\\").matcher(jsonLines).replaceAll("\\\\\\\\");
         // Parse
-        ObjectMapper parser = new ObjectMapper();
+        ObjectMapper parser = getObjectMapper();
         Object parsed = parser.readValue(jsonLines, Object.class);
         return JsonNode.fromObject(parsed, null, new Cursor(), null);
     }
