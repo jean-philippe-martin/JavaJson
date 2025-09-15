@@ -8,13 +8,33 @@
 
 DIR="$(dirname "$0")"
 TARGET="JavaJson-1.14-SNAPSHOT-jar-with-dependencies.jar"
-[ -f "${DIR}/${TARGET}" ] || TARGET="${DIR}/target/${TARGET}"
+FOUND=""
 
-if ! [ -f $TARGET ]; then
+# Look for our jar file. 
+[ -f "${TARGET}" ] && FOUND="${TARGET}"
+[ -f "${DIR}/${TARGET}" ] && FOUND="${DIR}/${TARGET}"
+[ -f "${DIR}/target/${TARGET}" ] && FOUND="${DIR}/target/${TARGET}"
+
+# Not found? Maybe jj is symlinked, let's follow that.
+if [ -z "${FOUND}" ] && which readlink > /dev/null; then
+  # try readlink
+  DIR="$(dirname $(readlink $0))"
+  [ -f "${DIR}/${TARGET}" ] && FOUND="${DIR}/${TARGET}"
+  [ -f "${DIR}/target/${TARGET}" ] && FOUND="${DIR}/target/${TARGET}"
+fi
+
+if [ -z "${FOUND}" ] && which stat > /dev/null; then
+  # try stat in case readlink isn't installed
+  DIR="$(dirname $(stat -f%Y $0))"
+  [ -f "${DIR}/${TARGET}" ] && FOUND="${DIR}/${TARGET}"
+  [ -f "${DIR}/target/${TARGET}" ] && FOUND="${DIR}/target/${TARGET}"
+fi
+
+if ! [ -f $FOUND ]; then
   echo "$TARGET not found"
   exit 1
 fi
 
 # 2. Execute the jar file
 
-java -jar "${TARGET}" "$@"
+java -jar "${FOUND}" "$@"
