@@ -1068,14 +1068,14 @@ public class Main {
             System.out.println("(C) 2025 Jean-Philippe Martin");
             System.out.println();
             System.out.println("Usage:");
-            System.out.println("./jj myfile.json [--theme LIGHT|DARK|BW|WB] [--goto <path>]");
+            System.out.println("./jj.sh myfile.json [--theme LIGHT|DARK|BW|WB] [--goto <path>]");
             System.out.println("OR");
             System.out.println("java -jar JavaJson*.jar myfile.json --print <path>");
             System.out.println();
             System.out.println("Examples:");
-            System.out.println("./jj testdata/hello.json");
-            System.out.println("./jj testdata/hello.json --goto '.players[0].score'");
-            System.out.println("./jj testdata/hello.json --print '.players[*].name'");
+            System.out.println("./jj.sh testdata/hello.json");
+            System.out.println("./jj.sh testdata/hello.json --goto '.players[0].score'");
+            System.out.println("./jj.sh testdata/hello.json --print '.players[*].name'");
             System.out.println();
             System.out.println("Key bindings:");
             System.out.println(keys_help);

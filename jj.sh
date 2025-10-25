@@ -7,7 +7,7 @@
 #    in either the same folder as this script, or target/ 
 
 DIR="$(dirname "$0")"
-TARGET="JavaJson-1.15-SNAPSHOT-jar-with-dependencies.jar"
+TARGET="JavaJson-1.15-jar-with-dependencies.jar"
 FOUND=""
 
 # Look for our jar file. 
