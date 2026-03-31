@@ -7,9 +7,10 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hjson.JsonArray;
+import org.hjson.JsonObject;
+import org.hjson.JsonValue;
+import org.hjson.ParseException;
 import org.example.cursor.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -212,27 +213,64 @@ public abstract class JsonNode {
         return JsonNode.parseLines(allLines.toArray(String[]::new));
     }
 
-    private static ObjectMapper getObjectMapper() {
-        ObjectMapper ret = new ObjectMapper();
-        ret.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS.mappedFeature(), true);
-        ret.configure(JsonReadFeature.ALLOW_YAML_COMMENTS.mappedFeature(), true); // for # comments
-        return ret;
+    /** Convert an hjson {@link JsonValue} tree to plain Java objects for {@link #fromObject}. */
+    private static Object jsonValueToPlain(JsonValue v) {
+        if (v == null || v.isNull()) {
+            return null;
+        }
+        if (v.isBoolean()) {
+            return v.asBoolean();
+        }
+        if (v.isString()) {
+            return v.asString();
+        }
+        if (v.isNumber()) {
+            double d = v.asDouble();
+            if (!Double.isNaN(d) && !Double.isInfinite(d)) {
+                long lv = v.asLong();
+                if (lv == d) {
+                    if (lv >= Integer.MIN_VALUE && lv <= Integer.MAX_VALUE) {
+                        return (int) lv;
+                    }
+                    return lv;
+                }
+            }
+            return d;
+        }
+        if (v.isArray()) {
+            JsonArray a = v.asArray();
+            ArrayList<Object> list = new ArrayList<>(a.size());
+            for (JsonValue item : a) {
+                list.add(jsonValueToPlain(item));
+            }
+            return list;
+        }
+        if (v.isObject()) {
+            JsonObject o = v.asObject();
+            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+            for (JsonObject.Member m : o) {
+                map.put(m.getName(), jsonValueToPlain(m.getValue()));
+            }
+            return map;
+        }
+        throw new IllegalStateException("Unsupported JsonValue: " + v.getType());
+    }
+
+    private static Object parseHjsonToPlain(String text) {
+        return jsonValueToPlain(JsonValue.readHjson(text));
     }
 
     // Try to read as either JSON or JSONL.
-    public static JsonNode parseLines(String[] lines) throws JsonProcessingException {
+    public static JsonNode parseLines(String[] lines) {
 
         // Is each line individually valid?
         List<Object> all = new ArrayList<>();
-        int i=0;
         for (String l : lines) {
-            i++;
             try {
                 if (l.isEmpty()) continue;
-                ObjectMapper parser = getObjectMapper();
-                Object parsed = parser.readValue(l, Object.class);
+                Object parsed = parseHjsonToPlain(l);
                 all.add(parsed);
-            } catch (JsonProcessingException jpx) {
+            } catch (ParseException jpx) {
                 // Try the thing as a whole
                 String linesTogether = String.join("\n", lines);
                 return JsonNode.parseJson(linesTogether);
@@ -247,19 +285,15 @@ public abstract class JsonNode {
         return ret;
     }
 
-    public static JsonNode parseJson(String jsonLines) throws JsonProcessingException {
-        // Parse it
-        ObjectMapper parser = getObjectMapper();
-        Object parsed = parser.readValue(jsonLines, Object.class);
+    public static JsonNode parseJson(String jsonLines) {
+        Object parsed = parseHjsonToPlain(jsonLines);
         return JsonNode.fromObject(parsed, null, new Cursor(), null);
     }
 
-    public static JsonNode parseJsonIgnoreEscapes(String jsonLines) throws JsonProcessingException {
+    public static JsonNode parseJsonIgnoreEscapes(String jsonLines) {
         // Remove escapes
         jsonLines = Pattern.compile("\\\\").matcher(jsonLines).replaceAll("\\\\\\\\");
-        // Parse
-        ObjectMapper parser = getObjectMapper();
-        Object parsed = parser.readValue(jsonLines, Object.class);
+        Object parsed = parseHjsonToPlain(jsonLines);
         return JsonNode.fromObject(parsed, null, new Cursor(), null);
     }
 
