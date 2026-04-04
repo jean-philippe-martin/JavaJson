@@ -7,8 +7,11 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.hjson.HjsonDocument;
+import org.hjson.HjsonOptions;
 import org.hjson.JsonArray;
 import org.hjson.JsonObject;
+import org.hjson.JsonObject.Member;
 import org.hjson.JsonValue;
 import org.hjson.ParseException;
 import org.example.cursor.*;
@@ -207,6 +210,29 @@ public abstract class JsonNode {
     protected boolean isAggregate;
     protected @Nullable JsonNode aggregate;
 
+    /**
+     * Verbatim Hjson trivia immediately before this value in the source (between ':' and value for
+     * object members; before each array element; before root). Set when parsing with preserved comments.
+     */
+    protected @Nullable String valueLeadingTrivia;
+    /**
+     * Verbatim Hjson trivia after this value in the source (before {@code ,} or closing delimiter;
+     * includes comma when followed by more members/elements). Set when parsing with preserved comments.
+     */
+    protected @Nullable String valueTrailingTrivia;
+    /** When true, {@link #valueLeadingTrivia} is shown as a single truncated line with an ellipsis. */
+    protected boolean commentFolded = true;
+    /** Suppress auto value annotations (epoch dates, etc.) when the source had comments near this entry. */
+    protected boolean suppressSyntheticAnnotation = false;
+
+    private static final HjsonOptions HJSON_PRESERVE_COMMENTS;
+
+    static {
+        HjsonOptions o = new HjsonOptions();
+        o.setPreserveComments(true);
+        HJSON_PRESERVE_COMMENTS = o;
+    }
+
     public static JsonNode parse(Path path) throws IOException {
         // Read the file
         List<String> allLines = Files.readAllLines(path);
@@ -260,41 +286,155 @@ public abstract class JsonNode {
         return jsonValueToPlain(JsonValue.readHjson(text));
     }
 
+    /** Parse with comment preservation and attach leading trivia to nodes. */
+    public static JsonNode parseHjsonWithComments(String text) {
+        HjsonDocument doc = JsonValue.readHjsonDocument(text, HJSON_PRESERVE_COMMENTS);
+        JsonNode root = JsonNode.fromObject(jsonValueToPlain(doc.getRoot()), null, new Cursor(), null);
+        applyDocumentAndMemberTrivia(root, doc);
+        return root;
+    }
+
+    /** True if preserved trivia likely contains a user comment (not just whitespace between tokens). */
+    public static boolean triviaLooksLikeUserComment(@Nullable String t) {
+        if (t == null || t.trim().isEmpty()) {
+            return false;
+        }
+        return t.contains("//") || t.contains("/*") || t.contains("#");
+    }
+
+    private static void applyDocumentAndMemberTrivia(JsonNode root, HjsonDocument doc) {
+        String lt = doc.getLeadingTrivia();
+        if (triviaLooksLikeUserComment(lt)) {
+            root.setValueLeadingTrivia(lt);
+        }
+        String tt = doc.getTrailingTrivia();
+        if (triviaLooksLikeUserComment(tt)) {
+            root.setValueTrailingTrivia(tt);
+        }
+        applyLeadingTriviaRecursive(root, doc.getRoot());
+    }
+
+    /** Combine Hjson trivia after a value with optional comma + trivia after comma (inline comments). */
+    static @Nullable String composeMemberTrailingTrivia(Member m) {
+        String ta = m.getTriviaAfterValue();
+        if (ta == null) {
+            ta = "";
+        }
+        if (!m.hasCommaAfter()) {
+            return ta.trim().isEmpty() ? null : ta;
+        }
+        String tw = m.getTriviaAfterComma();
+        if (tw == null) {
+            tw = "";
+        }
+        String combined = ta + "," + tw;
+        return combined.trim().isEmpty() ? null : combined;
+    }
+
+    static @Nullable String composeElementTrailingTrivia(JsonArray a, int index) {
+        String ta = a.getElementTriviaAfterValue(index);
+        if (ta == null) {
+            ta = "";
+        }
+        if (!a.getElementHasCommaAfter(index)) {
+            return ta.trim().isEmpty() ? null : ta;
+        }
+        String tw = a.getElementTriviaAfterComma(index);
+        if (tw == null) {
+            tw = "";
+        }
+        String combined = ta + "," + tw;
+        return combined.trim().isEmpty() ? null : combined;
+    }
+
+    private static void applyLeadingTriviaRecursive(@Nullable JsonNode node, @Nullable JsonValue v) {
+        if (node == null || v == null) {
+            return;
+        }
+        if (node instanceof JsonNodeMap && v.isObject()) {
+            JsonObject o = v.asObject();
+            for (JsonObject.Member m : o) {
+                JsonNodeMap map = (JsonNodeMap) node;
+                JsonNode ch = map.getChild(m.getName());
+                String lbn = m.getLeadingBeforeName();
+                String between = m.getBetweenNameAndColon();
+                String tbv = m.getLeadingBeforeValue();
+                map.applyMemberKeyTrivia(m.getName(), lbn, between, tbv);
+                if (triviaLooksLikeUserComment(lbn) || triviaLooksLikeUserComment(between) || triviaLooksLikeUserComment(tbv)) {
+                    ch.setSuppressSyntheticAnnotation(true);
+                }
+                TriviaLineSplit beforeVal = TriviaLineSplit.split(tbv);
+                String valueContinuation = beforeVal.fromFirstNewlineInclusive;
+                if (!valueContinuation.isEmpty()) {
+                    ch.setValueLeadingTrivia(valueContinuation);
+                }
+                String trail = composeMemberTrailingTrivia(m);
+                if (triviaLooksLikeUserComment(trail)) {
+                    ch.setValueTrailingTrivia(trail);
+                }
+                applyLeadingTriviaRecursive(ch, m.getValue());
+            }
+        } else if (node instanceof JsonNodeList && v.isArray()) {
+            JsonArray a = v.asArray();
+            JsonNodeList list = (JsonNodeList) node;
+            for (int i = 0; i < a.size(); i++) {
+                String el = a.getElementLeadingBefore(i);
+                JsonNode ch = list.get(i);
+                if (triviaLooksLikeUserComment(el)) {
+                    ch.setValueLeadingTrivia(el);
+                }
+                String trail = composeElementTrailingTrivia(a, i);
+                if (triviaLooksLikeUserComment(trail)) {
+                    ch.setValueTrailingTrivia(trail);
+                }
+                applyLeadingTriviaRecursive(ch, a.get(i));
+            }
+        }
+    }
+
     // Try to read as either JSON or JSONL.
     public static JsonNode parseLines(String[] lines) {
+        String joined = String.join("\n", lines);
+        // Prefer one full document first: per-line parsing of fragments like "[" can trigger
+        // unbounded array growth in the Hjson comment-preserving parser (no EOF in its array loop).
+        try {
+            return parseHjsonWithComments(joined);
+        } catch (ParseException ignored) {
+            // Fall through: JSONL or other per-line valid inputs.
+        }
 
-        // Is each line individually valid?
-        List<Object> all = new ArrayList<>();
+        List<JsonNode> lineRoots = new ArrayList<>();
         for (String l : lines) {
             try {
                 if (l.isEmpty()) continue;
-                Object parsed = parseHjsonToPlain(l);
-                all.add(parsed);
+                lineRoots.add(parseHjsonWithComments(l));
             } catch (ParseException jpx) {
-                // Try the thing as a whole
-                String linesTogether = String.join("\n", lines);
-                return JsonNode.parseJson(linesTogether);
+                return parseHjsonWithComments(joined);
             }
         }
-        if (all.size()==1) {
+        if (lineRoots.size()==1) {
             // special case: a single line. Let's not say this is JSONL.
-            return JsonNode.fromObject(all.get(0), null, new Cursor(), null);
+            return lineRoots.get(0);
         }
-        JsonNode ret = JsonNode.fromObject(all, null, new Cursor(), null);
+        if (lineRoots.isEmpty()) {
+            return JsonNode.fromObject(new ArrayList<>(), null, new Cursor(), null);
+        }
+        JsonNodeBuilder[] builders = lineRoots.stream()
+                .map(JsonNode.Builder::fromNode)
+                .toArray(JsonNodeBuilder[]::new);
+        JsonNode ret = new JsonNodeList.Builder(builders).build(null, new Cursor());
         ret.setAnnotation("JSONL");
         return ret;
     }
 
     public static JsonNode parseJson(String jsonLines) {
-        Object parsed = parseHjsonToPlain(jsonLines);
-        return JsonNode.fromObject(parsed, null, new Cursor(), null);
+        return parseHjsonWithComments(jsonLines);
     }
 
     public static JsonNode parseJsonIgnoreEscapes(String jsonLines) {
         // Remove escapes
         jsonLines = Pattern.compile("\\\\").matcher(jsonLines).replaceAll("\\\\\\\\");
-        Object parsed = parseHjsonToPlain(jsonLines);
-        return JsonNode.fromObject(parsed, null, new Cursor(), null);
+        return parseHjsonWithComments(jsonLines);
     }
 
     /** Create a JsonState object to wrap the given JSON object. **/
@@ -367,6 +507,56 @@ public abstract class JsonNode {
     public String getAnnotation() { return this.annotation; }
     public void setAnnotation(String a) {
         this.annotation = a;
+    }
+
+    public @Nullable String getValueLeadingTrivia() {
+        return valueLeadingTrivia;
+    }
+
+    public void setValueLeadingTrivia(@Nullable String trivia) {
+        this.valueLeadingTrivia = trivia;
+    }
+
+    public boolean hasValueLeadingTrivia() {
+        return triviaLooksLikeUserComment(valueLeadingTrivia);
+    }
+
+    public @Nullable String getValueTrailingTrivia() {
+        return valueTrailingTrivia;
+    }
+
+    public void setValueTrailingTrivia(@Nullable String trivia) {
+        this.valueTrailingTrivia = trivia;
+    }
+
+    public boolean hasValueTrailingTrivia() {
+        return triviaLooksLikeUserComment(valueTrailingTrivia);
+    }
+
+    /** True when preserved Hjson leading or trailing trivia should hide synthetic value annotations (e.g. epoch dates). */
+    public boolean hasPreservedSourceCommentTrivia() {
+        return hasValueLeadingTrivia() || hasValueTrailingTrivia();
+    }
+
+    public boolean getSuppressSyntheticAnnotation() {
+        return suppressSyntheticAnnotation;
+    }
+
+    public void setSuppressSyntheticAnnotation(boolean suppressSyntheticAnnotation) {
+        this.suppressSyntheticAnnotation = suppressSyntheticAnnotation;
+    }
+
+    /** Skip derived annotations (e.g. human-readable epoch) when source comments exist on this value or before its key. */
+    public boolean shouldSkipSyntheticAnnotation() {
+        return hasPreservedSourceCommentTrivia() || suppressSyntheticAnnotation;
+    }
+
+    public boolean getCommentFolded() {
+        return commentFolded;
+    }
+
+    public void setCommentFolded(boolean commentFolded) {
+        this.commentFolded = commentFolded;
     }
 
     /**

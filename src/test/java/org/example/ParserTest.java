@@ -1,6 +1,10 @@
 package org.example;
 
 import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -175,6 +179,155 @@ public class ParserTest {
         JsonNodeMap jsm = (JsonNodeMap) json;
         String bye = (String)jsm.getChild("bye").getValue();
         assertEquals("toil\\nnewline", bye);
+    }
+
+    /** Hjson allows comments; standard JSON does not. */
+    @Test
+    public void testParseWithComments() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                "  // line comment\n" +
+                "  \"count\": 42,\n" +
+                "  /* block\n" +
+                "     comment */ \"label\": \"ok\"\n" +
+                "}");
+        assertTrue(json instanceof JsonNodeMap);
+        JsonNodeMap map = (JsonNodeMap) json;
+        assertEquals(42, map.getChild("count").getValue());
+        assertEquals("ok", map.getChild("label").getValue());
+    }
+
+    @Test
+    public void testLeadingTriviaBeforeValue() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                "  \"k\":\n" +
+                "  // above value\n" +
+                "  99\n" +
+                "}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        JsonNode k = map.getChild("k");
+        assertTrue(k.hasValueLeadingTrivia());
+        assertTrue(k.getValueLeadingTrivia().contains("above value"));
+        assertEquals(99, k.getValue());
+    }
+
+    @Test
+    public void testInlineCommentAfterCommaButBeforeNewline() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                "  \"k\": \"hello\",\n" +
+                "  \"l\": \"beautiful\", // beautiful comment\n" +
+                "  \"m\": \"world\"\n" +
+                "}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        JsonNode l = map.getChild("l");
+        assertTrue(l.hasValueTrailingTrivia());
+        assertTrue(l.getValueTrailingTrivia().contains("beautiful comment"));
+        assertEquals("beautiful", l.getValue());
+    }
+
+    @Test
+    public void testInlineCommentAfterCommaAndAfterNewline() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                "  \"k\": \"hello\",\n" +
+                "  \"l\": \"beautiful\",\n" + 
+                "  // world comment\n" +
+                "  \"m\": \"world\"\n" +
+                "}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        JsonNode l = map.getChild("l");
+        JsonNode m = map.getChild("m");
+        assertFalse(l.hasValueTrailingTrivia());
+        assertTrue(map.getKeyLeadingTrivia("m").contains("world comment"));
+        assertEquals("beautiful", l.getValue());
+    }
+
+    @Test
+    public void testTrailingTriviaInlineAfterComma() throws Exception {
+        JsonNode json = JsonNode.parseJson("{\"debugMode\": true, // after true\n\"logLevel\": \"x\"}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        JsonNode dm = map.getChild("debugMode");
+        assertTrue(dm.hasValueTrailingTrivia());
+        assertTrue(dm.getValueTrailingTrivia().contains("after true"));
+    }
+
+    @Test
+    public void testTrailingTriviaAfterArrayElement() throws Exception {
+        JsonNode json = JsonNode.parseJson("[\"featureA\", // for A\n\"featureB\"]");
+        JsonNodeList list = (JsonNodeList) json;
+        assertTrue(list.get(0).hasValueTrailingTrivia());
+        assertTrue(list.get(0).getValueTrailingTrivia().contains("for A"));
+    }
+
+    @Test
+    public void testTriviaLineSplitUtility() {
+        TriviaLineSplit noNl = TriviaLineSplit.split(" // only same line ");
+        assertEquals(" // only same line ", noNl.sameLineBeforeFirstNewline);
+        assertEquals("", noNl.fromFirstNewlineInclusive);
+
+        TriviaLineSplit twoLines = TriviaLineSplit.split(" // same\n  // next");
+        assertEquals(" // same", twoLines.sameLineBeforeFirstNewline);
+        assertTrue(twoLines.fromFirstNewlineInclusive.startsWith("\n"));
+        assertTrue(twoLines.fromFirstNewlineInclusive.contains("next"));
+    }
+
+    @Test
+    public void testJsonNodeMapLineSplitsFromParse() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                "  // before key a\n" +
+                "  \"a\":\n" +
+                "  // before value 1\n" +
+                "  1\n" +
+                "}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        assertNotNull(map.getKeyLeadingTrivia("a"));
+        assertTrue(map.getKeyLeadingTrivia("a").contains("before key a"));
+        assertTrue(map.getChild("a").getValueLeadingTrivia().contains("before value 1"));
+        assertNull(map.getKeyTrailingTrivia("a"));
+    }
+
+    @Test
+    public void testLeadingBeforeValueSameLineAsColon() throws Exception {
+        JsonNode json = JsonNode.parseJson("{\"x\": // on colon line\n1}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        assertTrue(map.getKeyTrailingTrivia("x").contains("on colon line"));
+        // Continuation after the line comment is newline/space before "1", not a // comment
+        String cont = map.getChild("x").getValueLeadingTrivia();
+        assertNotNull(cont);
+        assertFalse(cont.contains("//"));
+    }
+
+    
+    
+    @Test
+    public void testJsonNodeMapComments() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "{\n" +
+                "  // before key a\n" +
+                "  \"a\" /* inline with key */ : // also inline \n" +
+                "  // before value 1\n" +
+                "  1\n" +
+                "}");
+        JsonNodeMap map = (JsonNodeMap) json;
+        JsonNode a = map.getChild("a");
+        assertTrue(map.getKeyLeadingTrivia("a").contains("before key a"));
+        assertTrue(map.getKeyTrailingTrivia("a").contains("inline with key"));
+        assertTrue(map.getKeyTrailingTrivia("a").contains("also inline"));
+        assertTrue(a.getValueLeadingTrivia().contains("before value 1"));
+    }
+
+    @Test
+    public void testCommentsHjsonFileInlineOnDebugMode() throws Exception {
+        Path p = Path.of("testdata/comments.hjson");
+        String src = Files.readString(p);
+        JsonNode root = JsonNode.parseJson(src);
+        JsonNodeMap settings = (JsonNodeMap) ((JsonNodeMap) root).getChild("settings");
+        JsonNode dm = settings.getChild("debugMode");
+        assertTrue(dm.hasValueTrailingTrivia(), "inline // after true should be preserved");
+        assertTrue(dm.getValueTrailingTrivia().contains("Another inline comment"));
     }
 
 

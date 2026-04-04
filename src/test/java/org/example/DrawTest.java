@@ -295,6 +295,136 @@ public class DrawTest {
         assertEquals(expected, got);
     }
 
+    /** Folded source comment truncates with Unicode ellipsis when wider than the terminal. */
+    @Test
+    public void testFoldedSourceCommentEllipsis() throws Exception {
+        Screen screen = setupScreen(22, 5);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n" +
+                "  \"v\":\n" +
+                "  // this_comment_is_far_too_wide_for_the_screen\n" +
+                "  \"x\"\n" +
+                "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        assertTrue(got.contains("\u2026"), "expected Unicode ellipsis in: " + got);
+    }
+
+    /** Unfolded preserved line comments: each non-empty trivia line is drawn (may share the key row). */
+    @Test
+    public void testUnfoldedSourceCommentsRendered() throws Exception {
+        int w = 45;
+        int h = 10;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"k\":\n"
+                        + "  // line one\n"
+                        + "  // line two\n"
+                        + "  42\n"
+                        + "}");
+        ((JsonNodeMap) state).getChild("k").setCommentFolded(false);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + "••\"k\":•//•line•one•••••••••••••••••••••••••••\n"
+                        + "•••••••//•line•two•••••••••••••••••••••••••••\n"
+                        + "•••••••42••••••••••••••••••••••••••••••••••••\n"
+                        + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + blank.repeat(5);
+        assertEquals(expected, got);
+    }
+
+    /** Default folded leading comment: trivia already starting with // is not prefixed again. */
+    @Test
+    public void testFoldedSourceCommentSingleLineRendering() throws Exception {
+        int w = 45;
+        int h = 10;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"k\":\n"
+                        + "  // short\n"
+                        + "  7\n"
+                        + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + "••\"k\":•//•short••••••••••••••••••••••••••••••\n"
+                        + "•••••••7•••••••••••••••••••••••••••••••••••••\n"
+                        + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + blank.repeat(6);
+        assertEquals(expected, got);
+    }
+
+    /** Inline {@code , // ...} after a scalar is drawn after the value (Hjson trivia after comma). */
+    @Test
+    public void testDrawInlineTrailingCommentAfterBoolean() throws Exception {
+        Screen screen = setupScreen(56, 12);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"debugMode\": true, // Another inline comment\n"
+                        + "  \"logLevel\": \"DEBUG\"\n"
+                        + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("Another inline comment"), norm);
+        assertTrue(norm.contains("true"));
+    }
+
+    /** Comment line before a key suppresses synthetic epoch annotation on the value. */
+    @Test
+    public void testDrawSuppressesEpochAnnotationWhenCommentBeforeTimestampKey() throws Exception {
+        Screen screen = setupScreen(48, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n" + "  # hash comment\n" + "  \"timestamp\": 1678886400000\n" + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertFalse(norm.contains("2023"), "synthetic date should not duplicate source comments: " + norm);
+    }
+
+    /** Block-style trivia is drawn as stored (no extra "// " prefix). */
+    @Test
+    public void testUnfoldedBlockSourceCommentRendered() throws Exception {
+        Screen screen = setupScreen(40, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"k\":\n"
+                        + "  /* block note */\n"
+                        + "  0\n"
+                        + "}");
+        ((JsonNodeMap) state).getChild("k").setCommentFolded(false);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String norm = got.replace('•', ' ');
+        assertTrue(norm.contains("/* block note */"), got);
+        assertTrue(norm.contains("0"), got);
+    }
+
+    /** Leading trivia on a list element is drawn above that element. */
+    @Test
+    public void testUnfoldedSourceCommentOnListElement() throws Exception {
+        Screen screen = setupScreen(36, 8);
+        Drawer d = makeDrawer();
+        JsonNode root = JsonNode.parseJson("[\n" + "  // above elem\n" + "  99\n" + "]");
+        ((JsonNodeList) root).get(0).setCommentFolded(false);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, root, null);
+        String got = extractAsString(screen);
+        String norm = got.replace('•', ' ');
+        assertTrue(norm.contains("// above elem"), got);
+        assertTrue(norm.contains("99"), got);
+    }
+
     @Test
     public void testSimpleListFolded() throws Exception {
         Screen screen = setupScreen(30,3);

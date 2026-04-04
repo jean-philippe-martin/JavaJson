@@ -16,6 +16,10 @@ public class JsonNodeMap extends JsonNode {
         private @Nullable Sorter sortOrder;
         private boolean pinned = false;
         private boolean folded = false;
+        private @Nullable String valueLeadingTrivia;
+        private @Nullable String valueTrailingTrivia;
+        private boolean commentFolded = true;
+        private boolean suppressSyntheticAnnotation = false;
 
         public Builder(LinkedHashMap<String, JsonNodeBuilder> children) {
             this.children = children;
@@ -28,6 +32,26 @@ public class JsonNodeMap extends JsonNode {
 
         public Builder folded(boolean folded) {
             this.folded = folded;
+            return this;
+        }
+
+        public Builder valueLeadingTrivia(@Nullable String trivia) {
+            this.valueLeadingTrivia = trivia;
+            return this;
+        }
+
+        public Builder valueTrailingTrivia(@Nullable String trivia) {
+            this.valueTrailingTrivia = trivia;
+            return this;
+        }
+
+        public Builder commentFolded(boolean commentFolded) {
+            this.commentFolded = commentFolded;
+            return this;
+        }
+
+        public Builder suppressSyntheticAnnotation(boolean suppressSyntheticAnnotation) {
+            this.suppressSyntheticAnnotation = suppressSyntheticAnnotation;
             return this;
         }
 
@@ -46,6 +70,10 @@ public class JsonNodeMap extends JsonNode {
             ret.sort(sortOrder);
             ret.setPinned(pinned);
             ret.folded = folded;
+            ret.setValueLeadingTrivia(valueLeadingTrivia);
+            ret.setValueTrailingTrivia(valueTrailingTrivia);
+            ret.setCommentFolded(commentFolded);
+            ret.setSuppressSyntheticAnnotation(suppressSyntheticAnnotation);
             return ret;
         }
     }
@@ -109,6 +137,13 @@ public class JsonNodeMap extends JsonNode {
 
     private @Nullable Sorter sortOrder = null;
 
+    /**
+     * Preserved Hjson trivia from {@link JsonNode#parseHjsonWithComments}: text not on the same line
+     * as the previous structural token, before the key; and text on the same line as this key (before
+     * and after {@code ':'}, drawn after the colon in the UI).
+     */
+    private final HashMap<String, String> keyLeadingTrivia = new HashMap<>();
+    private final HashMap<String, String> keyTrailingTrivia = new HashMap<>();
 
     /**
      * Normal constructor, from the result of parsing JSON.
@@ -180,6 +215,38 @@ public class JsonNodeMap extends JsonNode {
 
     public void setChildAggregateComment(String key, String comment) {
         getChild(key).aggregateComment = comment;
+    }
+
+    /**
+     * Trivia after a line break from the previous structural token, before the opening quote of this key
+     * (from {@code leadingBeforeName} after the first newline in that span).
+     */
+    public @Nullable String getKeyLeadingTrivia(String key) {
+        return keyLeadingTrivia.get(key);
+    }
+
+    /**
+     * Trivia on the same line as this key: between {@code "key"} and {@code ':'}, plus the segment of
+     * trivia between {@code ':'} and the value before the first line break (same line as the colon).
+     */
+    public @Nullable String getKeyTrailingTrivia(String key) {
+        return keyTrailingTrivia.get(key);
+    }
+
+    void applyMemberKeyTrivia(String key, String leadingBeforeName, String betweenNameAndColon, String leadingBeforeValue) {
+        TriviaLineSplit beforeKey = TriviaLineSplit.split(leadingBeforeName);
+        String leading = beforeKey.fromFirstNewlineInclusive.isEmpty() ? null : beforeKey.fromFirstNewlineInclusive;
+        if (leading != null) {
+            keyLeadingTrivia.put(key, leading);
+        }
+        TriviaLineSplit between = TriviaLineSplit.split(betweenNameAndColon);
+        TriviaLineSplit beforeVal = TriviaLineSplit.split(leadingBeforeValue);
+        StringBuilder trailing = new StringBuilder();
+        trailing.append(between.sameLineBeforeFirstNewline);
+        trailing.append(beforeVal.sameLineBeforeFirstNewline);
+        if (trailing.length() > 0) {
+            keyTrailingTrivia.put(key, trailing.toString());
+        }
     }
 
     /**
