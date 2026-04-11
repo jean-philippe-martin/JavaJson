@@ -331,4 +331,22 @@ public class ParserTest {
     }
 
 
+    @Test
+    public void testJsonNodeListComments() throws Exception {
+        JsonNode json = JsonNode.parseJson(
+                "[\n" +
+                "  // before a\n" +
+                "  \"a\",\n" +
+                "  \"b\", // after b\n" +
+                "  \"c\"\n" +
+                "]");
+        JsonNodeList lst = (JsonNodeList) json;
+        assertNotNull(lst.get(0).getValueLeadingTrivia());
+        assertTrue(lst.get(0).getValueLeadingTrivia().contains("before a"));
+        assertNotNull(lst.get(1).getValueTrailingTrivia());
+        assertTrue(lst.get(1).getValueTrailingTrivia().contains("after b"));
+        assertNull(lst.get(2).getValueTrailingTrivia());
+    }
+
+
 }

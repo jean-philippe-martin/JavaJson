@@ -295,6 +295,172 @@ public class DrawTest {
         assertEquals(expected, got);
     }
 
+    @Test
+    public void testListWithCommentsAfterLine() throws Exception {
+        Screen screen = setupScreen(20,6);
+        Drawer d = makeDrawer();
+
+        String expected =
+            "{•••••••••••••••••••\n"+
+            "••\"numbers\":•[•//•2•\n"+
+            "••••10,•//•ten••••••\n"+
+            "••••11/*•eleven•*/••\n"+
+            "••]•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     \"numbers\": [ \n"+
+           "       10, // ten \n"+
+           "       11 /* eleven */\n"+
+           "     ] \n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testListWithCommentsAboveLine() throws Exception {
+        Screen screen = setupScreen(20,6);
+        Drawer d = makeDrawer();
+
+        String expected =
+            "{•••••••••••••••••••\n" + 
+            "••\"numbers\":•[•//•2•\n" + 
+            "••••//•ten••••••••••\n" + 
+            "••••10••••••••••••••\n" + 
+            "••••/*•eleven•*/••••\n" + 
+            "••••\"11\"••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     \"numbers\": [ \n"+
+           "       // ten\n"+
+           "       10,\n"+
+           "       /* eleven */\n"+
+           "       \"11\"\n"+
+           "     ] \n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testMapWithCommentsAboveLine() throws Exception {
+        Screen screen = setupScreen(20,6);
+        Drawer d = makeDrawer();
+
+        String expected =
+           "{•••••••••••••••••••\n"+
+           "••//•ten••••••••••••\n"+
+           "••\"number\":•10••••••\n"+
+           "••/*•eleven•*/••••••\n"+
+           "••\"number2\":•11•••••\n"+
+           "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     // ten\n"+
+           "     \"number\": 10\n"+
+           "     /* eleven */\n"+
+           "     \"number2\": 11\n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    /**
+     * Trailing trivia on same row as values: null, string, and folded inner map (cursor returned to root).
+     */
+    @Test
+    public void testTrailingTriviaNullStringAndFoldedMap() throws Exception {
+        int w = 45;
+        int h = 14;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"n\": null, // nullT\n"
+                        + "  \"s\": \"x\", // strT\n"
+                        + "  \"m\": { \"q\": 1 } // foldT\n"
+                        + "}");
+        state.cursorDown();
+        state.cursorDown();
+        state.cursorDown();
+        state.setFoldedAtCursors(true);
+        state.cursorUp();
+        state.cursorUp();
+        state.cursorUp();
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••\"n\":•null,•//•nullT••••••••••••••••••••••••\n"
+                + "••\"s\":•\"x\",•//•strT••••••••••••••••••••••••••\n"
+                + "••\"m\":•{•...•}•••••••••••••••••••••••••••••••\n"
+                + "•••••••//•foldT••••••••••••••••••••••••••••••\n"
+                + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                + blank.repeat(8);
+        assertEquals(expected, got);
+    }
+
+    /** Preserved trailing comment after an inner map's closing brace; drawn on the row below that brace. */
+    @Test
+    public void testTrailingTriviaAfterMapClose() throws Exception {
+        int w = 45;
+        int h = 8;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"o\": {\n"
+                        + "    \"a\": 1\n"
+                        + "  } // mapTrail\n"
+                        + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••\"o\":•{•••••••••••••••••••••••••••••••••••••\n"
+                + "••••\"a\":•1•••••••••••••••••••••••••••••••••••\n"
+                + "••}••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••//•mapTrail••••••••••••••••••••••••••••••••\n"
+                + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + blank.repeat(2);
+        assertEquals(expected, got);
+    }
+
+    /** Preserved trailing comment after a list's closing bracket; drawn on the row below that bracket. */
+    @Test
+    public void testTrailingTriviaAfterListClose() throws Exception {
+        int w = 45;
+        int h = 8;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"arr\": [ 1, 2 ] // listTrail\n"
+                        + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••\"arr\":•[•//•2•entries••••••••••••••••••••••\n"
+                + "••••1••••••••••••••••••••••••••••••••••••••••\n"
+                + "••••2••••••••••••••••••••••••••••••••••••••••\n"
+                + "••]••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••//•listTrail•••••••••••••••••••••••••••••••\n"
+                + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + blank.repeat(1);
+        assertEquals(expected, got);
+    }
+
     /** Folded source comment truncates with Unicode ellipsis when wider than the terminal. */
     @Test
     public void testFoldedSourceCommentEllipsis() throws Exception {
@@ -319,23 +485,23 @@ public class DrawTest {
         Screen screen = setupScreen(w, h);
         Drawer d = makeDrawer();
         JsonNode state = JsonNode.parseJson(
-                "{\n"
-                        + "  \"k\":\n"
-                        + "  // line one\n"
-                        + "  // line two\n"
-                        + "  42\n"
-                        + "}");
+                "{\n" +
+                "  \"k\":\n" +
+                "  // line one\n" +
+                "  // line two\n" +
+                "  42\n" +
+                "}");
         ((JsonNodeMap) state).getChild("k").setCommentFolded(false);
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
         String blank = "•".repeat(w) + "\n";
         String expected =
-                "{••••••••••••••••••••••••••••••••••••••••••••\n"
-                        + "••\"k\":•//•line•one•••••••••••••••••••••••••••\n"
-                        + "•••••••//•line•two•••••••••••••••••••••••••••\n"
-                        + "•••••••42••••••••••••••••••••••••••••••••••••\n"
-                        + "}••••••••••••••••••••••••••••••••••••••••••••\n"
-                        + blank.repeat(5);
+                "{••••••••••••••••••••••••••••••••••••••••••••\n" +
+                "••\"k\":•//•line•one•••••••••••••••••••••••••••\n" +
+                "•••••••//•line•two•••••••••••••••••••••••••••\n" +
+                "•••••••42••••••••••••••••••••••••••••••••••••\n" +
+                "}••••••••••••••••••••••••••••••••••••••••••••\n" +
+                blank.repeat(5);
         assertEquals(expected, got);
     }
 
@@ -348,19 +514,19 @@ public class DrawTest {
         Drawer d = makeDrawer();
         JsonNode state = JsonNode.parseJson(
                 "{\n"
-                        + "  \"k\":\n"
-                        + "  // short\n"
-                        + "  7\n"
-                        + "}");
+                + "  \"k\":\n"
+                + "  // short\n"
+                + "  7\n"
+                + "}");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);
         String blank = "•".repeat(w) + "\n";
         String expected =
-                "{••••••••••••••••••••••••••••••••••••••••••••\n"
-                        + "••\"k\":•//•short••••••••••••••••••••••••••••••\n"
-                        + "•••••••7•••••••••••••••••••••••••••••••••••••\n"
-                        + "}••••••••••••••••••••••••••••••••••••••••••••\n"
-                        + blank.repeat(6);
+                "{••••••••••••••••••••••••••••••••••••••••••••\n" +
+                "••\"k\":•//•short••••••••••••••••••••••••••••••\n" +
+                "•••••••7•••••••••••••••••••••••••••••••••••••\n" +
+                "}••••••••••••••••••••••••••••••••••••••••••••\n" +
+                blank.repeat(6);
         assertEquals(expected, got);
     }
 
@@ -371,9 +537,9 @@ public class DrawTest {
         Drawer d = makeDrawer();
         JsonNode state = JsonNode.parseJson(
                 "{\n"
-                        + "  \"debugMode\": true, // Another inline comment\n"
-                        + "  \"logLevel\": \"DEBUG\"\n"
-                        + "}");
+                + "  \"debugMode\": true, // Another inline comment\n"
+                + "  \"logLevel\": \"DEBUG\"\n"
+                + "}");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String norm = extractAsString(screen).replace('•', ' ');
         assertTrue(norm.contains("Another inline comment"), norm);
@@ -399,10 +565,10 @@ public class DrawTest {
         Drawer d = makeDrawer();
         JsonNode state = JsonNode.parseJson(
                 "{\n"
-                        + "  \"k\":\n"
-                        + "  /* block note */\n"
-                        + "  0\n"
-                        + "}");
+                + "  \"k\":\n"
+                + "  /* block note */\n"
+                + "  0\n"
+                + "}");
         ((JsonNodeMap) state).getChild("k").setCommentFolded(false);
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String got = extractAsString(screen);

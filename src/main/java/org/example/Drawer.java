@@ -114,17 +114,15 @@ public class Drawer {
     }
 
     /**
-     * Draw preserved Hjson trivia above a value. Returns number of terminal rows used.
+     * Draw preserved leading trivia (same rules as value-leading). Returns number of terminal rows used.
+     *
+     * @param boldCursor whether to highlight (cursor on this node)
      */
-    private int printSourceCommentTrivia(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, Deleter deleter) {
-        if (!json.hasValueLeadingTrivia()) {
-            return 0;
-        }
+    private int printLeadingTriviaRaw(TextGraphics g, TerminalPosition start, int initialOffset, String raw, boolean folded, boolean boldCursor, JsonNode nodeForDelete, Deleter deleter) {
         TextGraphics cg = Theme.withColor(g, Theme.selected.synthetic);
-        possiblyChangeToDeletedColors(cg, json, deleter);
+        possiblyChangeToDeletedColors(cg, nodeForDelete, deleter);
         int w = Math.max(1, g.getSize().getColumns() - start.getColumn() - initialOffset);
-        String raw = Objects.requireNonNull(json.getValueLeadingTrivia()).replace('\r', '\n');
-        if (json.getCommentFolded()) {
+        if (folded) {
             String oneLine = raw.replace('\n', ' ').trim();
             String prefixed = syntheticLineForFoldedSourceComment(oneLine);
             int ellW = TextWidth.length(UNICODE_ELLIPSIS);
@@ -134,7 +132,7 @@ public class Drawer {
                     prefixed = prefixed.substring(0, fit) + UNICODE_ELLIPSIS;
                 }
             }
-            printMaybeReversed(cg, start.withRelativeColumn(initialOffset), prefixed, json.isAtCursor());
+            printMaybeReversed(cg, start.withRelativeColumn(initialOffset), prefixed, boldCursor);
             return 1;
         }
         int down = 0;
@@ -144,23 +142,45 @@ public class Drawer {
                 continue;
             }
             String line = (t.startsWith("//") || t.startsWith("#") || t.startsWith("/*")) ? t : "// " + t;
-            printMaybeReversed(cg, start.withRelative(initialOffset, down), line, json.isAtCursor());
+            printMaybeReversed(cg, start.withRelative(initialOffset, down), line, boldCursor);
             down++;
         }
         if (down == 0) {
-            printMaybeReversed(cg, start.withRelativeColumn(initialOffset), "// ", json.isAtCursor());
+            printMaybeReversed(cg, start.withRelativeColumn(initialOffset), "// ", boldCursor);
             return 1;
         }
         return down;
     }
 
     /**
+     * Draw preserved Hjson trivia above a value. Returns number of terminal rows used.
+     */
+    private int printSourceCommentTrivia(TextGraphics g, TerminalPosition start, int initialOffset, JsonNode json, Deleter deleter) {
+        if (!json.hasValueLeadingTrivia()) {
+            return 0;
+        }
+        String raw = Objects.requireNonNull(json.getValueLeadingTrivia()).replace('\r', '\n');
+        return printLeadingTriviaRaw(g, start, initialOffset, raw, json.getCommentFolded(), json.isAtCursor(), json, deleter);
+    }
+
+    /** Leading trivia before a map member's key (from {@link JsonNodeMap#getKeyLeadingTrivia(String)}). */
+    private int printMapKeyLeadingTriviaIfAny(TextGraphics g, TerminalPosition start, int initialOffset, JsonNodeMap jsonMap, String key, JsonNode child, Deleter deleter) {
+        String raw = jsonMap.getKeyLeadingTrivia(key);
+        if (raw == null || !JsonNode.triviaLooksLikeUserComment(raw)) {
+            return 0;
+        }
+        raw = raw.replace('\r', '\n');
+        return printLeadingTriviaRaw(g, start, initialOffset, raw, false, jsonMap.isAtCursor(key), child, deleter);
+    }
+
+    /**
      * Preserved Hjson trivia after a value (e.g. {@code , // inline}). Starts at {@code at}; wraps using
      * {@code continuationColumn} when the first column is past the terminal width.
      *
-     * @return extra rows used
+     * @param valueLastRow screen row of the last line of the value being decorated (scalar row, or line of closing brace or bracket, or folded placeholder)
+     * @return extra rows used below that value line
      */
-    private int printValueTrailingTrivia(TextGraphics g, TerminalPosition at, int continuationColumn, JsonNode json, Deleter deleter) {
+    private int printValueTrailingTrivia(TextGraphics g, TerminalPosition at, int continuationColumn, int valueLastRow, JsonNode json, Deleter deleter) {
         if (!json.hasValueTrailingTrivia()) {
             return 0;
         }
@@ -170,6 +190,7 @@ public class Drawer {
         if (pos.getColumn() >= g.getSize().getColumns()) {
             pos = new TerminalPosition(Math.min(continuationColumn, Math.max(0, g.getSize().getColumns() - 1)), pos.getRow() + 1);
         }
+        boolean shareRow = pos.getRow() == valueLastRow;
         int startCol = pos.getColumn();
         int w = Math.max(1, g.getSize().getColumns() - startCol);
         String raw = Objects.requireNonNull(json.getValueTrailingTrivia()).replace('\r', '\n');
@@ -184,7 +205,7 @@ public class Drawer {
                 }
             }
             printMaybeReversed(cg, pos, display, json.isAtCursor());
-            return 1;
+            return shareRow ? 0 : 1;
         }
         int down = 0;
         for (String part : raw.split("\n", -1)) {
@@ -205,7 +226,7 @@ public class Drawer {
             printMaybeReversed(cg, linePos, line, json.isAtCursor());
             down++;
         }
-        return down;
+        return shareRow ? Math.max(0, down - 1) : down;
     }
 
     // inFoldedContext = we're folded, only print pinned rows.
@@ -234,7 +255,7 @@ public class Drawer {
             if (!jsonMap.hasPins()) {
                 TerminalPosition bpos = pos.withRelativeColumn(initialOffset);
                 printMaybeReversed(myG, bpos,  "{ ... }", jsonMap.isAtCursor());
-                int trailRows = printValueTrailingTrivia(g, new TerminalPosition(bpos.getColumn(), bpos.getRow() + 1), bpos.getColumn(), jsonMap, deleter);
+                int trailRows = printValueTrailingTrivia(g, new TerminalPosition(bpos.getColumn(), bpos.getRow() + 1), bpos.getColumn(), bpos.getRow(), jsonMap, deleter);
                 return line + 1 + trailRows;
             }
             // we contain at least one thing that'll be shown, so open up.
@@ -261,6 +282,10 @@ public class Drawer {
                 // skip this child
                 continue;
             }
+            TerminalPosition memberTop = pos;
+            int keyLeadRows = printMapKeyLeadingTriviaIfAny(g, pos, 0, jsonMap, key, child, deleter);
+            pos = pos.withRelativeRow(keyLeadRows);
+
             String aggComment = "";
             if (inSyntheticContext && child.aggregateComment != null && !child.aggregateComment.isEmpty()) {
                 aggComment = child.aggregateComment + " ";
@@ -282,8 +307,8 @@ public class Drawer {
             if (child instanceof JsonNodeValue) {
                 int height;
                 if (inSyntheticContext) {
-                    printGutterIndicator(g, pos, child, 1, deleter);
-                    height = 1;
+                    printGutterIndicator(g, memberTop, child, keyLeadRows + 1, deleter);
+                    height = keyLeadRows + 1;
                 } else {
                     g2 = Theme.clone(g2);
                     possiblyChangeToDeletedColors(g2, child, deleter);
@@ -305,16 +330,20 @@ public class Drawer {
                     } else {
                         g2.putString(pos4, ": ");
                     }
-                    height = printJsonSubtree(g2, pos, pos4.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext || v.isSynthetic(), deleter);
+                    int innerH = innerPrintJsonSubtree(g2, pos, pos4.getColumn() - pos.getColumn() + 2, child, inFoldedContext, inSyntheticContext || v.isSynthetic(), deleter);
+                    printGutterIndicator(g2, memberTop, child, keyLeadRows + innerH, deleter);
+                    height = keyLeadRows + innerH;
                 }
                 line += height;
-                pos = pos.withRelativeRow(height);
+                pos = pos.withRelativeRow(height - keyLeadRows);
             } else {
                 myG.putString(pos2, ": ");
                 int childOffset = TextWidth.length(aggComment) + TextWidth.length(key) + 4;
-                int childHeight = printJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext, deleter);
-                line += childHeight;
-                pos = pos.withRelativeRow(childHeight);
+                int innerH = innerPrintJsonSubtree(g, pos, childOffset, child, inFoldedContext, inSyntheticContext, deleter);
+                printGutterIndicator(g, memberTop, child, keyLeadRows + innerH, deleter);
+                int height = keyLeadRows + innerH;
+                line += height;
+                pos = pos.withRelativeRow(height - keyLeadRows);
             }
             // stop drawing if we're off the screen.
             if (drewCursor && pos.getRow() > g.getSize().getRows() + 10) break;
@@ -323,7 +352,7 @@ public class Drawer {
         pos = pos.withRelativeColumn(-myIndent);
         g.putString(pos.withColumn(2), prefix);
         myG.putString(pos, "}");
-        int mapTrailRows = printValueTrailingTrivia(g, new TerminalPosition(pos.getColumn(), pos.getRow() + 1), pos.getColumn(), jsonMap, deleter);
+        int mapTrailRows = printValueTrailingTrivia(g, new TerminalPosition(pos.getColumn(), pos.getRow() + 1), pos.getColumn(), pos.getRow(), jsonMap, deleter);
         return line + mapTrailRows;
     }
 
@@ -441,7 +470,7 @@ public class Drawer {
                 String numStr = formatNumber(value);
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), numStr, json.isAtCursor());
                 TerminalPosition afterVal = start.withRelativeColumn(initialOffset + TextWidth.length(numStr));
-                int trows = printValueTrailingTrivia(g, afterVal, fallbackCol, json, deleter);
+                int trows = printValueTrailingTrivia(g, afterVal, fallbackCol, start.getRow(), json, deleter);
                 if (json.isAtPrimaryCursor()) {
                     substepsAvailable = commentH + annLinesDrawn + 1 + trows;
                 }
@@ -499,7 +528,7 @@ public class Drawer {
                 }
                 TerminalPosition lastStrPos = start.withRelative(initialOffset, down - 1);
                 int trailAtCol = lastStrPos.getColumn() + TextWidth.length(lastChunk);
-                int trows = printValueTrailingTrivia(g, new TerminalPosition(trailAtCol, lastStrPos.getRow()), fallbackCol, json, deleter);
+                int trows = printValueTrailingTrivia(g, new TerminalPosition(trailAtCol, lastStrPos.getRow()), fallbackCol, lastStrPos.getRow(), json, deleter);
                 if (json.isAtPrimaryCursor()) {
                     substepsAvailable = commentH + annLinesDrawn + down + trows;
                 }
@@ -510,7 +539,7 @@ public class Drawer {
                 String numStr = formatNumber(value);
                 printMaybeReversed(g_num, start.withRelativeColumn(initialOffset), numStr, json.isAtCursor());
                 TerminalPosition afterVal = start.withRelativeColumn(initialOffset + TextWidth.length(numStr));
-                int trows = printValueTrailingTrivia(g, afterVal, fallbackCol, json, deleter);
+                int trows = printValueTrailingTrivia(g, afterVal, fallbackCol, start.getRow(), json, deleter);
                 if (json.isAtPrimaryCursor()) {
                     substepsAvailable = commentH + annLinesDrawn + 1 + trows;
                 }
@@ -585,7 +614,7 @@ public class Drawer {
             }
             pos = pos3.withRelativeColumn(-INDENT);
             myG.putString(pos, "]");
-            int listTrailRows = printValueTrailingTrivia(g, new TerminalPosition(pos.getColumn(), pos.getRow() + 1), pos.getColumn(), jsonList, deleter);
+            int listTrailRows = printValueTrailingTrivia(g, new TerminalPosition(pos.getColumn(), pos.getRow() + 1), pos.getColumn(), pos.getRow(), jsonList, deleter);
             return listLine + 1 + listTrailRows;
         }
         else if (json instanceof JsonNodeMap) {
