@@ -373,6 +373,49 @@ public class DrawTest {
     }
 
     /**
+     * Parser-fed multiline block comments before keys: lines that trim to {@code * ...} continuations must not get a
+     * synthetic {@code // } prefix in the drawer (that would show as {@code // * ...} and misrepresent the source).
+     */
+    @Test
+    public void testMapWithMultilineCommentAboveLine() throws Exception {
+        int w = 20;
+        int h = 12;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+           "{•••••••••••••••••••\n" +
+           "••/*•this•••••••••••\n" +
+           "••*•comment•••••••••\n" +
+           "••*•spans•3•lines•••\n" +
+           "••*/••••••••••••••••\n" +
+           "••\"number\":•10••••••\n" +
+           "••/*•this•one•••••••\n"+
+           "••too!•*/•••••••••••\n"+
+           "••\"number2\":•11•••••\n"+
+           "}•••••••••••••••••••\n" +
+           blank.repeat(2);
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     /* this \n"+
+           "      * comment\n"+
+           "      * spans 3 lines\n"+
+           "      */\n"+
+           "     \"number\": 10\n"+
+           "     /* this one\n"+
+           "        too! */\n"+
+           "     \"number2\": 11\n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+        String norm = got.replace('•', ' ');
+        assertFalse(norm.contains("// *"), "block continuation lines must not be prefixed with //");
+    }
+
+    /**
      * Trailing trivia on same row as values: null, string, and folded inner map (cursor returned to root).
      */
     @Test

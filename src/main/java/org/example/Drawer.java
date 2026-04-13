@@ -62,12 +62,9 @@ public class Drawer {
         return n > 0 ? n : 1;
     }
 
-    /** One-line synthetic comment display when folded; avoids "// //" when trivia already starts with // or ,. */
+    /** One-line synthetic comment display when folded; trivia is shown verbatim (no {@code // } injection). */
     private static String syntheticLineForFoldedSourceComment(String oneLine) {
-        if (oneLine.startsWith("//") || oneLine.startsWith("#") || oneLine.startsWith("/*") || oneLine.startsWith(",")) {
-            return oneLine;
-        }
-        return "// " + oneLine;
+        return oneLine;
     }
 
     // Where on the screen we drew the cursor.
@@ -141,8 +138,7 @@ public class Drawer {
             if (t.isEmpty()) {
                 continue;
             }
-            String line = (t.startsWith("//") || t.startsWith("#") || t.startsWith("/*")) ? t : "// " + t;
-            printMaybeReversed(cg, start.withRelative(initialOffset, down), line, boldCursor);
+            printMaybeReversed(cg, start.withRelative(initialOffset, down), t, boldCursor);
             down++;
         }
         if (down == 0) {
@@ -213,8 +209,7 @@ public class Drawer {
             if (t.isEmpty()) {
                 continue;
             }
-            boolean rawLine = t.startsWith("//") || t.startsWith("#") || t.startsWith("/*") || t.startsWith(",");
-            String line = rawLine ? t : "// " + t;
+            String line = t;
             TerminalPosition linePos = down == 0 ? pos : new TerminalPosition(continuationColumn, pos.getRow() + down);
             int lineW = down == 0 ? w : Math.max(1, g.getSize().getColumns() - continuationColumn);
             if (TextWidth.length(line) > lineW && lineW > TextWidth.length(UNICODE_ELLIPSIS)) {
