@@ -548,7 +548,8 @@ public abstract class JsonNode {
 
     /** Skip derived annotations (e.g. human-readable epoch) when source comments exist on this value or before its key. */
     public boolean shouldSkipSyntheticAnnotation() {
-        return hasPreservedSourceCommentTrivia() || suppressSyntheticAnnotation;
+        return false;
+        //return hasPreservedSourceCommentTrivia() || suppressSyntheticAnnotation;
     }
 
     public boolean getCommentFolded() {

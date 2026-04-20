@@ -589,16 +589,17 @@ public class DrawTest {
         assertTrue(norm.contains("true"));
     }
 
-    /** Comment line before a key suppresses synthetic epoch annotation on the value. */
+    /** Leading comment before a key is drawn; synthetic epoch date annotation is still shown (not suppressed). */
     @Test
-    public void testDrawSuppressesEpochAnnotationWhenCommentBeforeTimestampKey() throws Exception {
+    public void testDrawShowsEpochAnnotationWithCommentBeforeTimestampKey() throws Exception {
         Screen screen = setupScreen(48, 10);
         Drawer d = makeDrawer();
         JsonNode state = JsonNode.parseJson(
                 "{\n" + "  # hash comment\n" + "  \"timestamp\": 1678886400000\n" + "}");
         d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
         String norm = extractAsString(screen).replace('•', ' ');
-        assertFalse(norm.contains("2023"), "synthetic date should not duplicate source comments: " + norm);
+        assertTrue(norm.contains("hash comment"), norm);
+        assertTrue(norm.contains("2023"), "synthetic epoch date annotation should appear: " + norm);
     }
 
     /** Block-style trivia is drawn as stored (no extra "// " prefix). */

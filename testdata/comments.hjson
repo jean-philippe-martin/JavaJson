@@ -15,5 +15,7 @@
     ]
   },
   # This is a YAML-style comment (if ALLOW_YAML_COMMENTS is enabled)
-  "timestamp": 1678886400000
+  "timestamp": 1678886400000,
+  // This one also has an end-of-line comment
+  "timestamp": 1678886400000, // this is the end-of-line comment
 }
