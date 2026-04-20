@@ -634,6 +634,165 @@ public class DrawTest {
         assertTrue(norm.contains("99"), got);
     }
 
+    /** Comment before the root object (document leading trivia). */
+    @Test
+    public void testDrawDocumentLeadingCommentBeforeRootBrace() throws Exception {
+        Screen screen = setupScreen(48, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "// file begins here\n"
+                        + "{\n"
+                        + "  \"a\": 1\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("file begins here"), norm);
+        assertTrue(norm.contains("\"a\""), norm);
+    }
+
+    /** Comment after the root object's closing brace (document trailing trivia). */
+    @Test
+    public void testDrawDocumentTrailingCommentAfterRootBrace() throws Exception {
+        Screen screen = setupScreen(48, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"a\": 1\n"
+                        + "}\n"
+                        + "// file ends here\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("file ends here"), norm);
+    }
+
+    /**
+     * Comment on a new line after {@code ,} belongs to the next member's key-leading trivia (not the previous
+     * value's trailing).
+     */
+    @Test
+    public void testDrawKeyLeadingCommentAfterCommaBeforeNextMember() throws Exception {
+        Screen screen = setupScreen(52, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"first\": 1,\n"
+                        + "  // belongs to second\n"
+                        + "  \"second\": 2\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("belongs to second"), norm);
+        assertTrue(norm.contains("\"second\""), norm);
+    }
+
+    /**
+     * Same-line {@code //} after {@code :} (before the newline) is stored as key-trailing trivia
+     * (see {@link JsonNodeMap#getKeyTrailingTrivia(String)}); the drawer does not render it yet, so the screen
+     * must still show the value without losing the tree.
+     */
+    @Test
+    public void testDrawKeyTrailingColonLineCommentNotRenderedYetTreeStillValid() throws Exception {
+        Screen screen = setupScreen(48, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson("{\n  \"x\": // on colon line\n  1\n}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("1"), norm);
+        assertTrue(norm.contains("\"x\""), norm);
+    }
+
+    /**
+     * Block comment between the key and {@code :} is key-trailing trivia; not drawn yet, but the value must appear.
+     */
+    @Test
+    public void testDrawKeyTrailingBlockBetweenKeyAndColonNotRenderedYetValueShown() throws Exception {
+        Screen screen = setupScreen(52, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"k\" /* by key */ : 0\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("0"), norm);
+        assertTrue(norm.contains("\"k\""), norm);
+    }
+
+    /** Key-leading trivia inside a nested object (not only top-level keys). */
+    @Test
+    public void testDrawNestedMapKeyLeadingComment() throws Exception {
+        Screen screen = setupScreen(52, 12);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"outer\": {\n"
+                        + "    // inner key note\n"
+                        + "    \"inner\": 3\n"
+                        + "  }\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("inner key note"), norm);
+        assertTrue(norm.contains("\"inner\""), norm);
+    }
+
+    /** Top-level array: leading comment before {@code [} and trailing after {@code ]}. */
+    @Test
+    public void testDrawTopLevelArrayDocumentLeadingAndTrailingComments() throws Exception {
+        Screen screen = setupScreen(48, 12);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "// before array\n"
+                        + "[ 7, 8 ]\n"
+                        + "// after array\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("before array"), norm);
+        assertTrue(norm.contains("after array"), norm);
+        assertTrue(norm.contains("7"), norm);
+    }
+
+    /** Trailing line comment after the last array element (same line, before {@code ]}). */
+    @Test
+    public void testDrawTrailingCommentAfterLastArrayElementBeforeClose() throws Exception {
+        Screen screen = setupScreen(52, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"items\": [ 1, 2 ] // tail on line with ]\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("tail on line"), norm);
+    }
+
+    /** Root is a scalar: leading comment only (no wrapping object). */
+    @Test
+    public void testDrawRootScalarWithLeadingComment() throws Exception {
+        Screen screen = setupScreen(40, 6);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson("// root is just a number\n42\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("root is just"), norm);
+        assertTrue(norm.contains("42"), norm);
+    }
+
+    /** String map value with trailing {@code //} on the same line as the closing quote. */
+    @Test
+    public void testDrawTrailingCommentAfterStringValueInMap() throws Exception {
+        Screen screen = setupScreen(56, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"msg\": \"hi\" // string trail\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("string trail"), norm);
+        assertTrue(norm.contains("hi"), norm);
+    }
+
     @Test
     public void testSimpleListFolded() throws Exception {
         Screen screen = setupScreen(30,3);
