@@ -15,6 +15,10 @@ public class JsonNodeValue<T> extends JsonNode {
         protected T value;
         boolean pinned = false;
         boolean folded = false;
+        private @Nullable String valueLeadingTrivia;
+        private @Nullable String valueTrailingTrivia;
+        private boolean commentFolded = true;
+        private boolean suppressSyntheticAnnotation = false;
 
         public Builder(T newValue) {
             this.value = newValue;
@@ -30,6 +34,26 @@ public class JsonNodeValue<T> extends JsonNode {
             return this;
         }
 
+        public Builder valueLeadingTrivia(@Nullable String trivia) {
+            this.valueLeadingTrivia = trivia;
+            return this;
+        }
+
+        public Builder valueTrailingTrivia(@Nullable String trivia) {
+            this.valueTrailingTrivia = trivia;
+            return this;
+        }
+
+        public Builder commentFolded(boolean commentFolded) {
+            this.commentFolded = commentFolded;
+            return this;
+        }
+
+        public Builder suppressSyntheticAnnotation(boolean suppressSyntheticAnnotation) {
+            this.suppressSyntheticAnnotation = suppressSyntheticAnnotation;
+            return this;
+        }
+
         @Override
         public JsonNodeValue<T> build(JsonNode parent, Cursor curToMe) {
             JsonNode root = null;
@@ -37,6 +61,10 @@ public class JsonNodeValue<T> extends JsonNode {
             JsonNodeValue<T> ret = new JsonNodeValue<>(value, parent, curToMe, root);
             if (pinned) ret.setPinned(pinned);
             if (folded) ret.folded = folded;
+            ret.setValueLeadingTrivia(valueLeadingTrivia);
+            ret.setValueTrailingTrivia(valueTrailingTrivia);
+            ret.setCommentFolded(commentFolded);
+            ret.setSuppressSyntheticAnnotation(suppressSyntheticAnnotation);
             return ret;
         }
 

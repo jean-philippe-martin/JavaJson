@@ -889,15 +889,22 @@ public class Main {
                     // shift-left: up
                     myJson.cursorParent();
                 } else {
-                    // left: fold/up
-                    if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
+                    JsonNode atLeft = myJson.atCursor();
+                    if ((atLeft.hasValueLeadingTrivia() || atLeft.hasValueTrailingTrivia()) && !atLeft.getCommentFolded()) {
+                        atLeft.setCommentFolded(true);
+                    } else if (myJson.getFoldedAtCursor() || !myJson.setFoldedAtCursors(true)) {
                         myJson.cursorParent();
                     }
                 }
             }
             if (key.getKeyType() == KeyType.ArrowRight
                     /*|| (key.getCharacter() != null && 'f' == pressed)*/) {
-                myJson.setFoldedAtCursors(false);
+                JsonNode atRight = myJson.atCursor();
+                if ((atRight.hasValueLeadingTrivia() || atRight.hasValueTrailingTrivia()) && atRight.getCommentFolded()) {
+                    atRight.setCommentFolded(false);
+                } else {
+                    myJson.setFoldedAtCursors(false);
+                }
             }
             if (key.getKeyType() == KeyType.Enter) {
                 return Action.SHOW_ACTION_MENU;

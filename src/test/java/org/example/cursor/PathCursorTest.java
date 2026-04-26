@@ -1,6 +1,5 @@
 package org.example.cursor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.example.Cursor;
 import org.example.JsonNode;
 import org.example.JsonNodeMap;
@@ -58,7 +57,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testAddAll() throws JsonProcessingException {
+    public void testAddAll() throws Exception {
         JsonNode state = JsonNode.parseJson(
                 "   {\n"+
                         "   \"players\": {\n"+
@@ -78,7 +77,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testAddAll2() throws JsonProcessingException {
+    public void testAddAll2() throws Exception {
         JsonNode state = JsonNode.parseJson(
                 "   {\n"+
                         "   \"players\": {\n"+
@@ -98,7 +97,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testAddAll3() throws JsonProcessingException {
+    public void testAddAll3() throws Exception {
         JsonNode state = JsonNode.parseJson(
                 "   {\n"+
                         "   \"players\": {\n"+
@@ -119,7 +118,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testAddAll4() throws JsonProcessingException {
+    public void testAddAll4() throws Exception {
         JsonNode state = JsonNode.parseJson(
                 "   {\n"+
                         "   \"players\": {\n"+
@@ -140,7 +139,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testAddAll5() throws JsonProcessingException {
+    public void testAddAll5() throws Exception {
         JsonNode state = JsonNode.parseJson(
                 "   {\n"+
                         "   \"players\": [\n"+
@@ -156,7 +155,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testNextAtLastCursor() throws JsonProcessingException {
+    public void testNextAtLastCursor() throws Exception {
         JsonNode state = JsonNode.parseJson(TWO_PLAYERS);
         PathCursor cur = new PathCursor(".players.Alex");
         JsonNodeMap alex = (JsonNodeMap)((JsonNodeMap)((JsonNodeMap)state).getChild("players")).getChild("Alex");
@@ -167,7 +166,7 @@ public class PathCursorTest {
     }
 
     @Test
-    public void testNext1() throws JsonProcessingException {
+    public void testNext1() throws Exception {
         JsonNode state = JsonNode.parseJson(TWO_PLAYERS);
         PathCursor cur = new PathCursor(".players.*");
         JsonNodeMap alex = (JsonNodeMap)((JsonNodeMap)((JsonNodeMap)state).getChild("players")).getChild("Alex");
@@ -179,7 +178,7 @@ public class PathCursorTest {
     // This code doesn't work yet, but it's also not used yet.
     @Disabled
     @Test
-    public void testNext2() throws JsonProcessingException {
+    public void testNext2() throws Exception {
         JsonNode state = JsonNode.parseJson(TWO_PLAYERS);
         PathCursor cur = new PathCursor(".players.*");
         JsonNode alexScore = ((JsonNodeMap)((JsonNodeMap)((JsonNodeMap)state).getChild("players")).getChild("Alex")).getChild("score");

@@ -15,6 +15,10 @@ public class JsonNodeList extends JsonNode {
         private @Nullable Sorter sortOrder;
         private boolean pinned = false;
         private boolean folded = false;
+        private @Nullable String valueLeadingTrivia;
+        private @Nullable String valueTrailingTrivia;
+        private boolean commentFolded = true;
+        private boolean suppressSyntheticAnnotation = false;
 
         public Builder(JsonNodeBuilder[] children) {
             this.children = children;
@@ -27,6 +31,26 @@ public class JsonNodeList extends JsonNode {
 
         public JsonNodeList.Builder folded(boolean folded) {
             this.folded = folded;
+            return this;
+        }
+
+        public Builder valueLeadingTrivia(@Nullable String trivia) {
+            this.valueLeadingTrivia = trivia;
+            return this;
+        }
+
+        public Builder valueTrailingTrivia(@Nullable String trivia) {
+            this.valueTrailingTrivia = trivia;
+            return this;
+        }
+
+        public Builder commentFolded(boolean commentFolded) {
+            this.commentFolded = commentFolded;
+            return this;
+        }
+
+        public Builder suppressSyntheticAnnotation(boolean suppressSyntheticAnnotation) {
+            this.suppressSyntheticAnnotation = suppressSyntheticAnnotation;
             return this;
         }
 
@@ -45,6 +69,10 @@ public class JsonNodeList extends JsonNode {
             ret.sort(sortOrder);
             ret.folded = folded;
             ret.pinned = pinned;
+            ret.setValueLeadingTrivia(valueLeadingTrivia);
+            ret.setValueTrailingTrivia(valueTrailingTrivia);
+            ret.setCommentFolded(commentFolded);
+            ret.setSuppressSyntheticAnnotation(suppressSyntheticAnnotation);
             return ret;
         }
     }

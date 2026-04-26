@@ -296,6 +296,505 @@ public class DrawTest {
     }
 
     @Test
+    public void testListWithCommentsAfterLine() throws Exception {
+        Screen screen = setupScreen(20,6);
+        Drawer d = makeDrawer();
+
+        String expected =
+            "{•••••••••••••••••••\n"+
+            "••\"numbers\":•[•//•2•\n"+
+            "••••10,•//•ten••••••\n"+
+            "••••11/*•eleven•*/••\n"+
+            "••]•••••••••••••••••\n"+
+            "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     \"numbers\": [ \n"+
+           "       10, // ten \n"+
+           "       11 /* eleven */\n"+
+           "     ] \n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testListWithCommentsAboveLine() throws Exception {
+        Screen screen = setupScreen(20,6);
+        Drawer d = makeDrawer();
+
+        String expected =
+            "{•••••••••••••••••••\n" + 
+            "••\"numbers\":•[•//•2•\n" + 
+            "••••//•ten••••••••••\n" + 
+            "••••10••••••••••••••\n" + 
+            "••••/*•eleven•*/••••\n" + 
+            "••••\"11\"••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     \"numbers\": [ \n"+
+           "       // ten\n"+
+           "       10,\n"+
+           "       /* eleven */\n"+
+           "       \"11\"\n"+
+           "     ] \n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    @Test
+    public void testMapWithCommentsAboveLine() throws Exception {
+        Screen screen = setupScreen(20,6);
+        Drawer d = makeDrawer();
+
+        String expected =
+           "{•••••••••••••••••••\n"+
+           "••//•ten••••••••••••\n"+
+           "••\"number\":•10••••••\n"+
+           "••/*•eleven•*/••••••\n"+
+           "••\"number2\":•11•••••\n"+
+           "}•••••••••••••••••••\n";
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     // ten\n"+
+           "     \"number\": 10\n"+
+           "     /* eleven */\n"+
+           "     \"number2\": 11\n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+    }
+
+    /**
+     * Parser-fed multiline block comments before keys: lines that trim to {@code * ...} continuations must not get a
+     * synthetic {@code // } prefix in the drawer (that would show as {@code // * ...} and misrepresent the source).
+     */
+    @Test
+    public void testMapWithMultilineCommentAboveLine() throws Exception {
+        int w = 20;
+        int h = 12;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+           "{•••••••••••••••••••\n" +
+           "••/*•this•••••••••••\n" +
+           "••*•comment•••••••••\n" +
+           "••*•spans•3•lines•••\n" +
+           "••*/••••••••••••••••\n" +
+           "••\"number\":•10••••••\n" +
+           "••/*•this•one•••••••\n"+
+           "••too!•*/•••••••••••\n"+
+           "••\"number2\":•11•••••\n"+
+           "}•••••••••••••••••••\n" +
+           blank.repeat(2);
+        JsonNode state = JsonNode.parseJson(
+           " { \n"+
+           "     /* this \n"+
+           "      * comment\n"+
+           "      * spans 3 lines\n"+
+           "      */\n"+
+           "     \"number\": 10\n"+
+           "     /* this one\n"+
+           "        too! */\n"+
+           "     \"number2\": 11\n"+
+           " }");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+
+        assertEquals(expected, got);
+        String norm = got.replace('•', ' ');
+        assertFalse(norm.contains("// *"), "block continuation lines must not be prefixed with //");
+    }
+
+    /**
+     * Trailing trivia on same row as values: null, string, and folded inner map (cursor returned to root).
+     */
+    @Test
+    public void testTrailingTriviaNullStringAndFoldedMap() throws Exception {
+        int w = 45;
+        int h = 14;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"n\": null, // nullT\n"
+                        + "  \"s\": \"x\", // strT\n"
+                        + "  \"m\": { \"q\": 1 } // foldT\n"
+                        + "}");
+        state.cursorDown();
+        state.cursorDown();
+        state.cursorDown();
+        state.setFoldedAtCursors(true);
+        state.cursorUp();
+        state.cursorUp();
+        state.cursorUp();
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••\"n\":•null,•//•nullT••••••••••••••••••••••••\n"
+                + "••\"s\":•\"x\",•//•strT••••••••••••••••••••••••••\n"
+                + "••\"m\":•{•...•}•••••••••••••••••••••••••••••••\n"
+                + "•••••••//•foldT••••••••••••••••••••••••••••••\n"
+                + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                + blank.repeat(8);
+        assertEquals(expected, got);
+    }
+
+    /** Preserved trailing comment after an inner map's closing brace; drawn on the row below that brace. */
+    @Test
+    public void testTrailingTriviaAfterMapClose() throws Exception {
+        int w = 45;
+        int h = 8;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"o\": {\n"
+                        + "    \"a\": 1\n"
+                        + "  } // mapTrail\n"
+                        + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••\"o\":•{•••••••••••••••••••••••••••••••••••••\n"
+                + "••••\"a\":•1•••••••••••••••••••••••••••••••••••\n"
+                + "••}••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••//•mapTrail••••••••••••••••••••••••••••••••\n"
+                + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + blank.repeat(2);
+        assertEquals(expected, got);
+    }
+
+    /** Preserved trailing comment after a list's closing bracket; drawn on the row below that bracket. */
+    @Test
+    public void testTrailingTriviaAfterListClose() throws Exception {
+        int w = 45;
+        int h = 8;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"arr\": [ 1, 2 ] // listTrail\n"
+                        + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••\"arr\":•[•//•2•entries••••••••••••••••••••••\n"
+                + "••••1••••••••••••••••••••••••••••••••••••••••\n"
+                + "••••2••••••••••••••••••••••••••••••••••••••••\n"
+                + "••]••••••••••••••••••••••••••••••••••••••••••\n"
+                + "••//•listTrail•••••••••••••••••••••••••••••••\n"
+                + "}••••••••••••••••••••••••••••••••••••••••••••\n"
+                        + blank.repeat(1);
+        assertEquals(expected, got);
+    }
+
+    /** Folded source comment truncates with Unicode ellipsis when wider than the terminal. */
+    @Test
+    public void testFoldedSourceCommentEllipsis() throws Exception {
+        Screen screen = setupScreen(22, 5);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n" +
+                "  \"v\":\n" +
+                "  // this_comment_is_far_too_wide_for_the_screen\n" +
+                "  \"x\"\n" +
+                "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        assertTrue(got.contains("\u2026"), "expected Unicode ellipsis in: " + got);
+    }
+
+    /** Unfolded preserved line comments: each non-empty trivia line is drawn (may share the key row). */
+    @Test
+    public void testUnfoldedSourceCommentsRendered() throws Exception {
+        int w = 45;
+        int h = 10;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n" +
+                "  \"k\":\n" +
+                "  // line one\n" +
+                "  // line two\n" +
+                "  42\n" +
+                "}");
+        ((JsonNodeMap) state).getChild("k").setCommentFolded(false);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n" +
+                "••\"k\":•//•line•one•••••••••••••••••••••••••••\n" +
+                "•••••••//•line•two•••••••••••••••••••••••••••\n" +
+                "•••••••42••••••••••••••••••••••••••••••••••••\n" +
+                "}••••••••••••••••••••••••••••••••••••••••••••\n" +
+                blank.repeat(5);
+        assertEquals(expected, got);
+    }
+
+    /** Default folded leading comment: trivia already starting with // is not prefixed again. */
+    @Test
+    public void testFoldedSourceCommentSingleLineRendering() throws Exception {
+        int w = 45;
+        int h = 10;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                + "  \"k\":\n"
+                + "  // short\n"
+                + "  7\n"
+                + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String blank = "•".repeat(w) + "\n";
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n" +
+                "••\"k\":•//•short••••••••••••••••••••••••••••••\n" +
+                "•••••••7•••••••••••••••••••••••••••••••••••••\n" +
+                "}••••••••••••••••••••••••••••••••••••••••••••\n" +
+                blank.repeat(6);
+        assertEquals(expected, got);
+    }
+
+    /** Inline {@code , // ...} after a scalar is drawn after the value (Hjson trivia after comma). */
+    @Test
+    public void testDrawInlineTrailingCommentAfterBoolean() throws Exception {
+        Screen screen = setupScreen(56, 12);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                + "  \"debugMode\": true, // Another inline comment\n"
+                + "  \"logLevel\": \"DEBUG\"\n"
+                + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("Another inline comment"), norm);
+        assertTrue(norm.contains("true"));
+    }
+
+    /** Leading comment before a key is drawn; synthetic epoch date annotation is still shown (not suppressed). */
+    @Test
+    public void testDrawShowsEpochAnnotationWithCommentBeforeTimestampKey() throws Exception {
+        Screen screen = setupScreen(48, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n" + "  # hash comment\n" + "  \"timestamp\": 1678886400000\n" + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("hash comment"), norm);
+        assertTrue(norm.contains("2023"), "synthetic epoch date annotation should appear: " + norm);
+    }
+
+    /** Block-style trivia is drawn as stored (no extra "// " prefix). */
+    @Test
+    public void testUnfoldedBlockSourceCommentRendered() throws Exception {
+        Screen screen = setupScreen(40, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                + "  \"k\":\n"
+                + "  /* block note */\n"
+                + "  0\n"
+                + "}");
+        ((JsonNodeMap) state).getChild("k").setCommentFolded(false);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String norm = got.replace('•', ' ');
+        assertTrue(norm.contains("/* block note */"), got);
+        assertTrue(norm.contains("0"), got);
+    }
+
+    /** Leading trivia on a list element is drawn above that element. */
+    @Test
+    public void testUnfoldedSourceCommentOnListElement() throws Exception {
+        Screen screen = setupScreen(36, 8);
+        Drawer d = makeDrawer();
+        JsonNode root = JsonNode.parseJson("[\n" + "  // above elem\n" + "  99\n" + "]");
+        ((JsonNodeList) root).get(0).setCommentFolded(false);
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, root, null);
+        String got = extractAsString(screen);
+        String norm = got.replace('•', ' ');
+        assertTrue(norm.contains("// above elem"), got);
+        assertTrue(norm.contains("99"), got);
+    }
+
+    /** Comment before the root object (document leading trivia). */
+    @Test
+    public void testDrawDocumentLeadingCommentBeforeRootBrace() throws Exception {
+        Screen screen = setupScreen(48, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "// file begins here\n"
+                        + "{\n"
+                        + "  \"a\": 1\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("file begins here"), norm);
+        assertTrue(norm.contains("\"a\""), norm);
+    }
+
+    /** Comment after the root object's closing brace (document trailing trivia). */
+    @Test
+    public void testDrawDocumentTrailingCommentAfterRootBrace() throws Exception {
+        Screen screen = setupScreen(48, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"a\": 1\n"
+                        + "}\n"
+                        + "// file ends here\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("file ends here"), norm);
+    }
+
+    /**
+     * Comment on a new line after {@code ,} belongs to the next member's key-leading trivia (not the previous
+     * value's trailing).
+     */
+    @Test
+    public void testDrawKeyLeadingCommentAfterCommaBeforeNextMember() throws Exception {
+        Screen screen = setupScreen(52, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"first\": 1,\n"
+                        + "  // belongs to second\n"
+                        + "  \"second\": 2\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("belongs to second"), norm);
+        assertTrue(norm.contains("\"second\""), norm);
+    }
+
+    /**
+     * Same-line {@code //} after {@code :} (before the newline) is stored as key-trailing trivia
+     * (see {@link JsonNodeMap#getKeyTrailingTrivia(String)}); the drawer does not render it yet, so the screen
+     * must still show the value without losing the tree.
+     */
+    @Test
+    public void testDrawKeyTrailingColonLineCommentNotRenderedYetTreeStillValid() throws Exception {
+        Screen screen = setupScreen(48, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson("{\n  \"x\": // on colon line\n  1\n}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("1"), norm);
+        assertTrue(norm.contains("\"x\""), norm);
+    }
+
+    /**
+     * Block comment between the key and {@code :} is key-trailing trivia; not drawn yet, but the value must appear.
+     */
+    @Test
+    public void testDrawKeyTrailingBlockBetweenKeyAndColonNotRenderedYetValueShown() throws Exception {
+        Screen screen = setupScreen(52, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"k\" /* by key */ : 0\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("0"), norm);
+        assertTrue(norm.contains("\"k\""), norm);
+    }
+
+    /** Key-leading trivia inside a nested object (not only top-level keys). */
+    @Test
+    public void testDrawNestedMapKeyLeadingComment() throws Exception {
+        Screen screen = setupScreen(52, 12);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"outer\": {\n"
+                        + "    // inner key note\n"
+                        + "    \"inner\": 3\n"
+                        + "  }\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("inner key note"), norm);
+        assertTrue(norm.contains("\"inner\""), norm);
+    }
+
+    /** Top-level array: leading comment before {@code [} and trailing after {@code ]}. */
+    @Test
+    public void testDrawTopLevelArrayDocumentLeadingAndTrailingComments() throws Exception {
+        Screen screen = setupScreen(48, 12);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "// before array\n"
+                        + "[ 7, 8 ]\n"
+                        + "// after array\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("before array"), norm);
+        assertTrue(norm.contains("after array"), norm);
+        assertTrue(norm.contains("7"), norm);
+    }
+
+    /** Trailing line comment after the last array element (same line, before {@code ]}). */
+    @Test
+    public void testDrawTrailingCommentAfterLastArrayElementBeforeClose() throws Exception {
+        Screen screen = setupScreen(52, 10);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"items\": [ 1, 2 ] // tail on line with ]\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("tail on line"), norm);
+    }
+
+    /** Root is a scalar: leading comment only (no wrapping object). */
+    @Test
+    public void testDrawRootScalarWithLeadingComment() throws Exception {
+        Screen screen = setupScreen(40, 6);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson("// root is just a number\n42\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("root is just"), norm);
+        assertTrue(norm.contains("42"), norm);
+    }
+
+    /** String map value with trailing {@code //} on the same line as the closing quote. */
+    @Test
+    public void testDrawTrailingCommentAfterStringValueInMap() throws Exception {
+        Screen screen = setupScreen(56, 8);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                        + "  \"msg\": \"hi\" // string trail\n"
+                        + "}\n");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String norm = extractAsString(screen).replace('•', ' ');
+        assertTrue(norm.contains("string trail"), norm);
+        assertTrue(norm.contains("hi"), norm);
+    }
+
+    @Test
     public void testSimpleListFolded() throws Exception {
         Screen screen = setupScreen(30,3);
         Drawer d = makeDrawer();
