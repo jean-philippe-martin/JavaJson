@@ -917,4 +917,26 @@ public class DrawTest {
 
         assertEquals(expected, got);
     }
+
+    /** Multiline value **/
+    @Test
+    public void testMultilineValue() throws Exception {
+        int w = 45;
+        int h = 5;
+        Screen screen = setupScreen(w, h);
+        Drawer d = makeDrawer();
+        JsonNode state = JsonNode.parseJson(
+                "{\n"
+                + "  \"multiline\": \"Line 1\\nline 2\\nline 3\"\n"
+                + "}");
+        d.printJsonTree(screen.newTextGraphics(), TerminalPosition.TOP_LEFT_CORNER, 0, state, null);
+        String got = extractAsString(screen);
+        String expected =
+                "{••••••••••••••••••••••••••••••••••••••••••••\n" +
+                "••\"multiline\":•\"Line•1...••••••••••••••••••••\n" +
+                "}••••••••••••••••••••••••••••••••••••••••••••\n"+
+                "•••••••••••••••••••••••••••••••••••••••••••••\n"+
+                "•••••••••••••••••••••••••••••••••••••••••••••\n";
+        assertEquals(expected, got);
+    }
 }

@@ -294,9 +294,52 @@ public class Drawer {
             printMaybeReversed(g2, pos, aggComment, jsonMap.isAtCursor(key));
             TerminalPosition pos2 = pos;
             if (!it.isAggregate()) {
-                // skip key for aggregate.
-                printMaybeReversed(g_key, pos.withRelativeColumn(TextWidth.length(aggComment)), "\"" + key + "\"", jsonMap.isAtCursor(key));
-                pos2 = pos.withRelativeColumn(TextWidth.length(aggComment) + 2 + TextWidth.length(key));
+                // print key unless this is an aggregate.
+                String keyToPrint = "\"" + key + "\"";
+                int w = g.getSize().getColumns() - pos.getColumn() - 5;
+                int room = TextWidth.charsInSpace(keyToPrint, 0, w);
+                int lineReturnPosition = key.indexOf('\n', 0);
+                boolean multilineKey = false;
+                if (room >= w) {                    
+                    if (child.getFolded()) {
+                        keyToPrint = "\"" + key.substring(0, room) + "...";
+                    } else {
+                        multilineKey = true;
+                    }
+                }
+                if (lineReturnPosition != -1) {
+                    // They put a line return in the key! The gall.
+                    if (child.getFolded()) {
+                        keyToPrint = "\"" + key.substring(0, lineReturnPosition) + "...";
+                    } else {
+                        multilineKey = true; 
+                    }
+                }
+                if (multilineKey) {
+                    String str = keyToPrint;
+                    String lastChunk = str;
+                    
+                    int down = 0;
+                    int index = 0;
+                    int zeroes = 0;
+                    while (index < str.length() && zeroes<2) {
+                        room = TextWidth.charsInSpace(str, index, w);
+                        lineReturnPosition = str.indexOf('\n', index);
+                        if (lineReturnPosition != -1 && (lineReturnPosition-index) < room) {
+                            room = lineReturnPosition-index+1;
+                        }
+                        String oneLine = str.substring(index, index+room);
+                        printMaybeReversed(g_key, pos.withRelative(0, down), oneLine, jsonMap.isAtCursor(key));
+                        lastChunk = oneLine;
+                        index += room;
+                        down++;
+                    }
+                    pos = pos.withRelativeRow(down-1);
+                    pos2 = pos.withRelativeColumn(TextWidth.length(aggComment) + 2 + TextWidth.length(lastChunk)-1);
+                } else {
+                    printMaybeReversed(g_key, pos.withRelativeColumn(TextWidth.length(aggComment)), keyToPrint, jsonMap.isAtCursor(key));
+                    pos2 = pos.withRelativeColumn(TextWidth.length(aggComment) + TextWidth.length(keyToPrint));
+                }
             }
             // normal case, user data.
             if (child instanceof JsonNodeValue) {
@@ -481,6 +524,10 @@ public class Drawer {
                 if (jsonValue.getFolded()) {
                     // show only one line, regardless of length
                     int charsUntilEllipsis = TextWidth.charsInSpace(str, 0, w-3);
+                    int lineReturnPosition = str.indexOf('\n', 0);
+                    if (lineReturnPosition != -1 && lineReturnPosition < charsUntilEllipsis) {
+                        charsUntilEllipsis = lineReturnPosition;
+                    }
                     if (charsUntilEllipsis<str.length()) {
                         // not enough room for the whole string
                         int charsLeft = TextWidth.charsInSpace(str, charsUntilEllipsis, 3);
@@ -497,6 +544,10 @@ public class Drawer {
                     int zeroes = 0;
                     while (index < str.length() && zeroes<2) {
                         int room = TextWidth.charsInSpace(str, index, w);
+                        int lineReturnPosition = str.indexOf('\n', index);
+                        if (lineReturnPosition != -1 && (lineReturnPosition-index) < room) {
+                            room = lineReturnPosition-index+1;
+                        }
                         String oneLine = str.substring(index, index+room);
                         printMaybeReversed(g_str, start.withRelative(initialOffset, down), oneLine, json.isAtCursor());
                         lastChunk = oneLine;
