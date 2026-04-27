@@ -1,0 +1,8 @@
+{
+  "A multiline string": "Line 1\nLine 2\nLine 3",
+  "This value is too long for one line": "Yes it really is! Did you know how long it is? No you don't, you have no idea, but I promise you it is so long that there is no way it fits on your screen. OK, so long as your window is reasonably-sized. I mean, come on. That was obvious. Anyways, beautiful day today right?",
+  "Single-line string": "hello",
+  "array": ["Multiline value with 3 lines\nLine 2\nLine 3", "This value here is multiline by virtue of being a very long text that is so long it goes off the margin. No? How about now? Now I think it's too long, surely."],
+  "A multiline key!\nline 2 of the key": "Can you believe it?",
+  "A key so long it does not fit on a single line. Surely this is an edge case. Who would do something like that? It is madness": "yes it is"
+}
