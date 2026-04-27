@@ -8,6 +8,7 @@
         "creation_timestamp": 1667950165,
         "too_many_seconds": 3628800
     },
+    // Try to do those things using JavaJson
     "challenges": [
         "sort characters by name",
         "how many characters have blue eyes?",

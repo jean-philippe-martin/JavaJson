@@ -8,6 +8,7 @@ The program focuses on viewing JSON files and has the following features:
 - [Find](#search)
 - [Sort](#sorting)
 - [Sibling selection](#sibling-selection)
+- [Comments](#comments)
 - [Annotations](#annotations)
 - [Unique keys](#Unique-keys)
 - [Groupby](#groupby)
@@ -387,6 +388,10 @@ Press <kbd>⎋ Escape</kbd> to remove the secondary cursors.
 
 While you have multiple cursors, all the operations you do (like fold, pin, sort, etc.) will apply
 to all the cursors.
+
+## Comments
+
+The viewer can parse JSON files with comments (`//`, `/*..*/` or `#`). It will show the comments on the screen.
 
 ## Annotations
 

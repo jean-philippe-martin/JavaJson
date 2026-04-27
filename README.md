@@ -1,7 +1,7 @@
 # Java Json
 
 An open source interactive JSON viewer for the terminal. Includes useful features like folding, sort,
-multiple cursors, groupby, JSONL support, and more. Watch the demo below for a taste.
+multiple cursors, groupby, JSONL and HJSON support, and more. Watch the demo below for a taste.
 
 ![demo](doc/demo.gif)
 
