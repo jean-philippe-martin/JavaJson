@@ -14,12 +14,12 @@ Then:
 mvn package
 ```
 
-This will create a file like `target/JavaJson-1.16-jar-with-dependencies.jar`
+This will create a file like `target/JavaJson-1.17-snapshot-jar-with-dependencies.jar`
 
 You can then run it with `./jj.sh` or with
 
 ```
-java -jar target/JavaJson-1.16-jar-with-dependencies.jar somejsonfile.json
+java -jar target/JavaJson-1.17-snapshot-jar-with-dependencies.jar somejsonfile.json
 ```
 
 ## Testing
