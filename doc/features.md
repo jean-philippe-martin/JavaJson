@@ -28,11 +28,10 @@ You can press <kbd>q</kbd> to quit the program.
 
 You can fold sections of the document to better focus on what you are interested in. For example:
 
-Start the program as shown below (you can skip the compilation step if you downloaded the jar):
+Start the program as shown below (this assumes you downloaded the jar from the release):
 
 ```shell
-mvn package -DskipTests
-java -jar target/JavaJson-1.15-jar-with-dependencies.jar testdata/hello.json
+./jj.sh testdata/hello.json
 ```
 
 Here is what you'd see after pressing <kbd>↓</kbd> a few times to reach "count_to_five".
@@ -90,8 +89,7 @@ Pinning marks rows so they will be shown even when they are inside a folded regi
 For example, let's open the car_maintenance test file (you can skip the build step if you already have the jar file).
 
 ```shell
-mvn package -DskipTests
-java -jar target/JavaJson-1.15-jar-with-dependencies.jar testdata/car_maintenance.json
+./jj.sh testdata/car_maintenance.json
 ```
 Here's what it looks like after we lower the cursor a few times with <kbd>↓</kbd>:
 
@@ -144,8 +142,7 @@ Search is the easiest to explain, so let's start there.
 Let's open the car_maintenance test file (you can skip the build step if you already have the jar file).
 
 ```shell
- mvn package -DskipTests
- java -jar target/JavaJson-1.15-jar-with-dependencies.jar testdata/car_maintenance.json
+./jj.sh testdata/car_maintenance.json
 ```
 
 Now press the <kbd>f</kbd> key to open the find dialog, type `make` and press the <kbd>⏎ Enter</kbd>
@@ -242,8 +239,7 @@ that contains the things you want to sort.
 Let's open the `sortme` test file (you can skip the build step if you already have the jar file).
 
 ```shell
-mvn package -DskipTests
-java -jar target/JavaJson-1.15-jar-with-dependencies.jar testdata/sortme.json
+./jj.sh testdata/sortme.json
 ```
 
 Press <kbd>↓</kbd> once to move the cursor to the "numbers" section and press the `s` key.

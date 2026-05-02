@@ -47,12 +47,14 @@ brew install openjdk
 
 You can also [download it directly online](https://jdk.java.net/24/).
 
+If you are running Windows then you have to adapt `jj.sh` into a `jj.bat` for your platform yourself.
+
 ## Getting started
 
 Starting JavaJson with a demo file will look something like this:
 
 ```
-./jj testdata/demo.json	
+./jj.sh testdata/demo.json	
 ```
 
 Then you can use the arrow keys to navigate, <kbd>H</kbd> for help, 
